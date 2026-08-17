@@ -1,0 +1,731 @@
+openapi: 3.0.3
+info:
+  title: YOURMAHABALESHWAR Mobile API
+  version: 1.0.0-phase3
+  description: |
+    Frozen contract for Android (Expo) customer & vendor apps.
+    Base URL: `{API_BASE}/api` (e.g. http://10.0.2.2:5000/api for Android emulator).
+    Auth: `Authorization: Bearer {accessToken}`. Refresh via POST /auth/refresh.
+  contact:
+    name: SM Enterprises
+servers:
+  - url: https://www.yourmahabaleshwar.com/api
+    description: Production
+  - url: http://localhost:5000/api
+    description: Local development
+
+tags:
+  - name: Auth
+  - name: Catalog
+  - name: Bookings
+  - name: Payments
+  - name: Users
+  - name: Vendor
+  - name: Devices
+
+paths:
+  /health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Customer register (OTP required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, phone, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+                password: { type: string, minLength: 6 }
+      responses:
+        '201':
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallenge'
+
+  /auth/register-vendor:
+    post:
+      tags: [Auth]
+      summary: Vendor register (OTP then KYC)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, phone, password, vendorType]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                password: { type: string }
+                vendorType:
+                  type: string
+                  enum: [HOTEL, RESORT, HOMESTAY, TENT, GUIDE, TAXI, DRIVER, HORSE]
+                businessName: { type: string }
+      responses:
+        '201':
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallenge'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (OTP for customer/vendor; password-only for admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Tokens or OTP challenge
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AuthSession'
+                  - $ref: '#/components/schemas/OtpChallenge'
+
+  /auth/otp/send:
+    post:
+      tags: [Auth]
+      summary: Resend OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, channel]
+              properties:
+                identifier: { type: string }
+                channel: { type: string, enum: [PHONE, EMAIL] }
+                purpose: { type: string, enum: [LOGIN, SIGNUP, VERIFY] }
+      responses:
+        '200':
+          description: OTP sent
+
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP and receive tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, code]
+              properties:
+                identifier: { type: string }
+                code: { type: string }
+                purpose: { type: string, enum: [LOGIN, SIGNUP, VERIFY] }
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: New access token
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      summary: Current user
+      responses:
+        '200':
+          description: User
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      summary: Logout
+      responses:
+        '200':
+          description: OK
+
+  /hotels:
+    get:
+      tags: [Catalog]
+      summary: List hotels
+      parameters:
+        - in: query
+          name: type
+          schema: { type: string, enum: [HOTEL, RESORT] }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: Hotel list
+
+  /hotels/{slug}:
+    get:
+      tags: [Catalog]
+      summary: Hotel detail
+      parameters:
+        - $ref: '#/components/parameters/slug'
+      responses:
+        '200':
+          description: Hotel
+
+  /homestays:
+    get:
+      tags: [Catalog]
+      summary: List homestays
+      responses:
+        '200':
+          description: Homestay list
+
+  /homestays/{slug}:
+    get:
+      tags: [Catalog]
+      parameters:
+        - $ref: '#/components/parameters/slug'
+      responses:
+        '200':
+          description: Homestay
+
+  /tents:
+    get:
+      tags: [Catalog]
+      responses:
+        '200':
+          description: Tent list
+
+  /tents/{slug}:
+    get:
+      tags: [Catalog]
+      parameters:
+        - $ref: '#/components/parameters/slug'
+      responses:
+        '200':
+          description: Tent
+
+  /guides:
+    get:
+      tags: [Catalog]
+      responses:
+        '200':
+          description: Guide list
+
+  /guides/{slug}:
+    get:
+      tags: [Catalog]
+      parameters:
+        - $ref: '#/components/parameters/slug'
+      responses:
+        '200':
+          description: Guide
+
+  /drivers:
+    get:
+      tags: [Catalog]
+      responses:
+        '200':
+          description: Taxi/driver list
+
+  /drivers/{slug}:
+    get:
+      tags: [Catalog]
+      parameters:
+        - $ref: '#/components/parameters/slug'
+      responses:
+        '200':
+          description: Driver
+
+  /horses:
+    get:
+      tags: [Catalog]
+      responses:
+        '200':
+          description: Horse rides list
+
+  /horses/{slug}:
+    get:
+      tags: [Catalog]
+      parameters:
+        - $ref: '#/components/parameters/slug'
+      responses:
+        '200':
+          description: Horse
+
+  /search:
+    get:
+      tags: [Catalog]
+      summary: Unified search
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200':
+          description: Search results
+
+  /availability/{type}/{id}:
+    get:
+      tags: [Catalog]
+      summary: Listing blocked dates / availability
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema: { type: string }
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Availability
+
+  /bookings:
+    get:
+      tags: [Bookings]
+      security: [{ bearerAuth: [] }]
+      summary: My bookings (customer)
+      responses:
+        '200':
+          description: Bookings
+    post:
+      tags: [Bookings]
+      security: [{ bearerAuth: [] }]
+      summary: Create booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBooking'
+      responses:
+        '201':
+          description: Booking created
+
+  /bookings/vendor:
+    get:
+      tags: [Vendor]
+      security: [{ bearerAuth: [] }]
+      summary: Vendor bookings
+      responses:
+        '200':
+          description: Bookings
+
+  /bookings/{id}/status:
+    patch:
+      tags: [Vendor]
+      security: [{ bearerAuth: [] }]
+      summary: Accept / reject / update booking status
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [CONFIRMED, CANCELLED, COMPLETED, REJECTED]
+      responses:
+        '200':
+          description: Updated booking
+
+  /bookings/{id}/invoice:
+    get:
+      tags: [Bookings]
+      security: [{ bearerAuth: [] }]
+      summary: Download invoice PDF
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: PDF or URL payload
+
+  /payments/create-order:
+    post:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Create Razorpay order (or mock)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookingId]
+              properties:
+                bookingId: { type: string }
+      responses:
+        '200':
+          description: order + payment + keyId
+
+  /payments/verify:
+    post:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Verify Razorpay payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paymentId, razorpayPaymentId, razorpayOrderId, razorpaySignature]
+              properties:
+                paymentId: { type: string }
+                razorpayPaymentId: { type: string }
+                razorpayOrderId: { type: string }
+                razorpaySignature: { type: string }
+      responses:
+        '200':
+          description: Verified
+
+  /payments/refund:
+    post:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Request refund / cancel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookingId]
+              properties:
+                bookingId: { type: string }
+                reason: { type: string }
+      responses:
+        '200':
+          description: Refund requested
+
+  /payments/refund-preview/{bookingId}:
+    get:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Preview amount/type
+
+  /users/me:
+    get:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Profile
+    patch:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                phone: { type: string }
+                preferredLanguage: { type: string, enum: [en, mr] }
+      responses:
+        '200':
+          description: Updated
+
+  /users/wishlist:
+    get:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Wishlist
+    post:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId, itemType]
+              properties:
+                itemId: { type: string }
+                itemType: { type: string }
+      responses:
+        '200':
+          description: Added
+
+  /users/notifications:
+    get:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: In-app notifications
+
+  /users/kyc:
+    get:
+      tags: [Vendor]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: KYC status
+    post:
+      tags: [Vendor]
+      security: [{ bearerAuth: [] }]
+      summary: Submit KYC (multipart)
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                vendorType: { type: string }
+                aadhar: { type: string }
+                pan: { type: string }
+                bankDetails: { type: string, description: JSON string }
+                aadharDoc: { type: string, format: binary }
+                panDoc: { type: string, format: binary }
+      responses:
+        '200':
+          description: Submitted
+
+  /users/devices:
+    post:
+      tags: [Devices]
+      security: [{ bearerAuth: [] }]
+      summary: Register FCM device token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string }
+                platform: { type: string, enum: [ANDROID, IOS, WEB] }
+                appRole: { type: string, enum: [CUSTOMER, VENDOR] }
+      responses:
+        '200':
+          description: Registered
+
+  /users/devices/{token}:
+    delete:
+      tags: [Devices]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Removed
+
+  /admin/wallet:
+    get:
+      tags: [Vendor]
+      security: [{ bearerAuth: [] }]
+      summary: Vendor wallet + points
+      responses:
+        '200':
+          description: Wallet
+
+  /admin/subscriptions/me:
+    get:
+      tags: [Vendor]
+      security: [{ bearerAuth: [] }]
+      summary: Vendor subscription
+      responses:
+        '200':
+          description: Subscription
+
+  /admin/subscriptions/points/purchase:
+    post:
+      tags: [Vendor]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                points: { type: number }
+      responses:
+        '200':
+          description: Points purchased
+
+  /reviews:
+    get:
+      tags: [Catalog]
+      parameters:
+        - in: query
+          name: itemId
+          schema: { type: string }
+        - in: query
+          name: itemType
+          schema: { type: string }
+      responses:
+        '200':
+          description: Reviews
+    post:
+      tags: [Bookings]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookingId, rating]
+              properties:
+                bookingId: { type: string }
+                rating: { type: number, minimum: 1, maximum: 5 }
+                comment: { type: string }
+      responses:
+        '201':
+          description: Created
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    slug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string }
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+
+  schemas:
+    ApiEnvelope:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data: {}
+
+    OtpChallenge:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                requiresOtp: { type: boolean, example: true }
+                userId: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                devCode: { type: string, description: Present only in non-production }
+
+    AuthSession:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                accessToken: { type: string }
+                refreshToken: { type: string }
+                user:
+                  $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        role:
+          type: string
+          enum:
+            - CUSTOMER
+            - HOTEL_VENDOR
+            - HOMESTAY_VENDOR
+            - TENT_OPERATOR
+            - GUIDE
+            - DRIVER
+            - HORSE_OPERATOR
+            - SUPER_ADMIN
+            - OFFICE_STAFF_HOTEL
+            - OFFICE_STAFF_GUIDE
+            - MARKETING_STAFF
+        preferredLanguage: { type: string }
+
+    CreateBooking:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [HOTEL, RESORT, HOMESTAY, TENT, GUIDE, TAXI, HORSE]
+        hotelId: { type: string }
+        roomId: { type: string }
+        tentId: { type: string }
+        homestayId: { type: string }
+        guideId: { type: string }
+        driverId: { type: string }
+        horseId: { type: string }
+        checkIn: { type: string, format: date }
+        checkOut: { type: string, format: date }
+        guests: { type: number }
+        guidePackage: { type: string, enum: [6HR, 12HR] }
+        taxiType: { type: string, enum: [TRIP, HOURLY] }
+        hours: { type: number }

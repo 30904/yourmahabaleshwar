@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SM Enterprises — Implementation Status</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 14mm 16mm 14mm;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body {
+      margin: 0;
+      background: #e8edf3;
+      color: #1f2933;
+      font-family: Calibri, "Segoe UI", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.35;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 18px;
+      background: #003580;
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .toolbar button {
+      border: 0;
+      background: #ffb700;
+      color: #003580;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 18px auto;
+      padding: 16mm 15mm;
+      background: #fff;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      padding-bottom: 8px;
+      border-bottom: 3px solid #003580;
+      color: #003580;
+      font-size: 20pt;
+      line-height: 1.15;
+      font-weight: 700;
+    }
+
+    .meta {
+      margin: 0 0 10px;
+      color: #4b5563;
+      font-size: 9.5pt;
+    }
+
+    h2 {
+      margin: 14px 0 6px;
+      color: #003580;
+      font-size: 12.5pt;
+      page-break-after: avoid;
+    }
+
+    p { margin: 0 0 7px; }
+
+    ul, ol {
+      margin: 2px 0 8px 18px;
+      padding: 0;
+    }
+
+    li { margin: 0 0 3px; }
+
+    .note {
+      margin: 8px 0 12px;
+      padding: 8px 10px;
+      background: #f3f6fa;
+      border-left: 4px solid #003580;
+      font-size: 9.5pt;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 10px;
+      font-size: 9.3pt;
+    }
+
+    th, td {
+      border: 1px solid #c5cdd6;
+      padding: 5px 7px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #003580;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    tr { page-break-inside: avoid; }
+
+    .status {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 2px;
+      font-weight: 700;
+      font-size: 8.5pt;
+      white-space: nowrap;
+    }
+
+    .partial { background: #fff4d6; color: #8a5a00; }
+    .pending { background: #fde8e8; color: #9b1c1c; }
+
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 18px;
+    }
+
+    .footer {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid #c5cdd6;
+      color: #4b5563;
+      font-size: 9.5pt;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8.8pt;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .page {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <span>SM Enterprises — Implementation Status &nbsp;·&nbsp; Open this file, then click Print to save as PDF</span>
+    <button type="button" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+
+  <article class="page">
+    <h1>SM Enterprises — Implementation Status</h1>
+    <p class="meta">
+      <strong>Project:</strong> yourmahabaleshwar.com &nbsp;|&nbsp;
+      <strong>Source:</strong> Software Requirements Specification (SRS) v1.0, 06 August 2026 &nbsp;|&nbsp;
+      <strong>Review date:</strong> 17 August 2026
+    </p>
+
+    <p>
+      Two-page summary of what is <strong>working end-to-end today</strong> versus what is
+      <strong>still remaining</strong>, based on the SRS compared with the current website,
+      admin dashboard, API, and Android (Expo) app.
+    </p>
+    <p>
+      <strong>Done (E2E)</strong> = demoable on website + API with seeded data.
+      <strong>Partial</strong> = built but incomplete, mocked, or missing a surface.
+      <strong>Pending</strong> = not implemented as specified.
+    </p>
+
+    <div class="note">
+      Payments, SMS, email, and WhatsApp work in development (mock if keys are missing).
+      They are not production-live until Razorpay / SMS / SMTP / WhatsApp keys are configured.
+      Android is a development app, not a Play Store release.
+    </div>
+
+    <h2>1. What is complete and working end-to-end</h2>
+    <p><strong>Platforms:</strong> Customer website (React PWA) and web admin dashboard (<code>/admin</code>) are live and usable.</p>
+    <p><strong>Customer (website):</strong> registration, OTP login, profile, search, listing details, booking, online payment (Razorpay or mock), booking history, GST invoice PDF, cancel/refund request, wishlist, reviews, in-app notifications.</p>
+    <p><strong>Verticals live on web:</strong> hotels, resorts, homestays, tents, guides, taxi, horse rides. Browse → detail → book → pay → invoice works.</p>
+    <p><strong>Vendor (website):</strong> self-registration, admin-created vendors, KYC document upload, admin approve/reject, booking requests, accept/reject, wallet, subscriptions, point balance.</p>
+    <p><strong>Admin:</strong> dashboard, users, vendors, bookings, payments, refunds, commissions, advertisements, subscriptions, marketing campaigns, CMS (banners, blogs, FAQs, settings), reports with Excel export, daily/weekly backup and restore.</p>
+    <p><strong>Business modules working on web + API:</strong></p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:28%">Module</th>
+          <th>Working capability</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Booking flow</td><td>Search, dates, availability, confirm, pay, vendor accept, invoice, complete</td></tr>
+        <tr><td>Payments</td><td>Razorpay order/verify; UPI, cards, net banking, wallets via gateway</td></tr>
+        <tr><td>GST invoices</td><td>Auto PDF with invoice no., parties, GST amount, download</td></tr>
+        <tr><td>Commission</td><td>Configurable %; stored per booking; payouts and wallet</td></tr>
+        <tr><td>Subscription + points</td><td>Monthly plans and point deduction on accept</td></tr>
+        <tr><td>Ads + marketing</td><td>Banners, featured listings, ad packages, bulk email/SMS/WhatsApp UI</td></tr>
+        <tr><td>Refunds</td><td>Configurable policy: full / partial / none, with status tracking</td></tr>
+        <tr><td>Reports</td><td>Bookings, revenue, GST, refunds, payments, subscriptions, ads, vendors, customers</td></tr>
+        <tr><td>Backups</td><td>Scheduled daily + weekly; database and media; restore</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Ahead of the SRS:</strong> strawberry, Mapro, and combo modules (listed as future scope) are already built on web + API.</p>
+    <p><strong>Security basics:</strong> JWT + bcrypt, role-based access, admin audit logs, responsive PWA.</p>
+
+    <h2>2. What is remaining</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:26%">Area</th>
+          <th style="width:12%">Status</th>
+          <th>Gap</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Customer Android app</td><td><span class="status partial">Partial</span></td><td>Expo app can browse, OTP, book, mock-pay. Not Play Store ready. No native Razorpay.</td></tr>
+        <tr><td>Vendor Android app</td><td><span class="status partial">Partial</span></td><td>Same app: accept/reject, wallet, KYC text only. No listing CRUD or document photos.</td></tr>
+        <tr><td>English + Marathi</td><td><span class="status partial">Partial</span></td><td>Language toggle exists. Most screens, admin, and CMS stay English.</td></tr>
+        <tr><td>Separate vendor dashboards</td><td><span class="status pending">Pending</span></td><td>One shared vendor panel for all vendor types.</td></tr>
+        <tr><td>Vendor service &amp; pricing management</td><td><span class="status pending">Pending</span></td><td>Vendors cannot edit their own listings/prices; admin does this.</td></tr>
+        <tr><td>Availability calendar</td><td><span class="status partial">Partial</span></td><td>Vendor must enter a listing ID and block dates. No real calendar.</td></tr>
+        <tr><td>Taxi vs driver (two modules)</td><td><span class="status partial">Partial</span></td><td>One driver/taxi model plus enquiry forms, not two catalogs.</td></tr>
+        <tr><td>Resort packages / activities</td><td><span class="status partial">Partial</span></td><td>Resorts reuse the hotel module.</td></tr>
+        <tr><td>Forgot password</td><td><span class="status partial">Partial</span></td><td>Request page exists. No reset-password page or working email link.</td></tr>
+        <tr><td>OTP on every login</td><td><span class="status partial">Partial</span></td><td>Customers/vendors yes. Admin/staff are password-only.</td></tr>
+        <tr><td>Live SMS / WhatsApp / email</td><td><span class="status partial">Partial</span></td><td>Services exist; mock without production keys.</td></tr>
+        <tr><td>Coupons at checkout</td><td><span class="status pending">Pending</span></td><td>Admin can create coupons; checkout does not apply them.</td></tr>
+        <tr><td>Search ad priority</td><td><span class="status pending">Pending</span></td><td>Featured flag exists; search does not rank sponsored results first.</td></tr>
+        <tr><td>Vendor review inbox</td><td><span class="status pending">Pending</span></td><td>Reviews are customer + admin moderation only.</td></tr>
+        <tr><td>Password / KYC / blogs polish</td><td><span class="status partial">Partial</span></td><td>Mobile KYC is text-only. No public blog detail page. Legal pages are placeholders.</td></tr>
+        <tr><td>Production hardening</td><td><span class="status partial">Partial</span></td><td>No CI/CD or APM. Field-level encryption of KYC docs not implemented.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. Suggested next work</h2>
+    <div class="cols">
+      <div>
+        <p><strong>Website (do first)</strong></p>
+        <ol>
+          <li>Vendor listing, pricing, and a proper availability calendar</li>
+          <li>Password-reset page and email link</li>
+          <li>Apply coupons at checkout</li>
+          <li>Full Marathi on public, booking, and vendor screens</li>
+          <li>Connect live Razorpay, SMS, email, and WhatsApp keys</li>
+          <li>Vendor review inbox; blog detail and real legal content</li>
+        </ol>
+      </div>
+      <div>
+        <p><strong>Android (to match the SRS)</strong></p>
+        <ol>
+          <li>EAS / Play Store build</li>
+          <li>Native Razorpay checkout</li>
+          <li>KYC document capture and notification inbox</li>
+          <li>Vendor listing management on mobile</li>
+        </ol>
+        <p><strong>Later:</strong> split taxi vs driver if still required; resort packages as their own data; sponsored search ranking; OTP for staff; monitoring and CI/CD.</p>
+      </div>
+    </div>
+
+    <p class="footer">
+      <strong>Demo (after seed):</strong>
+      Admin <code>admin@yourmahabaleshwar.com</code> / Admin@123 &nbsp;·&nbsp;
+      Customer <code>customer1@demo.com</code> / Customer@123 &nbsp;·&nbsp;
+      Hotel vendor <code>hotel.vendor@demo.com</code> / Vendor@123
+      (vendors/customers then enter OTP).
+    </p>
+  </article>
+</body>
+</html>

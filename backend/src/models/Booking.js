@@ -1,0 +1,76 @@
+import mongoose from 'mongoose';
+import { BOOKING_STATUS, BOOKING_TYPES, REFUND_STATUS } from '../constants/booking.js';
+
+const bookingSchema = new mongoose.Schema(
+  {
+    bookingNumber: { type: String, unique: true },
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    type: { type: String, enum: Object.values(BOOKING_TYPES), required: true },
+    status: {
+      type: String,
+      enum: Object.values(BOOKING_STATUS),
+      default: BOOKING_STATUS.PENDING,
+    },
+    hotel: { type: mongoose.Schema.Types.ObjectId, ref: 'Hotel' },
+    room: { type: mongoose.Schema.Types.ObjectId, ref: 'Room' },
+    homestay: { type: mongoose.Schema.Types.ObjectId, ref: 'Homestay' },
+    homestayRoomId: { type: String },
+    tent: { type: mongoose.Schema.Types.ObjectId, ref: 'Tent' },
+    guide: { type: mongoose.Schema.Types.ObjectId, ref: 'Guide' },
+    driver: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },
+    horse: { type: mongoose.Schema.Types.ObjectId, ref: 'Horse' },
+    horseRouteId: { type: String },
+    product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+    productQty: { type: Number, default: 1 },
+    productVertical: { type: String, enum: ['STRAWBERRY', 'MAPRO'] },
+    combo: { type: mongoose.Schema.Types.ObjectId, ref: 'ComboOffer' },
+    comboSnapshot: { type: mongoose.Schema.Types.Mixed },
+    checkIn: { type: Date },
+    checkOut: { type: Date },
+    guests: { adults: Number, children: Number },
+    tentQuantity: { type: Number },
+    guidePackage: { type: String, enum: ['6HR', '12HR'] },
+    bikeAddon: { type: Boolean, default: false },
+    taxiType: { type: String, enum: ['PER_TRIP', 'HOURLY'] },
+    hours: { type: Number },
+    deliveryAddress: {
+      line1: String,
+      city: String,
+      phone: String,
+      note: String,
+    },
+    subtotal: { type: Number, required: true },
+    gst: { type: Number, default: 0 },
+    commission: { type: Number, default: 0 },
+    total: { type: Number, required: true },
+    paymentStatus: {
+      type: String,
+      enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIAL_REFUND'],
+      default: 'PENDING',
+    },
+    payment: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
+    invoiceNumber: { type: String },
+    invoiceUrl: { type: String },
+    refundStatus: {
+      type: String,
+      enum: Object.values(REFUND_STATUS),
+      default: REFUND_STATUS.NONE,
+    },
+    refundAmount: { type: Number, default: 0 },
+    refundReason: { type: String },
+    notes: { type: String },
+    cancelledAt: { type: Date },
+    cancellationReason: { type: String },
+  },
+  { timestamps: true }
+);
+
+bookingSchema.pre('save', function generateBookingNumber(next) {
+  if (!this.bookingNumber) {
+    this.bookingNumber = `YMB${Date.now().toString(36).toUpperCase()}`;
+  }
+  next();
+});
+
+export default mongoose.model('Booking', bookingSchema);

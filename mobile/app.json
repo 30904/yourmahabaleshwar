@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "YOURMAHABALESHWAR",
+    "slug": "yourmahabaleshwar",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "yourmahabaleshwar",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B3D2E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.smenterprises.yourmahabaleshwar"
+    },
+    "android": {
+      "package": "com.smenterprises.yourmahabaleshwar",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B3D2E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE", "POST_NOTIFICATIONS"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#0B3D2E"
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://www.yourmahabaleshwar.com/api",
+      "eas": {
+        "projectId": "yourmahabaleshwar-phase3"
+      }
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "common": {
+    "loading": "लोड होत आहे...",
+    "error": "काहीतरी चुकले",
+    "retry": "पुन्हा प्रयत्न करा",
+    "save": "जतन करा",
+    "cancel": "रद्द करा",
+    "continue": "पुढे जा",
+    "submit": "सबमिट",
+    "rupees": "₹{{amount}}"
+  },
+  "nav": {
+    "home": "मुख्य",
+    "explore": "शोधा",
+    "bookings": "बुकिंग्ज",
+    "account": "खाते",
+    "vendor": "विक्रेता",
+    "wallet": "वॉलेट",
+    "kyc": "KYC",
+    "hotels": "हॉटेल्स",
+    "resorts": "रिसॉर्ट्स",
+    "homestays": "होमस्टे",
+    "tents": "टेंट्स",
+    "guides": "मार्गदर्शक",
+    "taxi": "टॅक्सी",
+    "horses": "घोडे",
+    "strawberries": "स्ट्रॉबेरी",
+    "mapro": "माप्रो",
+    "combos": "कॉम्बो"
+  },
+  "auth": {
+    "signIn": "साइन इन",
+    "register": "खाते तयार करा",
+    "vendorRegister": "मालमत्ता यादीत टाका",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "phone": "फोन",
+    "name": "पूर्ण नाव",
+    "otp": "OTP कोड",
+    "otpHint": "फोन किंवा ईमेलवर पाठवलेला OTP टाका",
+    "verify": "OTP पडताळा",
+    "logout": "साइन आउट",
+    "welcome": "YOURMAHABALESHWAR मध्ये स्वागत"
+  },
+  "home": {
+    "headline": "महाबळेश्वर शोधा",
+    "subhead": "हॉटेल्स, होमस्टे, टेंट्स, मार्गदर्शक, टॅक्सी आणि घोड्याची सैर",
+    "browse": "श्रेणी पहा"
+  },
+  "booking": {
+    "bookNow": "आता बुक करा",
+    "payNow": "आता पेमेंट करा",
+    "invoice": "इनव्हॉइस",
+    "refund": "रद्द आणि परतावा",
+    "accept": "स्वीकारा",
+    "reject": "नकार द्या",
+    "noBookings": "अद्याप बुकिंग नाही",
+    "checkIn": "चेक-इन",
+    "checkOut": "चेक-आउट",
+    "guests": "पाहुणे",
+    "total": "एकूण",
+    "status": "स्थिती",
+    "mockPaid": "पेमेंट नोंदवले (मॉक)"
+  },
+  "vendor": {
+    "overview": "विक्रेता केंद्र",
+    "walletHint": "शिल्लक, पॉइंट्स आणि सदस्यता",
+    "kycHint": "पडताळणीसाठी कागदपत्रे अपलोड करा",
+    "submitKyc": "KYC सबमिट करा",
+    "points": "पॉइंट्स",
+    "balance": "वॉलेट शिल्लक"
+  }
+}

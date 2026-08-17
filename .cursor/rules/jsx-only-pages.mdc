@@ -1,0 +1,11 @@
+---
+description: Use JSX/JS for React pages — never create TSX/TS React screens
+alwaysApply: true
+---
+
+# JSX-only pages
+
+- Create and edit React UI as **`.jsx`** (and supporting modules as **`.js`**).
+- **Do not** create new `.tsx` or `.ts` page/screen/component files in `frontend/` or `mobile/`.
+- If converting existing TypeScript UI, emit **`.jsx` / `.js`** and remove the old `.tsx` / `.ts` files.
+- Do not add TypeScript-only navigation prop types or `*.d.ts` just for screens; keep runtime JS/JSX.

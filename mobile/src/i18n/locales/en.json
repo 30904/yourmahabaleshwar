@@ -1,0 +1,73 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "submit": "Submit",
+    "rupees": "₹{{amount}}"
+  },
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "bookings": "Bookings",
+    "account": "Account",
+    "vendor": "Vendor",
+    "wallet": "Wallet",
+    "kyc": "KYC",
+    "hotels": "Hotels",
+    "resorts": "Resorts",
+    "homestays": "Homestays",
+    "tents": "Tents",
+    "guides": "Guides",
+    "taxi": "Taxi",
+    "horses": "Horses",
+    "strawberries": "Strawberries",
+    "mapro": "Mapro",
+    "combos": "Combos"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "register": "Create account",
+    "vendorRegister": "List your property",
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone",
+    "name": "Full name",
+    "otp": "OTP code",
+    "otpHint": "Enter the OTP sent to your phone or email",
+    "verify": "Verify OTP",
+    "logout": "Sign out",
+    "welcome": "Welcome to YOURMAHABALESHWAR"
+  },
+  "home": {
+    "headline": "Discover Mahabaleshwar",
+    "subhead": "Hotels, homestays, tents, guides, taxi & horse rides",
+    "browse": "Browse categories"
+  },
+  "booking": {
+    "bookNow": "Book now",
+    "payNow": "Pay now",
+    "invoice": "Invoice",
+    "refund": "Cancel & refund",
+    "accept": "Accept",
+    "reject": "Reject",
+    "noBookings": "No bookings yet",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "total": "Total",
+    "status": "Status",
+    "mockPaid": "Payment recorded (mock)"
+  },
+  "vendor": {
+    "overview": "Vendor hub",
+    "walletHint": "Balance, points and subscription",
+    "kycHint": "Upload documents for verification",
+    "submitKyc": "Submit KYC",
+    "points": "Points",
+    "balance": "Wallet balance"
+  }
+}

@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+*.local
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+!.env.example
+!.env.*.example
+# Public Vite production vars only (no secrets)
+!frontend/.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Uploads
+backend/src/uploads/*
+!backend/src/uploads/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+
+# PWA
+dev-dist/
+
+# Docker
+*.pid
