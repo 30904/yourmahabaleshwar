@@ -6,9 +6,10 @@ import { ROLES } from '../constants/roles.js';
 const router = Router();
 
 router.get('/', hotel.getHotels);
+router.get('/mine', protect, authorize(ROLES.HOTEL_VENDOR, ROLES.SUPER_ADMIN), hotel.listMyHotels);
 router.get('/:slug', hotel.getHotelBySlug);
 router.post('/', protect, authorize(ROLES.HOTEL_VENDOR, ROLES.SUPER_ADMIN), hotel.createHotel);
 router.put('/:id', protect, authorize(ROLES.HOTEL_VENDOR, ROLES.SUPER_ADMIN), hotel.updateHotel);
-router.delete('/:id', protect, authorize(ROLES.SUPER_ADMIN), hotel.deleteHotel);
+router.delete('/:id', protect, authorize(ROLES.HOTEL_VENDOR, ROLES.SUPER_ADMIN), hotel.deleteHotel);
 
 export default router;

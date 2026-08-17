@@ -9,6 +9,6 @@ router.get('/', listing.getDrivers);
 router.get('/mine', protect, authorize(ROLES.DRIVER, ROLES.SUPER_ADMIN), domain.listMyDrivers);
 router.post('/', protect, authorize(ROLES.DRIVER, ROLES.SUPER_ADMIN), domain.createDriver);
 router.put('/:id', protect, authorize(ROLES.DRIVER, ROLES.SUPER_ADMIN), domain.updateDriver);
-router.delete('/:id', protect, authorize(ROLES.SUPER_ADMIN), domain.deleteDriver);
+router.delete('/:id', protect, authorize(ROLES.DRIVER, ROLES.SUPER_ADMIN), domain.deleteDriver);
 router.get('/:slug', listing.getDriverBySlug);
 export default router;

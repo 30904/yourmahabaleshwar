@@ -5,11 +5,20 @@ import { BOOKING_TYPES } from '../constants/booking.js';
 import { ROLES } from '../constants/roles.js';
 import { success, error } from '../utils/apiResponse.js';
 import { calculateTotalAsync } from '../utils/pricing.js';
+import { mapProductMine } from '../utils/vendorMineListings.js';
+import { denyIfNotOwner, stampOwnerOnCreate, stripOwnerOnUpdate } from '../utils/vendorListingAccess.js';
 
 const slugify = (s) =>
   `${String(s || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`;
 
 // ─── Products (Strawberry / Mapro) ───────────────────────────
+export const listMyProducts = async (req, res) => {
+  const filter = req.user.role === ROLES.SUPER_ADMIN ? {} : { vendor: req.user._id };
+  if (req.query.vertical) filter.vertical = String(req.query.vertical).toUpperCase();
+  const docs = await Product.find(filter).sort('-createdAt').limit(200);
+  return success(res, docs.map(mapProductMine));
+};
+
 export const listProducts = async (req, res) => {
   const filter = { isActive: { $ne: false } };
   if (req.query.vertical) filter.vertical = String(req.query.vertical).toUpperCase();
@@ -27,9 +36,8 @@ export const getProductBySlug = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const data = { ...req.body };
+    const data = stampOwnerOnCreate(req, { ...req.body }, 'vendor');
     if (!data.slug && data.name) data.slug = slugify(`${data.vertical || 'product'}-${data.name}`);
-    if (!data.vendor && req.user.role === ROLES.PRODUCT_VENDOR) data.vendor = req.user._id;
     if (!data.vertical) return error(res, 'vertical required (STRAWBERRY|MAPRO)', 400);
     const doc = await Product.create(data);
     return success(res, doc, 'Product created', 201);
@@ -39,14 +47,22 @@ export const createProduct = async (req, res) => {
 };
 
 export const updateProduct = async (req, res) => {
-  const doc = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const doc = await Product.findById(req.params.id);
   if (!doc) return error(res, 'Not found', 404);
+  const denied = denyIfNotOwner(req, doc, 'vendor');
+  if (denied) return error(res, denied.message, denied.status);
+  Object.assign(doc, stripOwnerOnUpdate(req, req.body, 'vendor'));
+  await doc.save();
   return success(res, doc);
 };
 
 export const deleteProduct = async (req, res) => {
-  const doc = await Product.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+  const doc = await Product.findById(req.params.id);
   if (!doc) return error(res, 'Not found', 404);
+  const denied = denyIfNotOwner(req, doc, 'vendor');
+  if (denied) return error(res, denied.message, denied.status);
+  doc.isActive = false;
+  await doc.save();
   return success(res, doc, 'Deactivated');
 };
 

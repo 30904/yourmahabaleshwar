@@ -9,6 +9,6 @@ router.get('/', listing.getTents);
 router.get('/mine', protect, authorize(ROLES.TENT_OPERATOR, ROLES.SUPER_ADMIN), domain.listMyTents);
 router.post('/', protect, authorize(ROLES.TENT_OPERATOR, ROLES.SUPER_ADMIN), domain.createTent);
 router.put('/:id', protect, authorize(ROLES.TENT_OPERATOR, ROLES.SUPER_ADMIN), domain.updateTent);
-router.delete('/:id', protect, authorize(ROLES.SUPER_ADMIN), domain.deleteTent);
+router.delete('/:id', protect, authorize(ROLES.TENT_OPERATOR, ROLES.SUPER_ADMIN), domain.deleteTent);
 router.get('/:slug', listing.getTentBySlug);
 export default router;
