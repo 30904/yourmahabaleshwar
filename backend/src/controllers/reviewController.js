@@ -7,6 +7,7 @@ import Driver from '../models/Driver.js';
 import Homestay from '../models/Homestay.js';
 import Horse from '../models/Horse.js';
 import { BOOKING_STATUS } from '../constants/booking.js';
+import { ROLES } from '../constants/roles.js';
 import { success, error } from '../utils/apiResponse.js';
 
 const listingModels = {
@@ -89,6 +90,83 @@ export const listReviews = async (req, res) => {
     .sort('-createdAt')
     .limit(100);
   return success(res, reviews);
+};
+
+const none = { _id: { $in: [] } };
+
+const vendorReviewFilter = async (user) => {
+  const owner = user._id;
+  const role = user.role;
+  const or = [];
+
+  if (role === ROLES.HOTEL_VENDOR) {
+    const ids = await Hotel.find({ vendor: owner }).distinct('_id');
+    if (ids.length) or.push({ hotel: { $in: ids } });
+  } else if (role === ROLES.HOMESTAY_VENDOR) {
+    const ids = await Homestay.find({ vendor: owner }).distinct('_id');
+    if (ids.length) or.push({ homestay: { $in: ids } });
+  } else if (role === ROLES.TENT_OPERATOR) {
+    const ids = await Tent.find({ operator: owner }).distinct('_id');
+    if (ids.length) or.push({ tent: { $in: ids } });
+  } else if (role === ROLES.HORSE_OPERATOR) {
+    const ids = await Horse.find({ operator: owner }).distinct('_id');
+    if (ids.length) or.push({ horse: { $in: ids } });
+  } else if (role === ROLES.GUIDE) {
+    const ids = await Guide.find({ user: owner }).distinct('_id');
+    if (ids.length) or.push({ guide: { $in: ids } });
+  } else if (role === ROLES.DRIVER) {
+    const ids = await Driver.find({ user: owner }).distinct('_id');
+    if (ids.length) or.push({ driver: { $in: ids } });
+  }
+
+  return or.length ? { $or: or } : none;
+};
+
+const listingDocOf = (review) =>
+  review.hotel || review.tent || review.guide || review.driver || review.homestay || review.horse;
+
+export const listVendorReviews = async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+  const skip = (page - 1) * limit;
+  const filter = await vendorReviewFilter(req.user);
+
+  const [raw, total] = await Promise.all([
+    Review.find(filter)
+      .populate('booking', 'bookingNumber')
+      .populate('hotel', 'name')
+      .populate('tent', 'name')
+      .populate('guide', 'name')
+      .populate('driver', 'name')
+      .populate('homestay', 'name')
+      .populate('horse', 'name')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(limit),
+    Review.countDocuments(filter),
+  ]);
+
+  const items = raw.map((review) => {
+    const listing = listingDocOf(review);
+    return {
+      id: String(review._id),
+      listingId: listing ? String(listing._id || listing) : null,
+      listingName: listing?.name || '',
+      listingType: review.listingType,
+      rating: review.rating,
+      comment: review.comment || '',
+      bookingRef: review.booking?.bookingNumber || null,
+      isApproved: !!review.isApproved,
+      createdAt: review.createdAt,
+    };
+  });
+
+  return success(res, {
+    items,
+    total,
+    page,
+    pages: Math.ceil(total / limit) || 0,
+  });
 };
 
 export const listPendingReviews = async (req, res) => {

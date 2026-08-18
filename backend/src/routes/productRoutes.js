@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as phase4 from '../controllers/phase4Controller.js';
+import * as pricing from '../controllers/vendorPricingController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { ROLES } from '../constants/roles.js';
 
@@ -8,6 +9,8 @@ const productManagers = [ROLES.SUPER_ADMIN, ROLES.PRODUCT_VENDOR, ROLES.MARKETIN
 
 router.get('/', phase4.listProducts);
 router.get('/mine', protect, authorize(ROLES.PRODUCT_VENDOR, ROLES.SUPER_ADMIN), phase4.listMyProducts);
+router.get('/mine/:id', protect, authorize(ROLES.PRODUCT_VENDOR, ROLES.SUPER_ADMIN), phase4.getMyProduct);
+router.patch('/:id/prices', protect, authorize(ROLES.PRODUCT_VENDOR, ROLES.SUPER_ADMIN), pricing.patchProductPrices);
 router.get('/:slug', phase4.getProductBySlug);
 router.post('/', protect, authorize(...productManagers), phase4.createProduct);
 router.put('/:id', protect, authorize(...productManagers), phase4.updateProduct);

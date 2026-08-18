@@ -6,7 +6,7 @@ import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import AdminModal from '../../components/AdminModal';
-import RowActions, { buildMasterActions } from '../../components/RowActions';
+import RowActions from '../../components/RowActions';
 import {
   fetchAdminProperties,
   setAdminPropertyActive,
@@ -23,6 +23,7 @@ export default function PropertyListPage({ typeFilter }) {
   const [view, setView] = useState('table');
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState(null);
+  const [approval, setApproval] = useState({ row: null, commissionRate: 10 });
 
   const load = () => {
     setLoading(true);
@@ -55,13 +56,22 @@ export default function PropertyListPage({ typeFilter }) {
   );
 
   const toggleActive = async (row) => {
+    const next = row.isActive === false;
+    if (next) {
+      // Approving pending/inactive listing requires commission %.
+      setApproval({
+        row,
+        commissionRate: row.commissionRate != null ? row.commissionRate : 10,
+      });
+      return;
+    }
+    // Deactivate (no commission input required)
     try {
-      const next = row.isActive === false;
       await setAdminPropertyActive(row._id, {
-        isActive: next,
+        isActive: false,
         listingType: row.listingType === 'TENT' ? 'TENT' : row.listingType,
       });
-      toast.success(next ? 'Marked active' : 'Marked inactive — still visible here, hidden on website');
+      toast.success('Marked inactive — still visible here, hidden on website');
       load();
     } catch (e) {
       toast.error(e.response?.data?.message || 'Update failed');
@@ -94,6 +104,22 @@ export default function PropertyListPage({ typeFilter }) {
   const publicPath = (row) => {
     if (row.listingType === 'TENT') return `/tents/${row.slug}`;
     return `/hotels/${row.slug}`;
+  };
+
+  const confirmApprove = async () => {
+    if (!approval.row) return;
+    try {
+      await setAdminPropertyActive(approval.row._id, {
+        isActive: true,
+        listingType: approval.row.listingType === 'TENT' ? 'TENT' : approval.row.listingType,
+        commissionRate: Number(approval.commissionRate),
+      });
+      toast.success('Listing approved and published');
+      setApproval({ row: null, commissionRate: 10 });
+      load();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Approval failed');
+    }
   };
 
   const columns = [
@@ -140,13 +166,19 @@ export default function PropertyListPage({ typeFilter }) {
       label: 'Action',
       render: (r) => (
         <RowActions
-          items={buildMasterActions({
-            isActive: r.isActive !== false,
-            onView: () => setViewing(r),
-            editTo: r.listingType !== 'TENT' ? `/admin/properties/edit/${r._id}` : undefined,
-            onToggleActive: () => toggleActive(r),
-            onDelete: () => remove(r),
-          })}
+          items={[
+            { key: 'view', label: 'View', onClick: () => setViewing(r) },
+            ...(r.listingType !== 'TENT'
+              ? [{ key: 'edit', label: 'Edit', to: `/admin/properties/edit/${r._id}` }]
+              : []),
+            {
+              key: 'toggle',
+              label: r.isActive !== false ? 'Mark as Inactive' : 'Approve',
+              onClick: () => toggleActive(r),
+              tone: r.isActive !== false ? 'muted' : undefined,
+            },
+            { key: 'delete', label: 'Delete', onClick: () => remove(r), tone: 'danger' },
+          ]}
         />
       ),
     },
@@ -239,6 +271,43 @@ export default function PropertyListPage({ typeFilter }) {
                 Open public page
               </a>
             )}
+          </div>
+        )}
+      </AdminModal>
+
+      <AdminModal
+        open={!!approval.row}
+        title={`Approve ${approval.row?.name || 'Listing'}`}
+        onClose={() => setApproval({ row: null, commissionRate: 10 })}
+      >
+        {approval.row && (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              Commission % for bookings on this listing. Example: 10% of ₹100 = ₹10.
+            </p>
+            <label className="admin-label">
+              Commission %
+              <input
+                type="number"
+                className="admin-input"
+                value={approval.commissionRate}
+                onChange={(e) => setApproval((p) => ({ ...p, commissionRate: e.target.value }))}
+                min="0"
+                step="0.1"
+              />
+            </label>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="admin-btn-secondary"
+                onClick={() => setApproval({ row: null, commissionRate: 10 })}
+              >
+                Cancel
+              </button>
+              <button type="button" className="admin-btn-primary" onClick={confirmApprove}>
+                Approve & Publish
+              </button>
+            </div>
           </div>
         )}
       </AdminModal>

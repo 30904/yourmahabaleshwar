@@ -13,6 +13,8 @@ import Blog from '../models/Blog.js';
 import FAQ from '../models/FAQ.js';
 import Coupon from '../models/Coupon.js';
 import PlatformSettings from '../models/PlatformSettings.js';
+import Homestay from '../models/Homestay.js';
+import Horse from '../models/Horse.js';
 import { ROLES, VENDOR_ROLES } from '../constants/roles.js';
 import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices } from '../utils/listingEnrich.js';
@@ -245,18 +247,42 @@ export const createAdminProperty = async (req, res) => {
 /** Toggle active flag only — safe for admin list actions (does not wipe other fields). */
 export const setAdminPropertyActive = async (req, res) => {
   try {
-    const { isActive, listingType } = req.body;
+    const { isActive, listingType, commissionRate } = req.body;
     if (typeof isActive !== 'boolean') return error(res, 'isActive boolean required', 400);
 
-    if (listingType === 'TENT') {
-      const tent = await Tent.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
-      if (!tent) return error(res, 'Tent not found', 404);
-      return success(res, tent, isActive ? 'Marked active' : 'Marked inactive');
+    const isActivating = isActive === true;
+    const shouldSetCommission = isActivating && commissionRate != null;
+    const parsedCommission = shouldSetCommission ? Number(commissionRate) : null;
+    if (isActivating && (parsedCommission == null || !Number.isFinite(parsedCommission))) {
+      // We require commission when turning a listing on from pending/inactive.
+      return error(res, 'commissionRate number is required when activating', 400);
     }
 
-    const hotel = await Hotel.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
-    if (!hotel) return error(res, 'Property not found', 404);
-    return success(res, hotel, isActive ? 'Marked active' : 'Marked inactive');
+    const update = { isActive };
+    if (isActivating) update.commissionRate = parsedCommission;
+
+    if (listingType === 'TENT') {
+      const doc = await Tent.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Tent not found', 404);
+      return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
+    }
+
+    if (listingType === 'HOMESTAY') {
+      const doc = await Homestay.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Homestay not found', 404);
+      return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
+    }
+
+    if (listingType === 'HORSE') {
+      const doc = await Horse.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Horse not found', 404);
+      return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
+    }
+
+    // HOTEL / RESORT
+    const doc = await Hotel.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!doc) return error(res, 'Property not found', 404);
+    return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
   } catch (err) {
     return error(res, err.message || 'Failed to update status', 500);
   }

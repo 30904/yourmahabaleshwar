@@ -359,30 +359,55 @@ const crudListMine = (Model, ownerField, mapFn) => async (req, res) => {
   return success(res, mapFn ? docs.map(mapFn) : docs);
 };
 
-export const createHomestay = crudCreate(Homestay, 'vendor');
+const crudGetMine = (Model, ownerField) => async (req, res) => {
+  const doc = await Model.findById(req.params.id);
+  if (!doc) return error(res, 'Not found', 404);
+  const denied = denyIfNotOwner(req, doc, ownerField);
+  if (denied) return error(res, denied.message, denied.status);
+  return success(res, doc);
+};
+
+export const createHomestay = async (req, res) => {
+  // Vendor-created listings should go to pending state until superadmin approval.
+  if (req.user.role !== ROLES.SUPER_ADMIN) req.body.isActive = false;
+  return crudCreate(Homestay, 'vendor')(req, res);
+};
 export const updateHomestay = crudUpdate(Homestay, 'vendor');
 export const deleteHomestay = crudDelete(Homestay, 'vendor');
 export const listMyHomestays = crudListMine(Homestay, 'vendor', mapHomestayMine);
+export const getMyHomestay = crudGetMine(Homestay, 'vendor');
 
-export const createHorse = crudCreate(Horse, 'operator');
+export const createHorse = async (req, res) => {
+  // Vendor-created listings should go to pending state until superadmin approval.
+  if (req.user.role !== ROLES.SUPER_ADMIN) req.body.isActive = false;
+  return crudCreate(Horse, 'operator')(req, res);
+};
 export const updateHorse = crudUpdate(Horse, 'operator');
 export const deleteHorse = crudDelete(Horse, 'operator');
 export const listMyHorses = crudListMine(Horse, 'operator', mapHorseMine);
+export const getMyHorse = crudGetMine(Horse, 'operator');
 
-export const createTent = crudCreate(Tent, 'operator');
+export const createTent = async (req, res) => {
+  // Vendor-created listings should go to pending state until superadmin approval.
+  if (req.user.role !== ROLES.SUPER_ADMIN) req.body.isActive = false;
+  return crudCreate(Tent, 'operator')(req, res);
+};
 export const updateTent = crudUpdate(Tent, 'operator');
 export const deleteTent = crudDelete(Tent, 'operator');
 export const listMyTents = crudListMine(Tent, 'operator', mapTentMine);
+export const getMyTent = crudGetMine(Tent, 'operator');
 
 export const createGuide = crudCreate(Guide, 'user');
 export const updateGuide = crudUpdate(Guide, 'user');
 export const deleteGuide = crudDelete(Guide, 'user');
 export const listMyGuides = crudListMine(Guide, 'user', mapGuideMine);
+export const getMyGuide = crudGetMine(Guide, 'user');
 
 export const createDriver = crudCreate(Driver, 'user');
 export const updateDriver = crudUpdate(Driver, 'user');
 export const deleteDriver = crudDelete(Driver, 'user');
 export const listMyDrivers = crudListMine(Driver, 'user', mapDriverMine);
+export const getMyDriver = crudGetMine(Driver, 'user');
 
 export const listAdminHomestays = async (req, res) =>
   success(res, await Homestay.find().sort('-createdAt').limit(200));

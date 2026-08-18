@@ -6,7 +6,7 @@ import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import AdminModal from '../../components/AdminModal';
-import RowActions, { buildMasterActions } from '../../components/RowActions';
+import RowActions from '../../components/RowActions';
 import {
   createHomestay,
   updateHomestay,
@@ -14,6 +14,7 @@ import {
   createHorse,
   updateHorse,
   deleteHorse,
+  setAdminPropertyActive,
 } from '../../../services/enterpriseAdminApi';
 import api from '../../../services/api';
 import { formatCurrency } from '../../../utils/format';
@@ -22,6 +23,7 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ mode: null, row: null });
+  const [approval, setApproval] = useState({ row: null, commissionRate: 10 });
   const isHorse = kind === 'horses';
   const { register, handleSubmit, reset } = useForm({
     defaultValues: isHorse
@@ -109,14 +111,39 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
   };
 
   const toggleActive = async (row) => {
+    const next = row.isActive === false;
+    if (next) {
+      setApproval({
+        row,
+        commissionRate: row.commissionRate != null ? row.commissionRate : 10,
+      });
+      return;
+    }
     try {
-      const next = row.isActive === false;
-      if (isHorse) await updateHorse(row._id, { isActive: next });
-      else await updateHomestay(row._id, { isActive: next });
-      toast.success(next ? 'Marked active' : 'Marked inactive');
+      await setAdminPropertyActive(row._id, {
+        isActive: false,
+        listingType: isHorse ? 'HORSE' : 'HOMESTAY',
+      });
+      toast.success('Marked inactive — still visible here, hidden on website');
       load();
     } catch {
       toast.error('Update failed');
+    }
+  };
+
+  const confirmApprove = async () => {
+    if (!approval.row) return;
+    try {
+      await setAdminPropertyActive(approval.row._id, {
+        isActive: true,
+        listingType: isHorse ? 'HORSE' : 'HOMESTAY',
+        commissionRate: Number(approval.commissionRate),
+      });
+      toast.success('Listing approved and published');
+      setApproval({ row: null, commissionRate: 10 });
+      load();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Approval failed');
     }
   };
 
@@ -165,13 +192,17 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
       label: 'Action',
       render: (r) => (
         <RowActions
-          items={buildMasterActions({
-            isActive: r.isActive !== false,
-            onView: () => setModal({ mode: 'view', row: r }),
-            onEdit: () => openEdit(r),
-            onToggleActive: () => toggleActive(r),
-            onDelete: () => remove(r),
-          })}
+          items={[
+            { key: 'view', label: 'View', onClick: () => setModal({ mode: 'view', row: r }) },
+            { key: 'edit', label: 'Edit', onClick: () => openEdit(r) },
+            {
+              key: 'toggle',
+              label: r.isActive !== false ? 'Mark as Inactive' : 'Approve',
+              onClick: () => toggleActive(r),
+              tone: r.isActive !== false ? 'muted' : undefined,
+            },
+            { key: 'delete', label: 'Delete', onClick: () => remove(r), tone: 'danger' },
+          ]}
         />
       ),
     },
@@ -236,6 +267,39 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
                 Open public page
               </a>
             )}
+          </div>
+        )}
+      </AdminModal>
+
+      <AdminModal
+        open={!!approval.row}
+        title={`Approve ${approval.row?.name || ''}`}
+        onClose={() => setApproval({ row: null, commissionRate: 10 })}
+      >
+        {approval.row && (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              Commission % for bookings on this listing. Example: 10% of ₹100 = ₹10.
+            </p>
+            <label className="admin-label">
+              Commission %
+              <input
+                type="number"
+                className="admin-input"
+                value={approval.commissionRate}
+                onChange={(e) => setApproval((p) => ({ ...p, commissionRate: e.target.value }))}
+                min="0"
+                step="0.1"
+              />
+            </label>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" className="admin-btn-secondary" onClick={() => setApproval({ row: null, commissionRate: 10 })}>
+                Cancel
+              </button>
+              <button type="button" className="admin-btn-primary" onClick={confirmApprove}>
+                Approve & Publish
+              </button>
+            </div>
           </div>
         )}
       </AdminModal>

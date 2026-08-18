@@ -20,6 +20,8 @@ export const ROUTES = {
   REGISTER_VENDOR: '/register-vendor',
   FORGOT_PASSWORD: '/forgot-password',
   CUSTOMER_DASHBOARD: '/dashboard/customer',
+  VENDOR_LISTINGS: '/dashboard/vendor/listings',
+  VENDOR_PRICING: '/dashboard/vendor/pricing',
   VENDOR_HOTEL: '/dashboard/vendor/hotel',
   VENDOR_TENT: '/dashboard/vendor/tent',
   VENDOR_GUIDE: '/dashboard/vendor/guide',

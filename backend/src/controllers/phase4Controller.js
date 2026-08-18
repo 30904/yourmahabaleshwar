@@ -19,6 +19,14 @@ export const listMyProducts = async (req, res) => {
   return success(res, docs.map(mapProductMine));
 };
 
+export const getMyProduct = async (req, res) => {
+  const doc = await Product.findById(req.params.id);
+  if (!doc) return error(res, 'Not found', 404);
+  const denied = denyIfNotOwner(req, doc, 'vendor');
+  if (denied) return error(res, denied.message, denied.status);
+  return success(res, doc);
+};
+
 export const listProducts = async (req, res) => {
   const filter = { isActive: { $ne: false } };
   if (req.query.vertical) filter.vertical = String(req.query.vertical).toUpperCase();

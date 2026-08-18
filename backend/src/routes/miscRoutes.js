@@ -6,6 +6,12 @@ import { ROLES, VENDOR_ROLES } from '../constants/roles.js';
 
 const router = Router();
 
+router.get(
+  '/availability/mine',
+  protect,
+  authorize(...VENDOR_ROLES, ROLES.SUPER_ADMIN),
+  listing.getMyAvailability
+);
 router.get('/availability/:type/:id', listing.getListingAvailability);
 router.patch(
   '/availability/:type/:id',
@@ -16,6 +22,12 @@ router.patch(
 
 router.get('/reviews', review.listReviews);
 router.post('/reviews', protect, review.createReview);
+router.get(
+  '/reviews/vendor',
+  protect,
+  authorize(...VENDOR_ROLES, ROLES.SUPER_ADMIN),
+  review.listVendorReviews
+);
 router.get('/reviews/pending', protect, authorize(ROLES.SUPER_ADMIN), review.listPendingReviews);
 router.patch('/reviews/:id/moderate', protect, authorize(ROLES.SUPER_ADMIN), review.moderateReview);
 

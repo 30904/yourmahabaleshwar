@@ -26,6 +26,46 @@ const listMyStayProperties = (forcedType) => async (req, res) => {
 export const listMyHotels = listMyStayProperties('HOTEL');
 export const listMyResorts = listMyStayProperties('RESORT');
 
+const mapVendorRooms = (rooms, hotelId) =>
+  (rooms || [])
+    .filter((room) => room?.name && Number(room.basePrice) > 0)
+    .map((room) => ({
+      hotel: hotelId,
+      name: String(room.name).trim(),
+      type: room.type || 'STANDARD',
+      description: room.description || '',
+      capacity: Number(room.capacity) || 2,
+      basePrice: Number(room.basePrice),
+      totalRooms: Number(room.totalRooms) || 5,
+      isActive: room.isActive !== false,
+    }));
+
+const syncHotelRooms = async (hotelId, rooms) => {
+  if (!Array.isArray(rooms)) return;
+  await Room.deleteMany({ hotel: hotelId });
+  const mapped = mapVendorRooms(rooms, hotelId);
+  if (mapped.length) await Room.insertMany(mapped);
+};
+
+const splitStayBody = (body = {}) => {
+  const { rooms, ...rest } = body;
+  delete rest.slug;
+  return { rooms, rest };
+};
+
+const getMyStayProperty = (forcedType) => async (req, res) => {
+  const hotel = await Hotel.findById(req.params.id);
+  if (!hotel) return error(res, 'Hotel not found', 404);
+  if (forcedType && hotel.type !== forcedType) return error(res, 'Not found', 404);
+  const denied = denyIfNotOwner(req, hotel, 'vendor');
+  if (denied) return error(res, denied.message, denied.status);
+  const rooms = await Room.find({ hotel: hotel._id });
+  return success(res, { ...hotel.toObject(), rooms });
+};
+
+export const getMyHotel = getMyStayProperty('HOTEL');
+export const getMyResort = getMyStayProperty('RESORT');
+
 export const getHotels = async (req, res) => {
   const { type, featured, search, page = 1, limit = 12 } = req.query;
   const filter = { isActive: true };
@@ -51,10 +91,20 @@ export const getHotelBySlug = async (req, res) => {
 
 export const createHotel = async (req, res) => {
   if (!req.body?.name) return error(res, 'Name is required', 400);
-  const slug = req.body.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  const payload = stampOwnerOnCreate(req, { ...req.body, slug }, 'vendor');
-  const hotel = await Hotel.create(payload);
-  return success(res, hotel, 'Hotel created', 201);
+  const { rooms, rest } = splitStayBody(req.body);
+  const slug = `${String(rest.name).toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Date.now().toString(36)}`;
+  try {
+    const payload = stampOwnerOnCreate(req, { ...rest, slug }, 'vendor');
+    // Vendor-created listings are hidden from the public website until superadmin approval.
+    if (req.user.role !== ROLES.SUPER_ADMIN) payload.isActive = false;
+    const hotel = await Hotel.create(payload);
+    await syncHotelRooms(hotel._id, rooms);
+    const savedRooms = await Room.find({ hotel: hotel._id });
+    return success(res, { ...hotel.toObject(), rooms: savedRooms }, 'Hotel created', 201);
+  } catch (err) {
+    if (err.code === 11000) return error(res, 'A listing with this name already exists', 400);
+    return error(res, err.message || 'Failed to create hotel', 400);
+  }
 };
 
 export const createResort = async (req, res) => {
@@ -67,9 +117,12 @@ export const updateHotel = async (req, res) => {
   if (!hotel) return error(res, 'Hotel not found', 404);
   const denied = denyIfNotOwner(req, hotel, 'vendor');
   if (denied) return error(res, denied.message, denied.status);
-  Object.assign(hotel, stripOwnerOnUpdate(req, req.body, 'vendor'));
+  const { rooms, rest } = splitStayBody(req.body);
+  Object.assign(hotel, stripOwnerOnUpdate(req, rest, 'vendor'));
   await hotel.save();
-  return success(res, hotel);
+  await syncHotelRooms(hotel._id, rooms);
+  const savedRooms = await Room.find({ hotel: hotel._id });
+  return success(res, { ...hotel.toObject(), rooms: savedRooms });
 };
 
 export const updateResort = async (req, res) => {
@@ -77,9 +130,12 @@ export const updateResort = async (req, res) => {
   if (!hotel || hotel.type !== 'RESORT') return error(res, 'Resort not found', 404);
   const denied = denyIfNotOwner(req, hotel, 'vendor');
   if (denied) return error(res, denied.message, denied.status);
-  Object.assign(hotel, stripOwnerOnUpdate(req, { ...req.body, type: 'RESORT' }, 'vendor'));
+  const { rooms, rest } = splitStayBody(req.body);
+  Object.assign(hotel, stripOwnerOnUpdate(req, { ...rest, type: 'RESORT' }, 'vendor'));
   await hotel.save();
-  return success(res, hotel);
+  await syncHotelRooms(hotel._id, rooms);
+  const savedRooms = await Room.find({ hotel: hotel._id });
+  return success(res, { ...hotel.toObject(), rooms: savedRooms });
 };
 
 export const deleteHotel = async (req, res) => {

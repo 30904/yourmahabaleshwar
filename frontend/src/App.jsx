@@ -40,9 +40,14 @@ import CustomerProfile from './dashboards/customer/CustomerProfile';
 import CustomerFavorites from './dashboards/customer/CustomerFavorites';
 
 import VendorOverview from './dashboards/vendor/VendorOverview';
+import VendorShell from './dashboards/vendor/VendorShell';
+import VendorListings from './dashboards/vendor/VendorListings';
+import VendorListingForm from './dashboards/vendor/VendorListingForm';
+import VendorPricing from './dashboards/vendor/VendorPricing';
 import VendorBookings from './dashboards/vendor/VendorBookings';
 import VendorKYC from './dashboards/vendor/VendorKYC';
 import VendorAvailability from './dashboards/vendor/VendorAvailability';
+import VendorReviews from './dashboards/vendor/VendorReviews';
 import VendorWallet from './dashboards/vendor/VendorWallet';
 
 import AdminOverview from './dashboards/admin/AdminOverview';
@@ -52,28 +57,13 @@ import AdminCMS from './dashboards/admin/AdminCMS';
 import AdminLayout from './admin/layouts/AdminLayout';
 import AdminRoutes from './admin/routes/AdminRoutes';
 
-import { LayoutDashboard, Calendar, User, FileText, Image, Heart, CalendarDays, Wallet } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, FileText, Image, Heart } from 'lucide-react';
 
 const customerNav = [
   { to: '/dashboard/customer', label: 'Overview', icon: LayoutDashboard },
   { to: '/dashboard/customer/bookings', label: 'My Bookings', icon: Calendar },
   { to: '/dashboard/customer/favorites', label: 'Favorites', icon: Heart },
   { to: '/dashboard/customer/profile', label: 'Profile', icon: User },
-];
-
-const vendorNav = [
-  { to: '/dashboard/vendor', label: 'Overview', icon: LayoutDashboard },
-  { to: '/dashboard/vendor/bookings', label: 'Bookings', icon: Calendar },
-  { to: '/dashboard/vendor/availability', label: 'Availability', icon: CalendarDays },
-  { to: '/dashboard/vendor/wallet', label: 'Wallet', icon: Wallet },
-  { to: '/dashboard/vendor/kyc', label: 'KYC', icon: FileText },
-];
-
-const adminNav = [
-  { to: '/dashboard/admin', label: 'Analytics', icon: LayoutDashboard },
-  { to: '/dashboard/admin/bookings', label: 'Bookings', icon: Calendar },
-  { to: '/dashboard/admin/kyc', label: 'KYC Approval', icon: FileText },
-  { to: '/dashboard/admin/cms', label: 'CMS', icon: Image },
 ];
 
 const vendorRoles = [
@@ -84,6 +74,13 @@ const vendorRoles = [
   ROLES.DRIVER,
   ROLES.HORSE_OPERATOR,
   ROLES.PRODUCT_VENDOR,
+];
+
+const adminNav = [
+  { to: '/dashboard/admin', label: 'Analytics', icon: LayoutDashboard },
+  { to: '/dashboard/admin/bookings', label: 'Bookings', icon: Calendar },
+  { to: '/dashboard/admin/kyc', label: 'KYC Approval', icon: FileText },
+  { to: '/dashboard/admin/cms', label: 'CMS', icon: Image },
 ];
 
 export default function App() {
@@ -152,12 +149,17 @@ export default function App() {
 
       <Route path="dashboard/vendor" element={
         <ProtectedRoute roles={vendorRoles}>
-          <DashboardLayout navItems={vendorNav} title="Vendor Dashboard" />
+          <VendorShell />
         </ProtectedRoute>
       }>
         <Route index element={<VendorOverview />} />
+        <Route path="listings" element={<VendorListings />} />
+        <Route path="listings/new" element={<VendorListingForm />} />
+        <Route path="listings/:vertical/:id/edit" element={<VendorListingForm />} />
+        <Route path="pricing" element={<VendorPricing />} />
         <Route path="bookings" element={<VendorBookings />} />
         <Route path="availability" element={<VendorAvailability />} />
+        <Route path="reviews" element={<VendorReviews />} />
         <Route path="wallet" element={<VendorWallet />} />
         <Route path="kyc" element={<VendorKYC />} />
       </Route>
