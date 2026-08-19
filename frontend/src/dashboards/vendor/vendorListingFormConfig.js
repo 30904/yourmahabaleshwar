@@ -169,6 +169,7 @@ export const toFormValues = (vertical, doc) => {
       checkOutTime: doc.checkOutTime || '11:00',
       policies: doc.policies || '',
       isActive: doc.isActive !== false,
+      approvalStatus: doc.approvalStatus,
       imageUrl: doc.images?.[0] || '',
       amenities: Array.isArray(doc.amenities) ? doc.amenities : [],
       rooms: doc.rooms?.length
@@ -190,6 +191,7 @@ export const toFormValues = (vertical, doc) => {
       location: doc.location || doc.address?.city || 'Mahabaleshwar',
       contactPhone: doc.contactPhone || '',
       isActive: doc.isActive !== false,
+      approvalStatus: doc.approvalStatus,
       imageUrl: doc.images?.[0] || '',
       amenities: Array.isArray(doc.amenities) ? doc.amenities : [],
       rooms: doc.rooms?.length
@@ -213,6 +215,7 @@ export const toFormValues = (vertical, doc) => {
       totalTents: doc.totalTents ?? 10,
       pricePerNight: doc.pricePerNight || 0,
       isActive: doc.isActive !== false,
+      approvalStatus: doc.approvalStatus,
       imageUrl: doc.images?.[0] || '',
       amenities: Array.isArray(doc.amenities) ? doc.amenities : [],
     };
@@ -228,6 +231,7 @@ export const toFormValues = (vertical, doc) => {
       package12hr: doc.package12hr || 0,
       bikeAddonPrice: doc.bikeAddonPrice || 0,
       isActive: doc.isActive !== false,
+      approvalStatus: doc.approvalStatus,
     };
   }
   if (type === 'TAXI') {
@@ -240,6 +244,7 @@ export const toFormValues = (vertical, doc) => {
       perTripPrice: doc.perTripPrice || 0,
       hourlyRate: doc.hourlyRate || 0,
       isActive: doc.isActive !== false,
+      approvalStatus: doc.approvalStatus,
     };
   }
   if (type === 'HORSE') {
@@ -249,6 +254,7 @@ export const toFormValues = (vertical, doc) => {
       description: doc.description || '',
       location: doc.location || 'Mahabaleshwar',
       isActive: doc.isActive !== false,
+      approvalStatus: doc.approvalStatus,
       imageUrl: doc.images?.[0] || '',
       routes: doc.routes?.length
         ? doc.routes.map((route) => ({

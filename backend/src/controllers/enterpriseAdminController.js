@@ -19,6 +19,7 @@ import { ROLES, VENDOR_ROLES } from '../constants/roles.js';
 import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices } from '../utils/listingEnrich.js';
 import { normalizePropertyImages } from '../utils/propertyImages.js';
+import { APPROVAL_STATUS, approvalFilter } from '../utils/listingApproval.js';
 
 function buildHotelData(body, userId) {
   const slug = body.name
@@ -38,10 +39,15 @@ function buildHotelData(body, userId) {
     amenities: Array.isArray(body.amenities) ? body.amenities : [],
     rating: Number(body.rating) || 4,
     isActive: body.isActive !== false && body.isActive !== 'false',
+    approvalStatus:
+      body.isActive !== false && body.isActive !== 'false'
+        ? APPROVAL_STATUS.APPROVED
+        : APPROVAL_STATUS.PENDING,
     isFeatured: body.isFeatured === true || body.isFeatured === 'true',
     checkInTime: body.checkInTime || '14:00',
     checkOutTime: body.checkOutTime || '11:00',
     policies: body.policies,
+    gstNumber: body.gstNumber,
     commissionRate: Number(body.commissionRate) || 10,
     vendor: body.vendor || userId,
   };
@@ -192,18 +198,13 @@ export const getEnterpriseDashboard = async (req, res) => {
 export const getAdminProperties = async (req, res) => {
   // Admin default: show BOTH active + inactive. Public hotel APIs stay active-only.
   const { type, search, status = 'all', page = 1, limit = 50 } = req.query;
-  const filter = {};
+  const filter = { ...approvalFilter(status) };
   if (type && type !== 'ALL') filter.type = type.toUpperCase();
   if (search) filter.name = { $regex: search, $options: 'i' };
   if (status === 'featured') filter.isFeatured = true;
-  else if (status === 'active') filter.isActive = true;
-  else if (status === 'inactive') filter.isActive = false;
-  // status === 'all' (default): no isActive filter
 
-  const tentFilter = {};
+  const tentFilter = { ...approvalFilter(status) };
   if (search) tentFilter.name = { $regex: search, $options: 'i' };
-  if (status === 'active') tentFilter.isActive = true;
-  else if (status === 'inactive') tentFilter.isActive = false;
 
   const skip = (page - 1) * limit;
   const [raw, total] = await Promise.all([
@@ -259,32 +260,72 @@ export const setAdminPropertyActive = async (req, res) => {
     }
 
     const update = { isActive };
-    if (isActivating) update.commissionRate = parsedCommission;
+    if (isActivating) {
+      update.commissionRate = parsedCommission;
+      update.approvalStatus = APPROVAL_STATUS.APPROVED;
+    } else {
+      update.approvalStatus = APPROVAL_STATUS.REJECTED;
+    }
 
     if (listingType === 'TENT') {
       const doc = await Tent.findByIdAndUpdate(req.params.id, update, { new: true });
       if (!doc) return error(res, 'Tent not found', 404);
-      return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
     }
 
     if (listingType === 'HOMESTAY') {
       const doc = await Homestay.findByIdAndUpdate(req.params.id, update, { new: true });
       if (!doc) return error(res, 'Homestay not found', 404);
-      return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
     }
 
     if (listingType === 'HORSE') {
       const doc = await Horse.findByIdAndUpdate(req.params.id, update, { new: true });
       if (!doc) return error(res, 'Horse not found', 404);
-      return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
     }
 
     // HOTEL / RESORT
     const doc = await Hotel.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!doc) return error(res, 'Property not found', 404);
-    return success(res, doc, isActive ? 'Marked active (commission set)' : 'Marked inactive');
+    return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
   } catch (err) {
     return error(res, err.message || 'Failed to update status', 500);
+  }
+};
+
+export const getAdminListingReview = async (req, res) => {
+  try {
+    const type = String(req.query.type || 'HOTEL').toUpperCase();
+    const { id } = req.params;
+    let listing = null;
+    let rooms = [];
+
+    if (type === 'TENT') {
+      listing = await Tent.findById(id).populate('operator', 'name email phone');
+    } else if (type === 'HOMESTAY') {
+      listing = await Homestay.findById(id).populate('vendor', 'name email phone');
+    } else if (type === 'HORSE') {
+      listing = await Horse.findById(id).populate('operator', 'name email phone');
+    } else {
+      listing = await Hotel.findById(id).populate('vendor', 'name email phone');
+      if (listing) rooms = await Room.find({ hotel: listing._id });
+    }
+
+    if (!listing) return error(res, 'Listing not found', 404);
+
+    const vendorUser = listing.vendor || listing.operator || null;
+    const vendorId = vendorUser?._id || vendorUser;
+    const kyc = vendorId ? await KYC.findOne({ user: vendorId }) : null;
+
+    return success(res, {
+      listing,
+      rooms: type === 'HOMESTAY' ? listing.rooms || [] : rooms,
+      kyc,
+      vendor: vendorUser,
+    });
+  } catch (err) {
+    return error(res, err.message || 'Failed to load listing review', 500);
   }
 };
 
@@ -294,6 +335,10 @@ export const updateAdminProperty = async (req, res) => {
     if (!existing) return error(res, 'Property not found', 404);
 
     const update = buildHotelData(req.body, req.user._id);
+    delete update.isActive;
+    delete update.approvalStatus;
+    delete update.commissionRate;
+    delete update.slug;
 
     if (req.body.images?.length) {
       update.images = await normalizePropertyImages(req.body.images);

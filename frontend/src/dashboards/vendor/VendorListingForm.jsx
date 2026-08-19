@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
 import Skeleton from '../../components/ui/Skeleton';
 import {
@@ -28,6 +29,7 @@ import {
   toPayload,
   validateListingForm,
 } from './vendorListingFormConfig';
+import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
 
 const LISTINGS_PATH = '/dashboard/vendor/listings';
 
@@ -57,7 +59,14 @@ export default function VendorListingForm() {
     if (!isEdit || !vertical || !id) return;
     setLoading(true);
     fetchMyVendorListing(vertical, id)
-      .then((doc) => setForm(toFormValues(vertical, doc)))
+      .then((doc) => {
+        if (!canVendorEditListing({ ...doc, vertical })) {
+          toast.error(t('vendor.listingEditLocked'));
+          navigate(LISTINGS_PATH, { replace: true });
+          return;
+        }
+        setForm(toFormValues(vertical, doc));
+      })
       .catch(() => {
         toast.error(t('vendor.listingLoadFailed'));
         navigate(LISTINGS_PATH, { replace: true });
@@ -287,10 +296,14 @@ export default function VendorListingForm() {
             />
           )}
 
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
-            <input type="checkbox" checked={form.isActive !== false} onChange={(e) => setField('isActive', e.target.checked)} />
-            {t('vendor.listingActive')}
-          </label>
+          {isEdit && (
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
+              <span>{t('common.status')}</span>
+              <Badge color={listingStatusBadgeColor(listingStatusOf(form))}>
+                {t(listingStatusI18nKey(listingStatusOf(form)))}
+              </Badge>
+            </div>
+          )}
         </Card>
 
         {showAmenities && (

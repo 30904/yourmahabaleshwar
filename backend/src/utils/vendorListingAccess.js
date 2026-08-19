@@ -24,6 +24,11 @@ export const stampOwnerOnCreate = (req, data, ownerField) => {
 
 export const stripOwnerOnUpdate = (req, data, ownerField) => {
   const next = { ...data };
-  if (!isListingAdmin(req.user)) delete next[ownerField];
+  if (!isListingAdmin(req.user)) {
+    delete next[ownerField];
+    delete next.isActive;
+    delete next.approvalStatus;
+    delete next.commissionRate;
+  }
   return next;
 };

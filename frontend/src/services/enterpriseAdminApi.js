@@ -6,6 +6,9 @@ export const fetchEnterpriseDashboard = () =>
 export const fetchAdminProperties = (params) =>
   api.get('/admin/enterprise/properties', { params }).then((r) => r.data.data);
 
+export const fetchAdminListingReview = (id, type) =>
+  api.get(`/admin/enterprise/listings/${id}/review`, { params: { type } }).then((r) => r.data.data);
+
 export const fetchAdminProperty = (id) =>
   api.get(`/admin/enterprise/properties/${id}`).then((r) => r.data.data);
 

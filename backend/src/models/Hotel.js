@@ -21,6 +21,7 @@ const hotelSchema = new mongoose.Schema(
     reviewCount: { type: Number, default: 0 },
     vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isActive: { type: Boolean, default: true },
+    approvalStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' },
     isFeatured: { type: Boolean, default: false },
     checkInTime: { type: String, default: '14:00' },
     checkOutTime: { type: String, default: '11:00' },

@@ -30,6 +30,7 @@ router.get('/dashboard', authorize(...staffAndAdmin), admin.getDashboardStats);
 router.get('/enterprise/dashboard', authorize(...staffAndAdmin), enterprise.getEnterpriseDashboard);
 router.get('/enterprise/properties', authorize(...staffAndAdmin), enterprise.getAdminProperties);
 router.patch('/enterprise/properties/:id/status', authorize(...staffAndAdmin), enterprise.setAdminPropertyActive);
+router.get('/enterprise/listings/:id/review', authorize(...staffAndAdmin), enterprise.getAdminListingReview);
 router.get('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise.getAdminProperty);
 router.post('/enterprise/properties', authorize(...adminOnly), enterprise.createAdminProperty);
 router.put('/enterprise/properties/:id', authorize(...adminOnly), enterprise.updateAdminProperty);

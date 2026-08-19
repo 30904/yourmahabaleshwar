@@ -5,6 +5,7 @@ import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices, enrichHotel } from '../utils/listingEnrich.js';
 import { mapHotelMine } from '../utils/vendorMineListings.js';
 import { denyIfNotOwner, stampOwnerOnCreate, stripOwnerOnUpdate } from '../utils/vendorListingAccess.js';
+import { APPROVAL_STATUS, denyIfVendorCannotEdit, stampPendingIfVendor } from '../utils/listingApproval.js';
 
 const listMyStayProperties = (forcedType) => async (req, res) => {
   const requested = String(forcedType || req.query.type || '').toUpperCase();
@@ -94,9 +95,7 @@ export const createHotel = async (req, res) => {
   const { rooms, rest } = splitStayBody(req.body);
   const slug = `${String(rest.name).toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Date.now().toString(36)}`;
   try {
-    const payload = stampOwnerOnCreate(req, { ...rest, slug }, 'vendor');
-    // Vendor-created listings are hidden from the public website until superadmin approval.
-    if (req.user.role !== ROLES.SUPER_ADMIN) payload.isActive = false;
+    const payload = stampPendingIfVendor(req, stampOwnerOnCreate(req, { ...rest, slug }, 'vendor'));
     const hotel = await Hotel.create(payload);
     await syncHotelRooms(hotel._id, rooms);
     const savedRooms = await Room.find({ hotel: hotel._id });
@@ -117,6 +116,8 @@ export const updateHotel = async (req, res) => {
   if (!hotel) return error(res, 'Hotel not found', 404);
   const denied = denyIfNotOwner(req, hotel, 'vendor');
   if (denied) return error(res, denied.message, denied.status);
+  const blocked = denyIfVendorCannotEdit(req, hotel);
+  if (blocked) return error(res, blocked.message, blocked.status);
   const { rooms, rest } = splitStayBody(req.body);
   Object.assign(hotel, stripOwnerOnUpdate(req, rest, 'vendor'));
   await hotel.save();
@@ -130,6 +131,8 @@ export const updateResort = async (req, res) => {
   if (!hotel || hotel.type !== 'RESORT') return error(res, 'Resort not found', 404);
   const denied = denyIfNotOwner(req, hotel, 'vendor');
   if (denied) return error(res, denied.message, denied.status);
+  const blocked = denyIfVendorCannotEdit(req, hotel);
+  if (blocked) return error(res, blocked.message, blocked.status);
   const { rooms, rest } = splitStayBody(req.body);
   Object.assign(hotel, stripOwnerOnUpdate(req, { ...rest, type: 'RESORT' }, 'vendor'));
   await hotel.save();
@@ -144,6 +147,7 @@ export const deleteHotel = async (req, res) => {
   const denied = denyIfNotOwner(req, hotel, 'vendor');
   if (denied) return error(res, denied.message, denied.status);
   hotel.isActive = false;
+  if (hotel.approvalStatus === APPROVAL_STATUS.APPROVED) hotel.approvalStatus = APPROVAL_STATUS.REJECTED;
   await hotel.save();
   return success(res, null, 'Hotel deactivated');
 };
@@ -154,6 +158,7 @@ export const deleteResort = async (req, res) => {
   const denied = denyIfNotOwner(req, hotel, 'vendor');
   if (denied) return error(res, denied.message, denied.status);
   hotel.isActive = false;
+  if (hotel.approvalStatus === APPROVAL_STATUS.APPROVED) hotel.approvalStatus = APPROVAL_STATUS.REJECTED;
   await hotel.save();
   return success(res, null, 'Resort deactivated');
 };

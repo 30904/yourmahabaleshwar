@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, PencilOff, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,7 @@ import Badge from '../../components/ui/Badge';
 import Card from '../../components/ui/Card';
 import Skeleton from '../../components/ui/Skeleton';
 import { formatCurrency } from '../../utils/format';
+import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
 
 const CREATE_PATH = '/dashboard/vendor/listings/new';
 
@@ -75,7 +76,7 @@ export default function VendorListings() {
                   <th className="px-5 py-3 font-semibold">{t('vendor.listingsSlug')}</th>
                   <th className="px-5 py-3 font-semibold">{t('vendor.fromPrice')}</th>
                   <th className="px-5 py-3 font-semibold">{t('common.status')}</th>
-                  <th className="px-5 py-3 font-semibold" />
+                  <th className="px-5 py-3 text-center font-semibold">{t('common.action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,10 +91,12 @@ export default function VendorListings() {
                       {item.prices?.from != null ? formatCurrency(item.prices.from) : '—'}
                     </td>
                     <td className="px-5 py-3">
-                      <StatusBadge active={item.isActive} t={t} />
+                      <ListingStatus item={item} t={t} />
                     </td>
-                    <td className="px-5 py-3 text-right">
-                      <EditLink to={editPath(item)} label={t('vendor.editListingShort')} />
+                    <td className="px-5 py-3 text-center">
+                      <div className="flex justify-center">
+                        <ListingEditControl item={item} t={t} />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -115,31 +118,43 @@ function ListingCard({ item, t }) {
           <p className="mt-0.5 text-xs text-slate-500">{t(item.labelKey)}</p>
           <p className="mt-1 font-mono text-xs text-slate-400">{item.slug || '—'}</p>
         </div>
-        <StatusBadge active={item.isActive} t={t} />
+        <ListingStatus item={item} t={t} />
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
         <p className="text-lg font-bold text-primary">
           {item.prices?.from != null ? formatCurrency(item.prices.from) : '—'}
         </p>
-        <EditLink to={editPath(item)} label={t('vendor.editListingShort')} />
+        <ListingEditControl item={item} t={t} />
       </div>
     </Card>
   );
 }
 
-function StatusBadge({ active, t }) {
-  return (
-    <Badge color={active ? 'success' : 'neutral'}>
-      {active ? t('vendor.listingActive') : t('vendor.listingPending')}
-    </Badge>
-  );
+function ListingStatus({ item, t }) {
+  const status = listingStatusOf(item);
+  return <Badge color={listingStatusBadgeColor(status)}>{t(listingStatusI18nKey(status))}</Badge>;
 }
 
-function EditLink({ to, label }) {
+function ListingEditControl({ item, t }) {
+  if (!canVendorEditListing(item)) {
+    return (
+      <span
+        className="inline-flex items-center justify-center rounded-md p-1.5 text-slate-300"
+        aria-label={t('vendor.listingEditLocked')}
+        title={t('vendor.listingEditLocked')}
+      >
+        <PencilOff size={16} />
+      </span>
+    );
+  }
   return (
-    <Link to={to} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
-      <Pencil size={14} />
-      {label}
+    <Link
+      to={editPath(item)}
+      aria-label={t('vendor.editListingShort')}
+      title={t('vendor.editListingShort')}
+      className="inline-flex items-center justify-center rounded-md p-1.5 text-primary hover:bg-blue-50"
+    >
+      <Pencil size={16} />
     </Link>
   );
 }

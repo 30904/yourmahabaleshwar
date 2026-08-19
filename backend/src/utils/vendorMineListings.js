@@ -1,4 +1,6 @@
-/** Shared vendor "my listings" payload: { id, name, slug, prices, isActive }. */
+import { resolveListingStatus } from './listingApproval.js';
+
+/** Shared vendor "my listings" payload: { id, name, slug, prices, isActive, approvalStatus }. */
 
 const num = (value) => {
   const n = Number(value);
@@ -16,6 +18,7 @@ export const toMineListing = (doc, prices) => ({
   slug: doc.slug || null,
   prices,
   isActive: doc.isActive !== false,
+  approvalStatus: resolveListingStatus(doc),
 });
 
 export const mapTentMine = (doc) =>

@@ -7,24 +7,24 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import AdminModal from '../../components/AdminModal';
 import RowActions from '../../components/RowActions';
+import ListingReviewModal from '../../components/ListingReviewModal';
 import {
   createHomestay,
-  updateHomestay,
-  deleteHomestay,
   createHorse,
-  updateHorse,
+  deleteHomestay,
   deleteHorse,
-  setAdminPropertyActive,
 } from '../../../services/enterpriseAdminApi';
 import api from '../../../services/api';
 import { formatCurrency } from '../../../utils/format';
+import { listingStatusOf } from '../../../utils/listingStatus';
 
 export default function HomestayHorseListPage({ kind = 'homestays' }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState({ mode: null, row: null });
-  const [approval, setApproval] = useState({ row: null, commissionRate: 10 });
+  const [addOpen, setAddOpen] = useState(false);
+  const [review, setReview] = useState({ row: null, mode: 'view' });
   const isHorse = kind === 'horses';
+  const listingType = isHorse ? 'HORSE' : 'HOMESTAY';
   const { register, handleSubmit, reset } = useForm({
     defaultValues: isHorse
       ? { name: '', description: '', price: 800, location: 'Mahabaleshwar' }
@@ -51,46 +51,24 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
         ? { name: '', description: '', price: 800, location: 'Mahabaleshwar' }
         : { name: '', description: '', priceFrom: 2000, location: 'Mahabaleshwar', contactPhone: '' }
     );
-    setModal({ mode: 'add', row: null });
-  };
-
-  const openEdit = (row) => {
-    if (isHorse) {
-      reset({
-        name: row.name || '',
-        description: row.description || '',
-        price: row.priceFrom || row.routes?.[0]?.price || 0,
-        location: row.location || 'Mahabaleshwar',
-      });
-    } else {
-      reset({
-        name: row.name || '',
-        description: row.description || '',
-        priceFrom: row.priceFrom || 0,
-        location: row.location || row.address?.city || 'Mahabaleshwar',
-        contactPhone: row.contactPhone || '',
-      });
-    }
-    setModal({ mode: 'edit', row });
+    setAddOpen(true);
   };
 
   const onSave = async (data) => {
     try {
       if (isHorse) {
         const price = Number(data.price);
-        const payload = {
+        await createHorse({
           name: data.name,
           description: data.description,
           location: data.location,
           priceFrom: price,
           routes: [{ name: 'Standard ride', durationMinutes: 30, price }],
           isActive: true,
-        };
-        if (modal.mode === 'edit' && modal.row) await updateHorse(modal.row._id, payload);
-        else await createHorse(payload);
+        });
       } else {
         const priceFrom = Number(data.priceFrom);
-        const payload = {
+        await createHomestay({
           name: data.name,
           description: data.description,
           location: data.location,
@@ -98,52 +76,13 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
           priceFrom,
           rooms: [{ name: 'Standard', basePrice: priceFrom, capacity: 2, totalRooms: 1 }],
           isActive: true,
-        };
-        if (modal.mode === 'edit' && modal.row) await updateHomestay(modal.row._id, payload);
-        else await createHomestay(payload);
+        });
       }
-      toast.success(modal.mode === 'edit' ? 'Updated' : 'Created');
-      setModal({ mode: null, row: null });
+      toast.success('Created');
+      setAddOpen(false);
       load();
     } catch (e) {
       toast.error(e.response?.data?.message || 'Save failed');
-    }
-  };
-
-  const toggleActive = async (row) => {
-    const next = row.isActive === false;
-    if (next) {
-      setApproval({
-        row,
-        commissionRate: row.commissionRate != null ? row.commissionRate : 10,
-      });
-      return;
-    }
-    try {
-      await setAdminPropertyActive(row._id, {
-        isActive: false,
-        listingType: isHorse ? 'HORSE' : 'HOMESTAY',
-      });
-      toast.success('Marked inactive — still visible here, hidden on website');
-      load();
-    } catch {
-      toast.error('Update failed');
-    }
-  };
-
-  const confirmApprove = async () => {
-    if (!approval.row) return;
-    try {
-      await setAdminPropertyActive(approval.row._id, {
-        isActive: true,
-        listingType: isHorse ? 'HORSE' : 'HOMESTAY',
-        commissionRate: Number(approval.commissionRate),
-      });
-      toast.success('Listing approved and published');
-      setApproval({ row: null, commissionRate: 10 });
-      load();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Approval failed');
     }
   };
 
@@ -158,8 +97,6 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
       toast.error('Delete failed');
     }
   };
-
-  const publicPath = isHorse ? 'horses' : 'homestays';
 
   const columns = [
     {
@@ -185,7 +122,7 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
     {
       key: 'status',
       label: 'Status',
-      render: (r) => <StatusBadge status={r.isActive !== false ? 'ACTIVE' : 'INACTIVE'} />,
+      render: (r) => <StatusBadge status={listingStatusOf(r)} />,
     },
     {
       key: 'actions',
@@ -193,14 +130,8 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
       render: (r) => (
         <RowActions
           items={[
-            { key: 'view', label: 'View', onClick: () => setModal({ mode: 'view', row: r }) },
-            { key: 'edit', label: 'Edit', onClick: () => openEdit(r) },
-            {
-              key: 'toggle',
-              label: r.isActive !== false ? 'Mark as Inactive' : 'Approve',
-              onClick: () => toggleActive(r),
-              tone: r.isActive !== false ? 'muted' : undefined,
-            },
+            { key: 'view', label: 'View', onClick: () => setReview({ row: r, mode: 'view' }) },
+            { key: 'edit', label: 'Edit', onClick: () => setReview({ row: r, mode: 'edit' }) },
             { key: 'delete', label: 'Delete', onClick: () => remove(r), tone: 'danger' },
           ]}
         />
@@ -208,13 +139,11 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
     },
   ];
 
-  const viewing = modal.mode === 'view' ? modal.row : null;
-
   return (
     <div className="space-y-6">
       <PageHeader
         title={isHorse ? 'Horse Rides' : 'Homestays'}
-        subtitle={isHorse ? 'Horse operators and rides' : 'Homestay listings'}
+        subtitle="Open View or Edit to review documents, set commission, and approve or reject."
         actions={
           <button type="button" className="admin-btn-primary" onClick={openAdd}>
             <Plus size={18} /> Add {isHorse ? 'Horse Ride' : 'Homestay'}
@@ -228,9 +157,9 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
       )}
 
       <AdminModal
-        open={modal.mode === 'add' || modal.mode === 'edit'}
-        title={`${modal.mode === 'edit' ? 'Edit' : 'Add'} ${isHorse ? 'Horse Ride' : 'Homestay'}`}
-        onClose={() => setModal({ mode: null, row: null })}
+        open={addOpen}
+        title={`Add ${isHorse ? 'Horse Ride' : 'Homestay'}`}
+        onClose={() => setAddOpen(false)}
       >
         <form onSubmit={handleSubmit(onSave)} className="grid gap-3">
           <input className="admin-input" placeholder="Name" {...register('name', { required: true })} />
@@ -245,64 +174,24 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
             </>
           )}
           <div className="flex justify-end gap-2">
-            <button type="button" className="admin-btn-secondary" onClick={() => setModal({ mode: null, row: null })}>
+            <button type="button" className="admin-btn-secondary" onClick={() => setAddOpen(false)}>
               Cancel
             </button>
-            <button type="submit" className="admin-btn-primary">Save</button>
+            <button type="submit" className="admin-btn-primary">
+              Save
+            </button>
           </div>
         </form>
       </AdminModal>
 
-      <AdminModal open={!!viewing} title={viewing?.name || 'Details'} onClose={() => setModal({ mode: null, row: null })}>
-        {viewing && (
-          <div className="space-y-2 text-sm text-slate-700">
-            <p>{viewing.description || '—'}</p>
-            <p>
-              <span className="font-semibold">Price:</span>{' '}
-              {formatCurrency(viewing.priceFrom || viewing.routes?.[0]?.price || 0)}
-            </p>
-            <p><span className="font-semibold">Status:</span> {viewing.isActive !== false ? 'Active' : 'Inactive'}</p>
-            {viewing.slug && (
-              <a className="text-primary underline" href={`/${publicPath}/${viewing.slug}`} target="_blank" rel="noreferrer">
-                Open public page
-              </a>
-            )}
-          </div>
-        )}
-      </AdminModal>
-
-      <AdminModal
-        open={!!approval.row}
-        title={`Approve ${approval.row?.name || ''}`}
-        onClose={() => setApproval({ row: null, commissionRate: 10 })}
-      >
-        {approval.row && (
-          <div className="space-y-3">
-            <p className="text-sm text-slate-600">
-              Commission % for bookings on this listing. Example: 10% of ₹100 = ₹10.
-            </p>
-            <label className="admin-label">
-              Commission %
-              <input
-                type="number"
-                className="admin-input"
-                value={approval.commissionRate}
-                onChange={(e) => setApproval((p) => ({ ...p, commissionRate: e.target.value }))}
-                min="0"
-                step="0.1"
-              />
-            </label>
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" className="admin-btn-secondary" onClick={() => setApproval({ row: null, commissionRate: 10 })}>
-                Cancel
-              </button>
-              <button type="button" className="admin-btn-primary" onClick={confirmApprove}>
-                Approve & Publish
-              </button>
-            </div>
-          </div>
-        )}
-      </AdminModal>
+      <ListingReviewModal
+        open={!!review.row}
+        mode={review.mode}
+        listingType={listingType}
+        listingId={review.row?._id}
+        onClose={() => setReview({ row: null, mode: 'view' })}
+        onChanged={load}
+      />
     </div>
   );
 }

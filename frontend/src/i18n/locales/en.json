@@ -8,7 +8,8 @@
     "viewAll": "View all",
     "back": "Back",
     "submit": "Submit",
-    "status": "Status"
+    "status": "Status",
+    "action": "Action"
   },
   "nav": {
     "stays": "Stays",
@@ -160,9 +161,12 @@
     "listingsLoadFailed": "Could not load listings",
     "listingsSlug": "Slug",
     "fromPrice": "From",
-    "listingActive": "Active",
-    "listingInactive": "Inactive",
+    "listingActive": "Approved",
+    "listingInactive": "Rejected",
     "listingPending": "Pending",
+    "listingApproved": "Approved",
+    "listingRejected": "Rejected",
+    "listingEditLocked": "You can edit this listing after it is approved.",
     "editListingShort": "Edit",
     "editListing": "Edit {{kind}}",
     "createListingKind": "Create {{kind}}",

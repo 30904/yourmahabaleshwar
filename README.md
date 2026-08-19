@@ -35,27 +35,37 @@ project-root/
 - Node.js 18+
 - MongoDB Atlas URI (or local MongoDB via Docker)
 
-### 1. Backend
+Copy `.env.example` to `.env` in both `backend/` and `frontend/` first (set `MONGODB_URI`, JWT secrets, etc.).
+
+### Run both from the project root
+
+```bash
+npm install
+npm run install:all   # first time: installs backend + frontend deps
+npm run seed          # seed demo users and listings (backend)
+npm run dev           # API http://localhost:5000 + website http://localhost:5173
+```
+
+You can still run each app in its own folder with `npm run dev` if you prefer.
+
+### Backend only
 
 ```bash
 cd backend
-cp .env.example .env
-# Edit .env — set MONGODB_URI, JWT_SECRET, JWT_REFRESH_SECRET
 npm install
-npm run seed    # Seed hotels, tents, guides, drivers, users
+npm run seed
 npm run dev     # http://localhost:5000
 ```
 
-### 2. Frontend
+### Frontend only
 
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm run dev     # http://localhost:5173
 ```
 
-### 3. Docker (optional)
+### Docker (optional)
 
 ```bash
 docker-compose up -d

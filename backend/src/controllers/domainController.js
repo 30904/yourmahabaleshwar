@@ -29,6 +29,7 @@ import {
   stampOwnerOnCreate,
   stripOwnerOnUpdate,
 } from '../utils/vendorListingAccess.js';
+import { APPROVAL_STATUS, denyIfVendorCannotEdit, stampPendingIfVendor } from '../utils/listingApproval.js';
 import {
   mapDriverMine,
   mapGuideMine,
@@ -333,11 +334,15 @@ const crudCreate = (Model, ownerField) => async (req, res) => {
   }
 };
 
-const crudUpdate = (Model, ownerField) => async (req, res) => {
+const crudUpdate = (Model, ownerField, { requireApproved } = {}) => async (req, res) => {
   const doc = await Model.findById(req.params.id);
   if (!doc) return error(res, 'Not found', 404);
   const denied = denyIfNotOwner(req, doc, ownerField);
   if (denied) return error(res, denied.message, denied.status);
+  if (requireApproved) {
+    const blocked = denyIfVendorCannotEdit(req, doc);
+    if (blocked) return error(res, blocked.message, blocked.status);
+  }
   Object.assign(doc, stripOwnerOnUpdate(req, req.body, ownerField));
   await doc.save();
   return success(res, doc);
@@ -349,6 +354,7 @@ const crudDelete = (Model, ownerField) => async (req, res) => {
   const denied = denyIfNotOwner(req, doc, ownerField);
   if (denied) return error(res, denied.message, denied.status);
   doc.isActive = false;
+  if (doc.approvalStatus === APPROVAL_STATUS.APPROVED) doc.approvalStatus = APPROVAL_STATUS.REJECTED;
   await doc.save();
   return success(res, null, 'Deactivated');
 };
@@ -368,31 +374,28 @@ const crudGetMine = (Model, ownerField) => async (req, res) => {
 };
 
 export const createHomestay = async (req, res) => {
-  // Vendor-created listings should go to pending state until superadmin approval.
-  if (req.user.role !== ROLES.SUPER_ADMIN) req.body.isActive = false;
+  req.body = stampPendingIfVendor(req, req.body);
   return crudCreate(Homestay, 'vendor')(req, res);
 };
-export const updateHomestay = crudUpdate(Homestay, 'vendor');
+export const updateHomestay = crudUpdate(Homestay, 'vendor', { requireApproved: true });
 export const deleteHomestay = crudDelete(Homestay, 'vendor');
 export const listMyHomestays = crudListMine(Homestay, 'vendor', mapHomestayMine);
 export const getMyHomestay = crudGetMine(Homestay, 'vendor');
 
 export const createHorse = async (req, res) => {
-  // Vendor-created listings should go to pending state until superadmin approval.
-  if (req.user.role !== ROLES.SUPER_ADMIN) req.body.isActive = false;
+  req.body = stampPendingIfVendor(req, req.body);
   return crudCreate(Horse, 'operator')(req, res);
 };
-export const updateHorse = crudUpdate(Horse, 'operator');
+export const updateHorse = crudUpdate(Horse, 'operator', { requireApproved: true });
 export const deleteHorse = crudDelete(Horse, 'operator');
 export const listMyHorses = crudListMine(Horse, 'operator', mapHorseMine);
 export const getMyHorse = crudGetMine(Horse, 'operator');
 
 export const createTent = async (req, res) => {
-  // Vendor-created listings should go to pending state until superadmin approval.
-  if (req.user.role !== ROLES.SUPER_ADMIN) req.body.isActive = false;
+  req.body = stampPendingIfVendor(req, req.body);
   return crudCreate(Tent, 'operator')(req, res);
 };
-export const updateTent = crudUpdate(Tent, 'operator');
+export const updateTent = crudUpdate(Tent, 'operator', { requireApproved: true });
 export const deleteTent = crudDelete(Tent, 'operator');
 export const listMyTents = crudListMine(Tent, 'operator', mapTentMine);
 export const getMyTent = crudGetMine(Tent, 'operator');
@@ -410,11 +413,11 @@ export const listMyDrivers = crudListMine(Driver, 'user', mapDriverMine);
 export const getMyDriver = crudGetMine(Driver, 'user');
 
 export const listAdminHomestays = async (req, res) =>
-  success(res, await Homestay.find().sort('-createdAt').limit(200));
+  success(res, await Homestay.find().populate('vendor', 'name email phone').sort('-createdAt').limit(200));
 export const listAdminHorses = async (req, res) =>
-  success(res, await Horse.find().sort('-createdAt').limit(200));
+  success(res, await Horse.find().populate('operator', 'name email phone').sort('-createdAt').limit(200));
 export const listAdminTents = async (req, res) =>
-  success(res, await Tent.find().sort('-createdAt').limit(200));
+  success(res, await Tent.find().populate('operator', 'name email phone').sort('-createdAt').limit(200));
 
 // ─── Seasonal pricing ────────────────────────────────────────
 export const updateRoomSeasonal = async (req, res) => {

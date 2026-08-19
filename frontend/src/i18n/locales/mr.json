@@ -8,7 +8,8 @@
     "viewAll": "सर्व पहा",
     "back": "मागे",
     "submit": "सबमिट करा",
-    "status": "स्थिती"
+    "status": "स्थिती",
+    "action": "क्रिया"
   },
   "nav": {
     "stays": "राहण्याच्या जागा",
@@ -160,9 +161,12 @@
     "listingsLoadFailed": "यादी लोड करता आले नाही",
     "listingsSlug": "स्लग",
     "fromPrice": "पासून",
-    "listingActive": "सक्रिय",
-    "listingInactive": "निष्क्रिय",
+    "listingActive": "मंजूर",
+    "listingInactive": "नाकारले",
     "listingPending": "प्रलंबित",
+    "listingApproved": "मंजूर",
+    "listingRejected": "नाकारले",
+    "listingEditLocked": "ही यादी मंजूर झाल्यानंतरच संपादित करता येईल.",
     "editListingShort": "संपादन",
     "editListing": "{{kind}} संपादित करा",
     "createListingKind": "{{kind}} तयार करा",
