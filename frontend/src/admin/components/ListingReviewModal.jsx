@@ -386,17 +386,60 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 <Info label="Vendor" value={vendor?.name ? `${vendor.name} (${vendor.email || vendor.phone || '—'})` : '—'} />
-                <Info label="Price" value={formatCurrency(listing.priceFrom || listing.pricePerNight || rooms[0]?.basePrice)} />
+                <Info
+                  label="Price range"
+                  value={
+                    listing.priceRangeFrom != null || listing.priceRangeTo != null
+                      ? `${formatCurrency(listing.priceRangeFrom || 0)} – ${formatCurrency(listing.priceRangeTo || listing.priceRangeFrom || 0)}`
+                      : formatCurrency(listing.priceFrom || listing.pricePerNight || rooms[0]?.basePrice)
+                  }
+                />
+                <Info label="Owner / Partner" value={listing.ownerName} />
                 <Info label="Address / location" value={addressText} />
+                <Info label="Reception phone" value={listing.receptionPhone} />
+                <Info label="WhatsApp" value={listing.whatsapp} />
+                <Info label="Property email" value={listing.propertyEmail} />
+                <Info label="Website" value={listing.website} />
                 <Info label="GST" value={listing.gstNumber} />
                 <Info label="Check-in / Check-out" value={listing.checkInTime && listing.checkOutTime ? `${listing.checkInTime} / ${listing.checkOutTime}` : ''} />
                 <Info label="Contact" value={listing.contactPhone} />
+                <Info label="Driver accommodation" value={listing.driverAccommodation === true ? 'Yes' : listing.driverAccommodation === false ? 'No' : ''} />
+                <Info
+                  label="Room inventory"
+                  value={
+                    listing.roomInventory
+                      ? `Total ${listing.roomInventory.totalRooms || 0} · Non-AC ${listing.roomInventory.nonAc || 0} · Deluxe AC ${listing.roomInventory.deluxeAc || 0} · Suite ${listing.roomInventory.suite || 0} · Family/Dorm ${listing.roomInventory.familyDorm || 0}`
+                      : ''
+                  }
+                />
                 <Info label="Amenities" value={(listing.amenities || []).join(', ')} />
+                <Info
+                  label="Listing bank details"
+                  value={
+                    listing.bankDetails
+                      ? [listing.bankDetails.accountHolder, listing.bankDetails.bankName, listing.bankDetails.branch, listing.bankDetails.accountNumber, listing.bankDetails.ifsc]
+                          .filter(Boolean)
+                          .join(' · ')
+                      : ''
+                  }
+                />
+                <Info
+                  label="Legal acceptance"
+                  value={
+                    [
+                      listing.acceptedTermsAt ? 'Terms' : null,
+                      listing.acceptedAgreementAt ? 'Agreement' : null,
+                      listing.declarationAcceptedAt ? 'Declaration' : null,
+                    ]
+                      .filter(Boolean)
+                      .join(', ') || 'Not recorded'
+                  }
+                />
                 <div className="sm:col-span-2">
                   <Info label="Description" value={listing.description || listing.shortDescription} />
                 </div>
                 <div className="sm:col-span-2">
-                  <Info label="Policies" value={listing.policies} />
+                  <Info label="Cancellation / policies" value={listing.cancellationPolicyText || listing.policies} />
                 </div>
               </div>
             )}

@@ -29,6 +29,7 @@ import {
   toPayload,
   validateListingForm,
 } from './vendorListingFormConfig';
+import HotelResortRegistrationFields from './HotelResortRegistrationFields';
 import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
 
 const LISTINGS_PATH = '/dashboard/vendor/listings';
@@ -111,19 +112,25 @@ export default function VendorListingForm() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const errorMessage = validateListingForm(vertical, form);
+    const saveVertical =
+      vertical === 'HOTEL' || vertical === 'RESORT'
+        ? form.type === 'RESORT'
+          ? 'RESORT'
+          : 'HOTEL'
+        : vertical;
+    const errorMessage = validateListingForm(saveVertical, form, { isCreate: !isEdit });
     if (errorMessage) {
       toast.error(errorMessage);
       return;
     }
     setSaving(true);
     try {
-      const payload = toPayload(vertical, form);
+      const payload = toPayload(saveVertical, form);
       if (isEdit) {
         await updateVendorListing(vertical, id, payload);
         toast.success(t('vendor.listingUpdated'));
       } else {
-        await createVendorListing(vertical, payload);
+        await createVendorListing(saveVertical, payload);
         toast.success(t('vendor.listingCreated'));
       }
       navigate(LISTINGS_PATH);
@@ -140,8 +147,10 @@ export default function VendorListingForm() {
 
   if (loading) return <Skeleton className="h-48" />;
 
-  const showAmenities = ['HOTEL', 'RESORT', 'HOMESTAY', 'TENT'].includes(vertical);
-  const showRooms = ['HOTEL', 'RESORT', 'HOMESTAY'].includes(vertical);
+  const isHotelResort = vertical === 'HOTEL' || vertical === 'RESORT';
+  const showAmenities = ['HOMESTAY', 'TENT'].includes(vertical);
+  const showRooms = vertical === 'HOMESTAY';
+  const isOnboarding = searchParams.get('onboarding') === '1';
 
   return (
     <div>
@@ -149,9 +158,38 @@ export default function VendorListingForm() {
         {t('common.back')}
       </Link>
       <h2 className="mt-4 text-xl font-bold text-slate-900">{title}</h2>
-      <p className="mt-1 text-sm text-slate-500">{t('vendor.listingFormHint')}</p>
+      <p className="mt-1 text-sm text-slate-500">
+        {isHotelResort
+          ? 'Complete the hotel/resort registration form. Your listing stays pending until admin approval.'
+          : t('vendor.listingFormHint')}
+      </p>
+      {isOnboarding && isHotelResort && (
+        <p className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-700">
+          Welcome. Finish this registration form to submit your property. You can upload KYC documents anytime from the KYC page.
+        </p>
+      )}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-6">
+        {isEdit && (
+          <Card>
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <span>{t('common.status')}</span>
+              <Badge color={listingStatusBadgeColor(listingStatusOf(form))}>
+                {t(listingStatusI18nKey(listingStatusOf(form)))}
+              </Badge>
+            </div>
+          </Card>
+        )}
+
+        {isHotelResort ? (
+          <HotelResortRegistrationFields
+            form={form}
+            setField={setField}
+            toggleAmenity={toggleAmenity}
+            isEdit={isEdit}
+          />
+        ) : (
+          <>
         {!isEdit && allowedVerticals.length > 1 && (
           <Card>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('vendor.vendorType')}</label>
@@ -243,16 +281,6 @@ export default function VendorListingForm() {
             </>
           )}
 
-          {(vertical === 'HOTEL' || vertical === 'RESORT') && (
-            <>
-              <Input label={t('vendor.address')} value={form.addressLine1} onChange={(e) => setField('addressLine1', e.target.value)} />
-              <Input label={t('vendor.city')} value={form.city} onChange={(e) => setField('city', e.target.value)} />
-              <Input label={t('vendor.pincode')} value={form.pincode} onChange={(e) => setField('pincode', e.target.value)} />
-              <Input label={t('vendor.checkIn')} type="time" value={form.checkInTime} onChange={(e) => setField('checkInTime', e.target.value)} />
-              <Input label={t('vendor.checkOut')} type="time" value={form.checkOutTime} onChange={(e) => setField('checkOutTime', e.target.value)} />
-            </>
-          )}
-
           {vertical === 'HOMESTAY' && (
             <>
               <Input label={t('vendor.location')} value={form.location} onChange={(e) => setField('location', e.target.value)} />
@@ -275,17 +303,6 @@ export default function VendorListingForm() {
             </div>
           )}
 
-          {form.policies !== undefined && (vertical === 'HOTEL' || vertical === 'RESORT') && (
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('vendor.policies')}</label>
-              <textarea
-                className="input-field min-h-[72px]"
-                value={form.policies || ''}
-                onChange={(e) => setField('policies', e.target.value)}
-              />
-            </div>
-          )}
-
           {form.imageUrl !== undefined && (
             <Input
               className="sm:col-span-2"
@@ -295,16 +312,9 @@ export default function VendorListingForm() {
               placeholder="https://"
             />
           )}
-
-          {isEdit && (
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
-              <span>{t('common.status')}</span>
-              <Badge color={listingStatusBadgeColor(listingStatusOf(form))}>
-                {t(listingStatusI18nKey(listingStatusOf(form)))}
-              </Badge>
-            </div>
-          )}
         </Card>
+          </>
+        )}
 
         {showAmenities && (
           <Card>

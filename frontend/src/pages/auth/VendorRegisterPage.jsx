@@ -76,7 +76,12 @@ export default function VendorRegisterPage() {
         purpose: 'SIGNUP',
       });
       toast.success(t('vendor.registerSuccess'));
-      navigate('/dashboard/vendor/kyc');
+      const vendorType = String(watch('vendorType') || '').toUpperCase();
+      if (vendorType === 'HOTEL' || vendorType === 'RESORT') {
+        navigate(`/dashboard/vendor/listings/new?type=${vendorType}&onboarding=1`);
+      } else {
+        navigate('/dashboard/vendor/kyc');
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || t('auth.invalidOtp'));
     } finally {
@@ -117,6 +122,11 @@ export default function VendorRegisterPage() {
                 {...reg('confirm', { validate: (v) => v === watch('password') || t('auth.mismatch') })}
                 error={errors.confirm?.message}
               />
+              {(watch('vendorType') === 'HOTEL' || watch('vendorType') === 'RESORT') && (
+                <p className="rounded-lg bg-blue-50 p-3 text-sm text-slate-700">
+                  After OTP verification you will complete the full hotel/resort registration form (property details, bank, terms).
+                </p>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t('auth.creating') : t('vendor.registerCta')}
               </Button>

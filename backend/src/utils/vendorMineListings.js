@@ -65,5 +65,5 @@ export const mapProductMine = (doc) =>
 
 export const mapHotelMine = (doc, minRoomPrice) =>
   toMineListing(doc, {
-    from: num(minRoomPrice),
+    from: num(minRoomPrice) ?? num(doc.priceRangeFrom) ?? num(doc.priceRangeTo),
   });

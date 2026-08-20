@@ -42,6 +42,14 @@ const FALLBACK_DOCS = {
     { code: 'BUSINESS_REG', label: 'Business Registration' },
     { code: 'HOTEL_LICENSE', label: 'Hotel License' },
   ],
+  RESORT: [
+    { code: 'AADHAAR', label: 'Aadhaar Card' },
+    { code: 'PAN', label: 'PAN Card' },
+    { code: 'GST', label: 'GST Certificate' },
+    { code: 'BANK', label: 'Bank Proof' },
+    { code: 'BUSINESS_REG', label: 'Business Registration' },
+    { code: 'HOTEL_LICENSE', label: 'Hotel License' },
+  ],
   HOMESTAY: [
     { code: 'AADHAAR', label: 'Aadhaar Card' },
     { code: 'PAN', label: 'PAN Card' },
@@ -83,7 +91,14 @@ export default function VendorKYC() {
   const [kyc, setKyc] = useState(null);
   const [docs, setDocs] = useState(FALLBACK_DOCS[vendorType] || FALLBACK_DOCS.HOTEL);
   const [files, setFiles] = useState({});
-  const [bank, setBank] = useState({ accountHolder: '', accountNumber: '', ifsc: '', bankName: '', upiId: '' });
+  const [bank, setBank] = useState({
+    accountHolder: '',
+    accountNumber: '',
+    ifsc: '',
+    bankName: '',
+    branch: '',
+    upiId: '',
+  });
   const [ids, setIds] = useState({ aadhar: '', pan: '', gstNumber: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -200,6 +215,7 @@ export default function VendorKYC() {
             <Input label={t('vendor.accountNumber')} value={bank.accountNumber} onChange={(e) => setBank({ ...bank, accountNumber: e.target.value })} />
             <Input label={t('vendor.ifsc')} value={bank.ifsc} onChange={(e) => setBank({ ...bank, ifsc: e.target.value })} />
             <Input label={t('vendor.bankName')} value={bank.bankName} onChange={(e) => setBank({ ...bank, bankName: e.target.value })} />
+            <Input label="Branch" value={bank.branch || ''} onChange={(e) => setBank({ ...bank, branch: e.target.value })} />
             <Input label={t('vendor.upi')} value={bank.upiId} onChange={(e) => setBank({ ...bank, upiId: e.target.value })} />
           </div>
         </div>
