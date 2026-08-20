@@ -775,6 +775,10 @@
     padding: 1rem;
     background: rgba(15, 23, 42, 0.45);
   }
+  .admin-modal-overlay--stacked {
+    z-index: 80;
+    background: rgba(15, 23, 42, 0.55);
+  }
   .admin-modal {
     display: flex;
     flex-direction: column;

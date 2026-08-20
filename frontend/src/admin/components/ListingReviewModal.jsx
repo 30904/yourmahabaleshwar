@@ -81,6 +81,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [acting, setActing] = useState('');
+  const [confirmAction, setConfirmAction] = useState(null);
   const [data, setData] = useState(null);
   const [form, setForm] = useState(formFromListing(null, []));
   const [commissionRate, setCommissionRate] = useState('10');
@@ -220,10 +221,25 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
     }
   };
 
+  const requestApprove = () => {
+    if (!listing) return;
+    if (!commissionValid) {
+      toast.error('Enter a commission % before approving');
+      return;
+    }
+    setConfirmAction('approve');
+  };
+
+  const requestReject = () => {
+    if (!listing) return;
+    setConfirmAction('reject');
+  };
+
   const approve = async () => {
     if (!listing) return;
     if (!commissionValid) {
       toast.error('Enter a commission % before approving');
+      setConfirmAction(null);
       return;
     }
     setActing('approve');
@@ -234,6 +250,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
         commissionRate: parsedCommission,
       });
       toast.success('Listing approved and published');
+      setConfirmAction(null);
       onChanged?.();
       onClose?.();
     } catch (e) {
@@ -252,6 +269,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
         listingType: type,
       });
       toast.success('Listing rejected — hidden on the website');
+      setConfirmAction(null);
       onChanged?.();
       onClose?.();
     } catch (e) {
@@ -264,7 +282,8 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
   const title = `${editable ? 'Edit' : 'View'} ${listing?.name || 'listing'}`;
 
   return (
-    <AdminModal open={open} title={title} onClose={onClose} xl>
+    <>
+    <AdminModal open={open} title={title} onClose={() => { setConfirmAction(null); onClose?.(); }} xl>
       {loading || !listing ? (
         <p className="py-10 text-center text-sm text-slate-500">{loading ? 'Loading listing…' : 'Listing not found'}</p>
       ) : (
@@ -510,15 +529,53 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
             <button type="button" className="admin-btn-secondary" onClick={onClose}>
               Close
             </button>
-            <button type="button" className="admin-btn-danger-solid" onClick={reject} disabled={!!acting}>
-              {acting === 'reject' ? 'Rejecting…' : 'Reject'}
+            <button type="button" className="admin-btn-danger-solid" onClick={requestReject} disabled={!!acting}>
+              Reject
             </button>
-            <button type="button" className="admin-btn-success" onClick={approve} disabled={!!acting || !commissionValid}>
-              {acting === 'approve' ? 'Approving…' : 'Approve'}
+            <button
+              type="button"
+              className="admin-btn-success"
+              onClick={requestApprove}
+              disabled={!!acting || !commissionValid}
+            >
+              Approve
             </button>
           </div>
         </div>
       )}
     </AdminModal>
+
+      <AdminModal
+        open={!!confirmAction}
+        stacked
+        title={confirmAction === 'approve' ? 'Confirm approval' : 'Confirm rejection'}
+        onClose={() => !acting && setConfirmAction(null)}
+      >
+        <p className="text-sm text-slate-600">
+          {confirmAction === 'approve'
+            ? `Are you sure you want to approve "${listing?.name || 'this listing'}"?`
+            : `Are you sure you want to reject "${listing?.name || 'this listing'}"?`}
+        </p>
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            className="admin-btn-secondary"
+            onClick={() => setConfirmAction(null)}
+            disabled={!!acting}
+          >
+            Cancel
+          </button>
+          {confirmAction === 'approve' ? (
+            <button type="button" className="admin-btn-success" onClick={approve} disabled={!!acting}>
+              {acting === 'approve' ? 'Approving…' : 'Yes, approve'}
+            </button>
+          ) : (
+            <button type="button" className="admin-btn-danger-solid" onClick={reject} disabled={!!acting}>
+              {acting === 'reject' ? 'Rejecting…' : 'Yes, reject'}
+            </button>
+          )}
+        </div>
+      </AdminModal>
+    </>
   );
 }
