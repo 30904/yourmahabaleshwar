@@ -15,10 +15,11 @@ import GuidesPage from './pages/public/GuidesPage';
 import TaxiPage from './pages/public/TaxiPage';
 import HorsesPage from './pages/public/HorsesPage';
 import HorseDetailPage from './pages/public/HorseDetailPage';
-import ProductsPage from './pages/public/ProductsPage';
-import ProductDetailPage from './pages/public/ProductDetailPage';
-import CombosPage from './pages/public/CombosPage';
-import ComboDetailPage from './pages/public/ComboDetailPage';
+// Shop pages — coming soon (keep files; routes disabled until launch)
+// import ProductsPage from './pages/public/ProductsPage';
+// import ProductDetailPage from './pages/public/ProductDetailPage';
+// import CombosPage from './pages/public/CombosPage';
+// import ComboDetailPage from './pages/public/ComboDetailPage';
 import StaticPage from './pages/public/StaticPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -103,12 +104,14 @@ export default function App() {
         <Route path="taxi/:slug" element={<TaxiDetailPage />} />
         <Route path="horses" element={<HorsesPage />} />
         <Route path="horses/:slug" element={<HorseDetailPage />} />
+        {/* Shop pages — coming soon
         <Route path="strawberries" element={<ProductsPage vertical="STRAWBERRY" />} />
         <Route path="strawberries/:slug" element={<ProductDetailPage vertical="STRAWBERRY" />} />
         <Route path="mapro" element={<ProductsPage vertical="MAPRO" />} />
         <Route path="mapro/:slug" element={<ProductDetailPage vertical="MAPRO" />} />
         <Route path="combos" element={<CombosPage />} />
         <Route path="combos/:slug" element={<ComboDetailPage />} />
+        */}
         <Route path="driver-enquiry" element={<EnquiryPage type="DRIVER" />} />
         <Route path="hourly-enquiry" element={<EnquiryPage type="HOURLY" />} />
         <Route path="search" element={<SearchPage />} />

@@ -17,9 +17,9 @@ const primaryLinks = [
 ];
 
 const shopLinks = [
-  { to: '/strawberries', key: 'strawberries' },
-  { to: '/mapro', key: 'mapro' },
-  { to: '/combos', key: 'combos' },
+  { to: '/strawberries', key: 'strawberries', comingSoon: true },
+  { to: '/mapro', key: 'mapro', comingSoon: true },
+  { to: '/combos', key: 'combos', comingSoon: true },
 ];
 
 const allMobileLinks = [...primaryLinks, ...shopLinks];
@@ -42,7 +42,7 @@ export default function Navbar() {
         ? '/dashboard/vendor'
         : '/dashboard/customer';
 
-  const shopActive = shopLinks.some((l) => location.pathname.startsWith(l.to));
+  const shopActive = shopLinks.some((l) => !l.comingSoon && location.pathname.startsWith(l.to));
 
   const switchLang = (lng) => {
     i18n.changeLanguage(lng);
@@ -99,20 +99,31 @@ export default function Navbar() {
               <ChevronDown size={14} className={`transition ${shopOpen ? 'rotate-180' : ''}`} />
             </button>
             {shopOpen && (
-              <div className="absolute left-1/2 top-full z-50 mt-1 w-44 -translate-x-1/2 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
-                {shopLinks.map((l) => (
-                  <NavLink
-                    key={l.to}
-                    to={l.to}
-                    className={({ isActive }) =>
-                      `block whitespace-nowrap px-3 py-2 text-[13px] font-medium ${
-                        isActive ? 'bg-blue-50 text-primary' : 'text-slate-700 hover:bg-slate-50'
-                      }`
-                    }
-                  >
-                    {t(`nav.${l.key}`)}
-                  </NavLink>
-                ))}
+              <div className="absolute left-1/2 top-full z-50 mt-1 w-56 -translate-x-1/2 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                {shopLinks.map((l) =>
+                  l.comingSoon ? (
+                    <span
+                      key={l.to}
+                      className="block cursor-not-allowed whitespace-nowrap px-3 py-2 text-[13px] font-medium text-slate-500"
+                      aria-disabled="true"
+                    >
+                      {t(`nav.${l.key}`)}{' '}
+                      <span className="text-red-500">{t('nav.comingSoon')}</span>
+                    </span>
+                  ) : (
+                    <NavLink
+                      key={l.to}
+                      to={l.to}
+                      className={({ isActive }) =>
+                        `block whitespace-nowrap px-3 py-2 text-[13px] font-medium ${
+                          isActive ? 'bg-blue-50 text-primary' : 'text-slate-700 hover:bg-slate-50'
+                        }`
+                      }
+                    >
+                      {t(`nav.${l.key}`)}
+                    </NavLink>
+                  )
+                )}
               </div>
             )}
           </div>
@@ -175,12 +186,12 @@ export default function Navbar() {
                           setNotifications([]);
                         }}
                       >
-                        Mark all read
+                        {t('nav.markAllRead')}
                       </button>
                     </div>
                     <div className="max-h-72 space-y-2 overflow-y-auto">
                       {notifications.length === 0 && (
-                        <p className="py-4 text-center text-xs text-slate-500">No unread notifications</p>
+                        <p className="py-4 text-center text-xs text-slate-500">{t('nav.noNotifications')}</p>
                       )}
                       {notifications.map((n) => (
                         <div key={n._id} className="rounded-lg bg-slate-50 p-2 text-left">
@@ -229,20 +240,30 @@ export default function Navbar() {
 
       {open && (
         <div className="max-h-[70vh] overflow-y-auto border-t border-slate-100 bg-white px-4 py-4 xl:hidden">
-          {allMobileLinks.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `mb-1 block rounded-lg px-3 py-2.5 text-sm font-medium ${
-                  isActive ? 'bg-blue-50 text-primary' : 'text-slate-700'
-                }`
-              }
-            >
-              {t(`nav.${l.key}`)}
-            </NavLink>
-          ))}
+          {allMobileLinks.map((l) =>
+            l.comingSoon ? (
+              <span
+                key={l.to}
+                className="mb-1 block cursor-not-allowed rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500"
+                aria-disabled="true"
+              >
+                {t(`nav.${l.key}`)} <span className="text-red-500">{t('nav.comingSoon')}</span>
+              </span>
+            ) : (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
+                  `mb-1 block rounded-lg px-3 py-2.5 text-sm font-medium ${
+                    isActive ? 'bg-blue-50 text-primary' : 'text-slate-700'
+                  }`
+                }
+              >
+                {t(`nav.${l.key}`)}
+              </NavLink>
+            )
+          )}
         </div>
       )}
     </header>

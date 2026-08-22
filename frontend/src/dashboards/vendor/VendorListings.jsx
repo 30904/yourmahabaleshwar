@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Pencil, PencilOff, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -12,6 +12,7 @@ import { formatCurrency } from '../../utils/format';
 import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
 
 const CREATE_PATH = '/dashboard/vendor/listings/new';
+const STATUS_FILTERS = ['APPROVED', 'PENDING', 'REJECTED'];
 
 const editPath = (item) => `/dashboard/vendor/listings/${item.vertical}/${item.id}/edit`;
 
@@ -24,11 +25,42 @@ function CreateListingButton({ label, className = '' }) {
   );
 }
 
+function StatusFilterButtons({ value, onChange, t }) {
+  const activeStyles = {
+    APPROVED: 'border-emerald-600 bg-emerald-600 text-white',
+    PENDING: 'border-amber-500 bg-amber-500 text-white',
+    REJECTED: 'border-red-600 bg-red-600 text-white',
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {STATUS_FILTERS.map((status) => {
+        const active = value === status;
+        return (
+          <button
+            key={status}
+            type="button"
+            onClick={() => onChange(active ? null : status)}
+            className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+              active
+                ? activeStyles[status]
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {t(listingStatusI18nKey(status))}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function VendorListings() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState(null);
 
   useEffect(() => {
     if (!user?.role) return;
@@ -42,6 +74,11 @@ export default function VendorListings() {
       .finally(() => setLoading(false));
   }, [user?.role, t]);
 
+  const filteredListings = useMemo(() => {
+    if (!statusFilter) return listings;
+    return listings.filter((item) => listingStatusOf(item) === statusFilter);
+  }, [listings, statusFilter]);
+
   const createLabel = t('vendor.createListing');
 
   if (loading) return <Skeleton className="h-48" />;
@@ -53,7 +90,10 @@ export default function VendorListings() {
           <h2 className="text-xl font-bold text-slate-900">{t('vendor.listings')}</h2>
           <p className="mt-1 text-sm text-slate-500">{t('vendor.listingsHint')}</p>
         </div>
-        <CreateListingButton label={createLabel} />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusFilterButtons value={statusFilter} onChange={setStatusFilter} t={t} />
+          <CreateListingButton label={createLabel} />
+        </div>
       </div>
 
       {!listings.length ? (
@@ -61,10 +101,14 @@ export default function VendorListings() {
           <p className="text-slate-500">{t('vendor.noListings')}</p>
           <CreateListingButton label={createLabel} className="mt-4" />
         </Card>
+      ) : !filteredListings.length ? (
+        <Card className="mt-6 p-8 text-center">
+          <p className="text-slate-500">{t('vendor.noListingsForFilter')}</p>
+        </Card>
       ) : (
         <>
           <div className="mt-6 space-y-3 md:hidden">
-            {listings.map((item) => (
+            {filteredListings.map((item) => (
               <ListingCard key={`${item.vertical}-${item.id}`} item={item} t={t} />
             ))}
           </div>
@@ -80,7 +124,7 @@ export default function VendorListings() {
                 </tr>
               </thead>
               <tbody>
-                {listings.map((item) => (
+                {filteredListings.map((item) => (
                   <tr key={`${item.vertical}-${item.id}`} className="border-b border-slate-50 last:border-0">
                     <td className="px-5 py-3">
                       <p className="font-semibold text-slate-900">{item.name}</p>

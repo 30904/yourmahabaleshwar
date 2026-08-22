@@ -28,7 +28,10 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "favorites": "Favorites",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "comingSoon": "[coming soon]",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No unread notifications"
   },
   "auth": {
     "signIn": "Sign in",
@@ -81,7 +84,150 @@
   },
   "home": {
     "headline": "Discover Mahabaleshwar",
-    "subhead": "Hotels, homestays, tents, guides, taxi and horse rides — one platform."
+    "subhead": "Hotels, homestays, tents, guides, taxi and horse rides — one platform.",
+    "badgeTrusted": "India's trusted hill-station marketplace",
+    "badgeLoved": "Loved by 50,000+ travellers",
+    "statProperties": "Properties",
+    "statReviews": "Guest reviews",
+    "statRating": "Average rating",
+    "popular": "Popular:",
+    "quickHotels": "Hotels",
+    "quickResorts": "Resorts",
+    "quickGlamping": "Glamping",
+    "quickFreeCancellation": "Free cancellation",
+    "categories": {
+      "hotels": "Hotels",
+      "hotelsCount": "450+ stays",
+      "resorts": "Resorts",
+      "resortsCount": "80+ resorts",
+      "homestays": "Homestays",
+      "homestaysCount": "Local homes",
+      "tents": "Tents & camps",
+      "tentsCount": "50+ glamping",
+      "guides": "Local guides",
+      "guidesCount": "100+ experts",
+      "taxi": "Taxi & cabs",
+      "taxiCount": "200+ vehicles",
+      "horses": "Horse rides",
+      "horsesCount": "Scenic trails"
+    },
+    "deals": {
+      "eyebrow": "Limited time",
+      "title": "Trending deals & offers",
+      "subtitle": "Save more on your next hill-station escape",
+      "seeAll": "See all deals",
+      "bookNow": "Book now",
+      "monsoon": {
+        "title": "Monsoon Escape",
+        "discount": "30% off",
+        "desc": "Book before June 30"
+      },
+      "weekend": {
+        "title": "Weekend Getaway",
+        "discount": "Free breakfast",
+        "desc": "2+ night stays"
+      },
+      "earlyBird": {
+        "title": "Early Bird",
+        "discount": "15% off",
+        "desc": "Book 14 days ahead"
+      }
+    },
+    "propertyTabs": {
+      "eyebrow": "Guest favourites",
+      "title": "Popular in Mahabaleshwar",
+      "subtitle": "Highly rated properties with great value",
+      "topHotels": "Top hotels",
+      "luxuryResorts": "Luxury resorts",
+      "uniqueStays": "Unique stays"
+    },
+    "promo": {
+      "eyebrow": "Member perks",
+      "title": "Sign in to unlock exclusive deals & free upgrades",
+      "subtitle": "Create a free account — save properties, faster checkout, and seasonal discounts.",
+      "cta": "Join free"
+    },
+    "destinations": {
+      "eyebrow": "Explore",
+      "title": "Destinations near Mahabaleshwar",
+      "subtitle": "From misty valleys to heritage forts",
+      "mahabaleshwarCount": "450+ properties",
+      "panchganiCount": "120+ properties",
+      "tapolaCount": "45+ camps",
+      "pratapgadCount": "80+ guides"
+    },
+    "services": {
+      "eyebrow": "Beyond stays",
+      "title": "Guides & transport",
+      "subtitle": "Explore Mahabaleshwar with trusted locals",
+      "localGuide": "Local guide",
+      "taxiCab": "Taxi & cab",
+      "hourlyTrips": "Hourly & point-to-point trips",
+      "from": "From",
+      "per6hrs": "/ 6 hrs",
+      "perTrip": "/ trip",
+      "browseGuides": "Browse all guides",
+      "bookCab": "Book a cab"
+    },
+    "whyBook": {
+      "eyebrow": "Why us",
+      "title": "Book with confidence",
+      "subtitle": "The same trust you expect from global booking platforms — built for Mahabaleshwar"
+    }
+  },
+  "search": {
+    "destination": "Destination",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guestsRooms": "Guests & rooms",
+    "placeholderDestination": "City, property, or landmark",
+    "placeholderWhere": "Where are you going?",
+    "guests2_1": "2 adults · 1 room",
+    "guests2_2": "2 adults · 2 rooms",
+    "guests4_1": "4 adults · 1 room",
+    "guests4_2": "4 adults · 2 rooms"
+  },
+  "property": {
+    "featured": "Featured",
+    "freeCancellation": "Free cancellation",
+    "noPrepayment": "No prepayment needed",
+    "perNight": "/ night",
+    "inclTaxes": "incl. taxes",
+    "seeAvailability": "See availability",
+    "reviews": "reviews",
+    "signInFavorites": "Sign in to save favorites",
+    "removedFavorites": "Removed from favorites",
+    "savedFavorites": "Saved to favorites",
+    "favoritesError": "Could not update favorites",
+    "saveAria": "Save"
+  },
+  "trust": {
+    "secureTitle": "Secure booking",
+    "secureDesc": "256-bit SSL encryption",
+    "verifiedTitle": "Verified properties",
+    "verifiedDesc": "Every listing is vetted",
+    "supportTitle": "24/7 support",
+    "supportDesc": "Local team in Mahabaleshwar",
+    "paymentTitle": "Flexible payment",
+    "paymentDesc": "Pay online or at property"
+  },
+  "footer": {
+    "tagline": "Discover · Book · Experience Mahabaleshwar — hotels, resorts, tents, guides and taxi.",
+    "support": "Support",
+    "helpCentre": "Help Centre",
+    "contactUs": "Contact us",
+    "cancellation": "Cancellation",
+    "discover": "Discover",
+    "company": "Company",
+    "about": "About",
+    "blog": "Blog",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "© 2026 YOURMAHABALESHWAR.COM · All rights reserved",
+    "ventureOf": "A venture of",
+    "poweredBy": "Powered by",
+    "techPartner": "Technology partner",
+    "ventureBlurb": "YOURMAHABALESHWAR.COM is proudly operated as a venture of SM Enterprise."
   },
   "vendor": {
     "registerTitle": "List your property / service",
@@ -158,6 +304,7 @@
     "listingsHint": "Properties and services you own",
     "createListing": "Create listing",
     "noListings": "You have no listings yet.",
+    "noListingsForFilter": "No listings match this filter.",
     "listingsLoadFailed": "Could not load listings",
     "listingsSlug": "Slug",
     "fromPrice": "From",

@@ -28,7 +28,10 @@
     "signIn": "साइन इन",
     "signOut": "साइन आउट",
     "favorites": "आवडते",
-    "notifications": "सूचना"
+    "notifications": "सूचना",
+    "comingSoon": "[लवकरच]",
+    "markAllRead": "सर्व वाचले म्हणून चिन्हांकित करा",
+    "noNotifications": "वाच न केलेल्या सूचना नाहीत"
   },
   "auth": {
     "signIn": "साइन इन",
@@ -81,7 +84,150 @@
   },
   "home": {
     "headline": "महाबळेश्वर शोधा",
-    "subhead": "हॉटेल्स, होमस्टे, टेंट्स, मार्गदर्शक, टॅक्सी आणि घोड्याची सैर — एकच व्यासपीठ."
+    "subhead": "हॉटेल्स, होमस्टे, टेंट्स, मार्गदर्शक, टॅक्सी आणि घोड्याची सैर — एकच व्यासपीठ.",
+    "badgeTrusted": "भारताचे विश्वसनीय हिल स्टेशन मार्केटप्लेस",
+    "badgeLoved": "५०,०००+ प्रवाशांना आवडते",
+    "statProperties": "मालमत्ता",
+    "statReviews": "पाहुण्यांची पुनरावलोकने",
+    "statRating": "सरासरी रेटिंग",
+    "popular": "लोकप्रिय:",
+    "quickHotels": "हॉटेल्स",
+    "quickResorts": "रिसॉर्ट्स",
+    "quickGlamping": "ग्लॅम्पिंग",
+    "quickFreeCancellation": "मोफत रद्दीकरण",
+    "categories": {
+      "hotels": "हॉटेल्स",
+      "hotelsCount": "४५०+ राहण्याच्या जागा",
+      "resorts": "रिसॉर्ट्स",
+      "resortsCount": "८०+ रिसॉर्ट्स",
+      "homestays": "होमस्टे",
+      "homestaysCount": "स्थानिक घरे",
+      "tents": "टेंट्स आणि कॅम्प",
+      "tentsCount": "५०+ ग्लॅम्पिंग",
+      "guides": "स्थानिक मार्गदर्शक",
+      "guidesCount": "१००+ तज्ञ",
+      "taxi": "टॅक्सी आणि कॅब",
+      "taxiCount": "२००+ वाहने",
+      "horses": "घोड्याची सैर",
+      "horsesCount": "सुंदर मार्ग"
+    },
+    "deals": {
+      "eyebrow": "मर्यादित काळ",
+      "title": "ट्रेंडिंग सवलती आणि ऑफर्स",
+      "subtitle": "पुढच्या हिल स्टेशन सुट्टीवर अधिक बचत करा",
+      "seeAll": "सर्व सवलती पहा",
+      "bookNow": "आता बुक करा",
+      "monsoon": {
+        "title": "मान्सून एस्केप",
+        "discount": "३०% सवलत",
+        "desc": "३० जूनपूर्वी बुक करा"
+      },
+      "weekend": {
+        "title": "वीकेंड गेटवे",
+        "discount": "मोफत नाश्ता",
+        "desc": "२+ रात्री राहणे"
+      },
+      "earlyBird": {
+        "title": "अर्ली बर्ड",
+        "discount": "१५% सवलत",
+        "desc": "१४ दिवस आधी बुक करा"
+      }
+    },
+    "propertyTabs": {
+      "eyebrow": "पाहुण्यांचे आवडते",
+      "title": "महाबळेश्वरात लोकप्रिय",
+      "subtitle": "उच्च रेटिंग आणि चांगली किंमत",
+      "topHotels": "शीर्ष हॉटेल्स",
+      "luxuryResorts": "लक्झरी रिसॉर्ट्स",
+      "uniqueStays": "विशेष राहण्याच्या जागा"
+    },
+    "promo": {
+      "eyebrow": "सदस्य फायदे",
+      "title": "विशेष सवलती आणि मोफत अपग्रेडसाठी साइन इन करा",
+      "subtitle": "मोफत खाते तयार करा — मालमत्ता जतन करा, जलद चेकआउट आणि हंगामी सवलती.",
+      "cta": "मोफत सामील व्हा"
+    },
+    "destinations": {
+      "eyebrow": "अन्वेषण",
+      "title": "महाबळेश्वरजवळील ठिकाणे",
+      "subtitle": "धुके असलेल्या खोऱ्यांपासून वारसा किल्ल्यांपर्यंत",
+      "mahabaleshwarCount": "४५०+ मालमत्ता",
+      "panchganiCount": "१२०+ मालमत्ता",
+      "tapolaCount": "४५+ कॅम्प",
+      "pratapgadCount": "८०+ मार्गदर्शक"
+    },
+    "services": {
+      "eyebrow": "राहण्यापलीकडे",
+      "title": "मार्गदर्शक आणि वाहतूक",
+      "subtitle": "विश्वसनीय स्थानिकांसोबत महाबळेश्वर शोधा",
+      "localGuide": "स्थानिक मार्गदर्शक",
+      "taxiCab": "टॅक्सी आणि कॅब",
+      "hourlyTrips": "तासिक आणि बिंदू-ते-बिंदू प्रवास",
+      "from": "पासून",
+      "per6hrs": "/ ६ तास",
+      "perTrip": "/ प्रवास",
+      "browseGuides": "सर्व मार्गदर्शक पहा",
+      "bookCab": "कॅब बुक करा"
+    },
+    "whyBook": {
+      "eyebrow": "आम्ही का",
+      "title": "विश्वासाने बुक करा",
+      "subtitle": "जागतिक बुकिंग प्लॅटफॉर्मवर अपेक्षित विश्वास — महाबळेश्वरसाठी तयार"
+    }
+  },
+  "search": {
+    "destination": "गंतव्य",
+    "checkIn": "चेक-इन",
+    "checkOut": "चेक-आउट",
+    "guestsRooms": "पाहुणे आणि खोल्या",
+    "placeholderDestination": "शहर, मालमत्ता किंवा ठिकाण",
+    "placeholderWhere": "कुठे जात आहात?",
+    "guests2_1": "२ प्रौढ · १ खोली",
+    "guests2_2": "२ प्रौढ · २ खोल्या",
+    "guests4_1": "४ प्रौढ · १ खोली",
+    "guests4_2": "४ प्रौढ · २ खोल्या"
+  },
+  "property": {
+    "featured": "वैशिष्ट्यीकृत",
+    "freeCancellation": "मोफत रद्दीकरण",
+    "noPrepayment": "आगाऊ पेमेंट नको",
+    "perNight": "/ रात्र",
+    "inclTaxes": "करांसह",
+    "seeAvailability": "उपलब्धता पहा",
+    "reviews": "पुनरावलोकने",
+    "signInFavorites": "आवडते जतन करण्यासाठी साइन इन करा",
+    "removedFavorites": "आवडत्या मधून काढले",
+    "savedFavorites": "आवडत्या मध्ये जतन केले",
+    "favoritesError": "आवडते अपडेट करता आले नाही",
+    "saveAria": "जतन करा"
+  },
+  "trust": {
+    "secureTitle": "सुरक्षित बुकिंग",
+    "secureDesc": "२५६-बिट SSL एन्क्रिप्शन",
+    "verifiedTitle": "पडताळलेली मालमत्ता",
+    "verifiedDesc": "प्रत्येक यादी तपासलेली",
+    "supportTitle": "२४/७ सहाय्य",
+    "supportDesc": "महाबळेश्वरातील स्थानिक संघ",
+    "paymentTitle": "लवचिक पेमेंट",
+    "paymentDesc": "ऑनलाइन किंवा मालमत्तेवर पेमेंट"
+  },
+  "footer": {
+    "tagline": "शोधा · बुक करा · अनुभवा महाबळेश्वर — हॉटेल्स, रिसॉर्ट्स, टेंट्स, मार्गदर्शक आणि टॅक्सी.",
+    "support": "सहाय्य",
+    "helpCentre": "मदत केंद्र",
+    "contactUs": "संपर्क करा",
+    "cancellation": "रद्दीकरण",
+    "discover": "शोधा",
+    "company": "कंपनी",
+    "about": "आमच्याबद्दल",
+    "blog": "ब्लॉग",
+    "privacy": "गोपनीयता",
+    "terms": "अटी",
+    "copyright": "© २०२६ YOURMAHABALESHWAR.COM · सर्व हक्क राखीव",
+    "ventureOf": "चा उपक्रम",
+    "poweredBy": "द्वारे समर्थित",
+    "techPartner": "तंत्रज्ञान भागीदार",
+    "ventureBlurb": "YOURMAHABALESHWAR.COM हे SM Enterprise चा अभिमानाने चालवलेला उपक्रम आहे."
   },
   "vendor": {
     "registerTitle": "तुमची मालमत्ता / सेवा यादीत टाका",
@@ -158,6 +304,7 @@
     "listingsHint": "तुमच्या मालकीच्या मालमत्ता आणि सेवा",
     "createListing": "यादी तयार करा",
     "noListings": "अद्याप कोणतीही यादी नाही.",
+    "noListingsForFilter": "या फिल्टरशी जुळणारी यादी नाही.",
     "listingsLoadFailed": "यादी लोड करता आले नाही",
     "listingsSlug": "स्लग",
     "fromPrice": "पासून",
