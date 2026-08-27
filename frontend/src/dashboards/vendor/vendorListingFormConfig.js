@@ -145,12 +145,36 @@ export const defaultsFor = (vertical) => {
   if (type === 'HOMESTAY') {
     return {
       name: '',
-      description: '',
-      location: 'Mahabaleshwar',
-      contactPhone: '',
-      isActive: true,
-      imageUrl: '',
+      ownerName: '',
+      addressLine1: '',
+      city: 'Mahabaleshwar',
+      pincode: '',
+      receptionPhone: '',
+      whatsapp: '',
+      propertyEmail: '',
+      website: '',
+      totalRooms: '',
+      nonAc: '',
+      deluxeAc: '',
+      suite: '',
+      familyDorm: '',
+      driverAccommodation: false,
       amenities: [],
+      priceRangeFrom: '',
+      priceRangeTo: '',
+      checkInTime: '14:00',
+      checkOutTime: '11:00',
+      cancellationPolicyText: '',
+      description: '',
+      imageUrl: '',
+      bankName: '',
+      bankBranch: '',
+      accountHolder: '',
+      accountNumber: '',
+      ifsc: '',
+      acceptTerms: false,
+      acceptDeclaration: false,
+      isActive: true,
       rooms: [defaultRoom()],
     };
   }
@@ -276,16 +300,42 @@ export const toFormValues = (vertical, doc) => {
     };
   }
   if (type === 'HOMESTAY') {
+    const inv = doc.roomInventory || {};
+    const bank = doc.bankDetails || emptyBank();
     return {
       ...base,
       name: doc.name || '',
+      ownerName: doc.ownerName || '',
+      addressLine1: doc.address?.line1 || '',
+      city: doc.address?.city || doc.location || 'Mahabaleshwar',
+      pincode: doc.address?.pincode || '',
+      receptionPhone: doc.receptionPhone || doc.contactPhone || '',
+      whatsapp: doc.whatsapp || '',
+      propertyEmail: doc.propertyEmail || doc.contactEmail || '',
+      website: doc.website || '',
+      totalRooms: inv.totalRooms ?? '',
+      nonAc: inv.nonAc ?? '',
+      deluxeAc: inv.deluxeAc ?? '',
+      suite: inv.suite ?? '',
+      familyDorm: inv.familyDorm ?? '',
+      driverAccommodation: doc.driverAccommodation === true,
+      amenities: Array.isArray(doc.amenities) ? doc.amenities : [],
+      priceRangeFrom: doc.priceRangeFrom ?? doc.priceFrom ?? '',
+      priceRangeTo: doc.priceRangeTo ?? '',
+      checkInTime: doc.checkInTime || '14:00',
+      checkOutTime: doc.checkOutTime || '11:00',
+      cancellationPolicyText: doc.cancellationPolicyText || '',
       description: doc.description || '',
-      location: doc.location || doc.address?.city || 'Mahabaleshwar',
-      contactPhone: doc.contactPhone || '',
+      imageUrl: doc.images?.[0] || '',
+      bankName: bank.bankName || '',
+      bankBranch: bank.branch || '',
+      accountHolder: bank.accountHolder || '',
+      accountNumber: bank.accountNumber || '',
+      ifsc: bank.ifsc || '',
+      acceptTerms: Boolean(doc.acceptedTermsAt),
+      acceptDeclaration: Boolean(doc.declarationAcceptedAt),
       isActive: doc.isActive !== false,
       approvalStatus: doc.approvalStatus,
-      imageUrl: doc.images?.[0] || '',
-      amenities: Array.isArray(doc.amenities) ? doc.amenities : [],
       rooms: doc.rooms?.length
         ? doc.rooms.map((room) => ({
             name: room.name || '',
@@ -294,7 +344,15 @@ export const toFormValues = (vertical, doc) => {
             capacity: room.capacity ?? 2,
             totalRooms: room.totalRooms ?? 1,
           }))
-        : [defaultRoom()],
+        : roomsFromHotelInventory({
+            priceRangeFrom: doc.priceRangeFrom ?? doc.priceFrom,
+            priceRangeTo: doc.priceRangeTo,
+            totalRooms: inv.totalRooms,
+            nonAc: inv.nonAc,
+            deluxeAc: inv.deluxeAc,
+            suite: inv.suite,
+            familyDorm: inv.familyDorm,
+          }),
     };
   }
   if (type === 'TENT') {
@@ -422,6 +480,56 @@ export const toPayload = (vertical, form) => {
     };
   }
 
+  if (type === 'HOMESTAY') {
+    const rooms = roomsFromHotelInventory(form);
+    const now = new Date().toISOString();
+    const priceFrom = num(form.priceRangeFrom) || (rooms.length ? Math.min(...rooms.map((r) => r.basePrice)) : undefined);
+    return {
+      name: form.name.trim(),
+      ownerName: form.ownerName?.trim(),
+      description: form.description,
+      location: form.city || 'Mahabaleshwar',
+      address: {
+        line1: form.addressLine1,
+        city: form.city || 'Mahabaleshwar',
+        state: 'Maharashtra',
+        pincode: form.pincode,
+      },
+      receptionPhone: form.receptionPhone,
+      whatsapp: form.whatsapp,
+      propertyEmail: form.propertyEmail,
+      website: form.website,
+      contactPhone: form.receptionPhone,
+      contactEmail: form.propertyEmail,
+      roomInventory: {
+        totalRooms: num(form.totalRooms),
+        nonAc: num(form.nonAc),
+        deluxeAc: num(form.deluxeAc),
+        suite: num(form.suite),
+        familyDorm: num(form.familyDorm),
+      },
+      driverAccommodation: form.driverAccommodation === true,
+      amenities: form.amenities || [],
+      priceRangeFrom: num(form.priceRangeFrom) || undefined,
+      priceRangeTo: num(form.priceRangeTo) || undefined,
+      priceFrom,
+      checkInTime: form.checkInTime,
+      checkOutTime: form.checkOutTime,
+      cancellationPolicyText: form.cancellationPolicyText,
+      bankDetails: {
+        bankName: form.bankName,
+        branch: form.bankBranch,
+        accountHolder: form.accountHolder,
+        accountNumber: form.accountNumber,
+        ifsc: form.ifsc,
+      },
+      images,
+      rooms,
+      ...(form.acceptTerms ? { acceptedTermsAt: now } : {}),
+      ...(form.acceptDeclaration ? { declarationAcceptedAt: now } : {}),
+    };
+  }
+
   const rooms = (form.rooms || []).map((room) => ({
     name: String(room.name || '').trim(),
     type: room.type || 'STANDARD',
@@ -430,20 +538,6 @@ export const toPayload = (vertical, form) => {
     totalRooms: num(room.totalRooms, 1),
   }));
 
-  if (type === 'HOMESTAY') {
-    const priceFrom = rooms.length ? Math.min(...rooms.map((r) => r.basePrice)) : num(form.priceFrom);
-    return {
-      name: form.name.trim(),
-      description: form.description,
-      location: form.location || 'Mahabaleshwar',
-      contactPhone: form.contactPhone,
-      amenities: form.amenities || [],
-      isActive: form.isActive !== false,
-      images,
-      rooms,
-      priceFrom,
-    };
-  }
   if (type === 'TENT') {
     return {
       name: form.name.trim(),
@@ -533,10 +627,21 @@ export const validateListingForm = (vertical, form, { isCreate = true } = {}) =>
   }
 
   if (type === 'HOMESTAY') {
-    const rooms = form.rooms || [];
-    if (!rooms.length || rooms.some((r) => !String(r.name || '').trim() || num(r.basePrice) <= 0)) {
-      return 'Each room needs a name and a price greater than 0';
+    if (!String(form.ownerName || '').trim()) return 'Owner/Partner name is required';
+    if (!String(form.addressLine1 || '').trim()) return 'Full address is required';
+    if (!String(form.receptionPhone || '').trim()) return 'Reception contact number is required';
+    if (num(form.priceRangeFrom) <= 0) return 'Base price (from) must be greater than 0';
+    const roomCount =
+      num(form.totalRooms) + num(form.nonAc) + num(form.deluxeAc) + num(form.suite) + num(form.familyDorm);
+    if (roomCount <= 0) return 'Enter at least one room count in inventory';
+    if (!String(form.bankName || '').trim() || !String(form.accountNumber || '').trim() || !String(form.ifsc || '').trim()) {
+      return 'Bank name, account number, and IFSC are required';
     }
+    if (isCreate) {
+      if (!form.acceptTerms) return 'Please accept the Terms and Conditions';
+      if (!form.acceptDeclaration) return 'Please accept the declaration';
+    }
+    return null;
   }
   if (type === 'TENT' && num(form.pricePerNight) <= 0) return 'Nightly price must be greater than 0';
   if (type === 'GUIDE' && (num(form.package6hr) <= 0 || num(form.package12hr) <= 0)) {

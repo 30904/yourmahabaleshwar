@@ -55,6 +55,15 @@ export const HOTEL_BOOKING_TERMS_AND_CONDITIONS = {
   ],
 };
 
+/** Short guest-facing bullets shown on hotel/resort customer booking form */
+export const HOTEL_GUEST_BOOKING_TERMS = [
+  'Bookings are subject to actual hotel/resort availability.',
+  'Advance payment via our official gateway is required to confirm a booking.',
+  'A valid government-issued photo ID is mandatory for all guests at check-in.',
+  'Guests must follow hotel rules and are liable for any damage to property.',
+  'Cancellation charges apply as per hotel policy; eligible refunds take 5–7 business days.',
+];
+
 export const HOTEL_PARTNER_AGREEMENT = {
   title: 'Hotel Partner Registration Agreement',
   sections: [

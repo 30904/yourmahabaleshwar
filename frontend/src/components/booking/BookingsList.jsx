@@ -116,6 +116,30 @@ export default function BookingsList({ mode = 'customer', allowStatusUpdate = fa
               {mode !== 'customer' && b.customer?.name && (
                 <p className="text-sm text-slate-600">{b.customer.name} · {b.customer.email}</p>
               )}
+              {b.guestRegistration?.leadGuest?.fullName && (
+                <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                  <p className="font-semibold text-slate-800">Guest registration</p>
+                  <p className="mt-1">
+                    {b.guestRegistration.leadGuest.fullName}
+                    {b.guestRegistration.leadGuest.mobile ? ` · ${b.guestRegistration.leadGuest.mobile}` : ''}
+                    {b.guests?.adults != null ? ` · ${b.guests.adults} adults` : ''}
+                    {b.guests?.children ? ` · ${b.guests.children} children` : ''}
+                  </p>
+                  {b.guestRegistration.idProof?.type && (
+                    <p className="mt-0.5">
+                      ID: {b.guestRegistration.idProof.type}
+                      {b.guestRegistration.idProof.number ? ` · ${b.guestRegistration.idProof.number}` : ''}
+                      {b.guestRegistration.idProof.nationality ? ` · ${b.guestRegistration.idProof.nationality}` : ''}
+                    </p>
+                  )}
+                  {b.guestRegistration.coTravellers?.length > 0 && (
+                    <p className="mt-0.5">
+                      Co-travellers:{' '}
+                      {b.guestRegistration.coTravellers.map((c) => c.fullName).filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
               {b.refundStatus && b.refundStatus !== 'NONE' && (
                 <p className="mt-1 text-xs text-slate-500">{t('booking.refundStatus')}: {b.refundStatus} {b.refundAmount ? `· ${formatCurrency(b.refundAmount)}` : ''}</p>
               )}

@@ -30,6 +30,7 @@ import {
   validateListingForm,
 } from './vendorListingFormConfig';
 import HotelResortRegistrationFields from './HotelResortRegistrationFields';
+import HomestayRegistrationFields from './HomestayRegistrationFields';
 import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
 
 const LISTINGS_PATH = '/dashboard/vendor/listings';
@@ -148,8 +149,10 @@ export default function VendorListingForm() {
   if (loading) return <Skeleton className="h-48" />;
 
   const isHotelResort = vertical === 'HOTEL' || vertical === 'RESORT';
-  const showAmenities = ['HOMESTAY', 'TENT'].includes(vertical);
-  const showRooms = vertical === 'HOMESTAY';
+  const isHomestay = vertical === 'HOMESTAY';
+  const usePartnerForm = isHotelResort || isHomestay;
+  const showAmenities = ['TENT'].includes(vertical);
+  const showRooms = false;
   const isOnboarding = searchParams.get('onboarding') === '1';
 
   return (
@@ -161,9 +164,11 @@ export default function VendorListingForm() {
       <p className="mt-1 text-sm text-slate-500">
         {isHotelResort
           ? 'Complete the hotel/resort registration form. Your listing stays pending until admin approval.'
-          : t('vendor.listingFormHint')}
+          : isHomestay
+            ? 'Complete the homestay registration form. Your listing stays pending until admin approval.'
+            : t('vendor.listingFormHint')}
       </p>
-      {isOnboarding && isHotelResort && (
+      {isOnboarding && usePartnerForm && (
         <p className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-700">
           Welcome. Finish this registration form to submit your property. You can upload KYC documents anytime from the KYC page.
         </p>
@@ -183,6 +188,13 @@ export default function VendorListingForm() {
 
         {isHotelResort ? (
           <HotelResortRegistrationFields
+            form={form}
+            setField={setField}
+            toggleAmenity={toggleAmenity}
+            isEdit={isEdit}
+          />
+        ) : isHomestay ? (
+          <HomestayRegistrationFields
             form={form}
             setField={setField}
             toggleAmenity={toggleAmenity}

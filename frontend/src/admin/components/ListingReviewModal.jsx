@@ -173,12 +173,31 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
         await updateHomestay(listing._id, {
           name: form.name,
           description: form.description,
-          location: form.location,
+          location: form.location || form.city || 'Mahabaleshwar',
+          address: {
+            line1: form.addressLine1,
+            city: form.city || form.location || 'Mahabaleshwar',
+            state: 'Maharashtra',
+            pincode: form.pincode,
+          },
           contactPhone: form.contactPhone,
-          priceFrom: Number(form.pricePerNight) || 0,
+          receptionPhone: form.contactPhone || listing.receptionPhone,
+          checkInTime: form.checkInTime,
+          checkOutTime: form.checkOutTime,
+          priceFrom: Number(form.pricePerNight) || listing.priceFrom || 0,
           amenities,
           images,
           rooms: roomPayload,
+          ownerName: listing.ownerName,
+          whatsapp: listing.whatsapp,
+          propertyEmail: listing.propertyEmail,
+          website: listing.website,
+          roomInventory: listing.roomInventory,
+          driverAccommodation: listing.driverAccommodation,
+          priceRangeFrom: listing.priceRangeFrom,
+          priceRangeTo: listing.priceRangeTo,
+          cancellationPolicyText: listing.cancellationPolicyText,
+          bankDetails: listing.bankDetails,
         });
       } else if (type === 'HORSE') {
         await updateHorse(listing._id, {
@@ -396,9 +415,9 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
                 />
                 <Info label="Owner / Partner" value={listing.ownerName} />
                 <Info label="Address / location" value={addressText} />
-                <Info label="Reception phone" value={listing.receptionPhone} />
+                <Info label="Reception phone" value={listing.receptionPhone || listing.contactPhone} />
                 <Info label="WhatsApp" value={listing.whatsapp} />
-                <Info label="Property email" value={listing.propertyEmail} />
+                <Info label="Property email" value={listing.propertyEmail || listing.contactEmail} />
                 <Info label="Website" value={listing.website} />
                 <Info label="GST" value={listing.gstNumber} />
                 <Info label="Check-in / Check-out" value={listing.checkInTime && listing.checkOutTime ? `${listing.checkInTime} / ${listing.checkOutTime}` : ''} />

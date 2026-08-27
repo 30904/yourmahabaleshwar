@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Share2, Heart, Wifi, Car, Coffee, Waves } from 'lucide-react';
-import ImageGallery from '../../components/property/ImageGallery';
+import { MapPin, Images, Wifi, Car, Coffee, Waves } from 'lucide-react';
 import ReviewScore from '../../components/property/ReviewScore';
-import StickyReservation from '../../components/property/StickyReservation';
 import RoomCard from '../../components/property/RoomCard';
-import HotelBookingForm from '../../components/booking/HotelBookingForm';
+import HotelGuestBookingForm from '../../components/booking/HotelGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { fetchHotelBySlug } from '../../services/listingsApi';
@@ -13,7 +11,9 @@ import { dummyHotels } from '../../data/dummyListings';
 import { normalizeHotel } from '../../utils/listingHelpers';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
+import { formatCurrency } from '../../utils/format';
 
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200';
 const amenityIcons = { WiFi: Wifi, 'Free WiFi': Wifi, Parking: Car, 'Free parking': Car, Breakfast: Coffee, Pool: Waves };
 
 export default function HotelDetailPage() {
@@ -24,19 +24,28 @@ export default function HotelDetailPage() {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchHotelBySlug(slug)
       .then(({ hotel, rooms: r }) => {
         setProperty(hotel);
         setRooms(r);
+        if (r?.[0]) setSelectedRoom(r[0]);
       })
       .catch(() => {
         const h = dummyHotels.find((x) => x.slug === slug) || dummyHotels[0];
         setProperty(normalizeHotel(h));
         setRooms(h.rooms || []);
+        if (h.rooms?.[0]) setSelectedRoom(h.rooms[0]);
       })
       .finally(() => setLoading(false));
+  }, [slug]);
+
+  useEffect(() => {
+    setShowBookingForm(false);
+    setPhotoIndex(0);
   }, [slug]);
 
   if (loading) return <div className="page-container py-8"><Skeleton className="h-[400px]" /></div>;
@@ -49,92 +58,223 @@ export default function HotelDetailPage() {
     { id: 'policies', label: 'Policies' },
   ];
 
+  const roomOptions = rooms.length ? rooms : property.rooms || [];
+  const propertyLabel = property.type === 'RESORT' ? 'Resort' : 'Hotel';
+  const fromPrice = selectedRoom?.basePrice ?? property.priceFrom ?? property.priceRangeFrom;
+  const images = property.images?.length ? property.images : [FALLBACK_IMG];
+  const locationLabel =
+    [property.address?.line1, property.address?.city, property.address?.state].filter(Boolean).join(', ') ||
+    'Mahabaleshwar';
+
+  const openBookingForm = () => {
+    if (!isAuthenticated) return;
+    setShowBookingForm(true);
+    requestAnimationFrame(() => {
+      document.getElementById('hotel-guest-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   return (
-    <div className="bg-background pb-16">
+    <div className="page-container py-8">
       <Seo
         title={property.name}
         description={truncateMeta(property.description || `${property.name} — hotel in Mahabaleshwar. Book on YOURMAHABALESHWAR.COM.`)}
         image={firstImageUrl(property.images) || '/logo.png'}
         type="article"
       />
-      <div className="page-container py-4">
-        <nav className="text-sm text-primary">
-          <Link to="/">Home</Link> &gt; <Link to="/hotels">Hotels</Link> &gt;{' '}
-          <span className="text-slate-600">{property.name}</span>
-        </nav>
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{property.name}</h1>
-            <p className="mt-1 flex items-center gap-1 text-primary">
-              <MapPin size={16} />
-              {property.address?.line1 || property.address?.city} ·{' '}
-              <a href="#map" className="underline">Show on map</a>
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <ReviewScore score={property.score || property.rating} label={property.scoreLabel} reviewCount={property.reviewCount} size="lg" />
-            <button type="button" className="btn-ghost border border-border"><Share2 size={18} /></button>
-            <button type="button" className="btn-ghost border border-border"><Heart size={18} /></button>
-          </div>
-        </div>
-        <div className="mt-6"><ImageGallery images={property.images} name={property.name} /></div>
-        
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
-          <div>
-            <div className="flex gap-6 border-b border-border">
-              {tabs.map((t) => (
-                <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`pb-3 text-sm font-medium ${tab === t.id ? 'tab-active' : 'text-slate-500'}`}>{t.label}</button>
-              ))}
-            </div>
-            {tab === 'overview' && (
-              <div className="mt-6 space-y-6">
-                <p className="leading-relaxed text-slate-700">{property.description}</p>
-                <div>
-                  <h3 className="font-bold">Most popular facilities</h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {property.amenities?.map((a) => {
-                      const Icon = amenityIcons[a] || Wifi;
-                      return (
-                        <span key={a} className="flex items-center gap-2 text-sm">
-                          <Icon size={18} className="text-primary" />
-                          {a}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+
+      <nav className="mb-4 text-sm text-primary">
+        <Link to="/">Home</Link> &gt;{' '}
+        <Link to={property.type === 'RESORT' ? '/resorts' : '/hotels'}>
+          {property.type === 'RESORT' ? 'Resorts' : 'Hotels'}
+        </Link>{' '}
+        &gt; <span className="text-slate-600">{property.name}</span>
+      </nav>
+
+      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid lg:grid-cols-[340px_minmax(0,1fr)_240px]">
+          <div className="relative min-h-[220px] bg-slate-100 lg:min-h-[280px]">
+            <img
+              src={images[photoIndex] || images[0]}
+              alt={property.name}
+              className="h-full w-full object-cover lg:absolute lg:inset-0"
+            />
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2 py-1 text-sm font-bold shadow"
+                  onClick={() => setPhotoIndex((i) => (i - 1 + images.length) % images.length)}
+                  aria-label="Previous photo"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2 py-1 text-sm font-bold shadow"
+                  onClick={() => setPhotoIndex((i) => (i + 1) % images.length)}
+                  aria-label="Next photo"
+                >
+                  ›
+                </button>
+                <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-white">
+                  <Images size={12} />
+                  {photoIndex + 1}/{images.length}
+                </span>
+              </>
             )}
-            {tab === 'rooms' && (
-              <div className="mt-6 space-y-4">
-                <h3 className="font-bold">Select your room</h3>
-                {(rooms.length ? rooms : property.rooms || []).map((room) => (
-                  <RoomCard key={room._id} room={room} selected={selectedRoom?._id === room._id} onSelect={setSelectedRoom} />
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-slate-100 p-5 lg:border-l lg:border-t-0 lg:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="text-2xl font-bold text-primary sm:text-3xl">{property.name}</h1>
+              <ReviewScore
+                score={property.score || property.rating}
+                label={property.scoreLabel}
+                reviewCount={property.reviewCount}
+                size="sm"
+              />
+            </div>
+            <p className="flex items-start gap-1.5 text-sm text-slate-600">
+              <MapPin size={16} className="mt-0.5 shrink-0 text-primary" />
+              {locationLabel}
+            </p>
+            {property.amenities?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {property.amenities.slice(0, 6).map((a) => (
+                  <span key={a} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-primary">
+                    {a}
+                  </span>
                 ))}
               </div>
             )}
-            {tab === 'reviews' && (
-              <div className="mt-6 card p-6">
-                <ReviewScore score={property.score} label={property.scoreLabel} reviewCount={property.reviewCount} size="lg" />
-                <p className="mt-4 text-slate-600">Guests loved the location, cleanliness and friendly staff.</p>
-              </div>
+            {property.description && (
+              <p className="line-clamp-3 text-sm leading-relaxed text-slate-600">{property.description}</p>
             )}
-            {tab === 'policies' && (
-              <div className="mt-6 card space-y-2 p-6 text-sm text-slate-600">
-                <p><strong>Check-in:</strong> {property.checkInTime || '14:00'} · <strong>Check-out:</strong> {property.checkOutTime || '11:00'}</p>
-                <p>Free cancellation available on select room rates. GST 12% applicable.</p>
-              </div>
+            {roomOptions.length > 0 && (
+              <p className="mt-auto text-xs font-medium text-slate-500">
+                {roomOptions.length} room type{roomOptions.length > 1 ? 's' : ''} available
+                {selectedRoom ? ` · Selected: ${selectedRoom.name}` : ''}
+              </p>
             )}
           </div>
-          <div>
-            {selectedRoom && isAuthenticated ? (
-              <HotelBookingForm hotelId={property._id} room={selectedRoom} />
+
+          <div className="flex flex-col justify-between gap-4 border-t border-slate-100 bg-slate-50/80 p-5 lg:border-l lg:border-t-0 lg:p-6">
+            <div className="text-right lg:text-left">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">From</p>
+              <p className="mt-1 text-2xl font-bold text-primary">
+                {fromPrice != null ? formatCurrency(fromPrice) : '—'}
+              </p>
+              <p className="text-xs text-slate-500">per night · incl. taxes at checkout</p>
+              {selectedRoom && <p className="mt-2 text-sm font-medium text-slate-700">{selectedRoom.name}</p>}
+            </div>
+            {isAuthenticated ? (
+              <div>
+                <p className="mb-3 text-xs text-slate-500">
+                  {showBookingForm
+                    ? 'Complete the booking form below.'
+                    : `Open the ${propertyLabel.toLowerCase()} guest booking form to continue.`}
+                </p>
+                {!showBookingForm ? (
+                  <button
+                    type="button"
+                    className="btn-primary w-full"
+                    onClick={openBookingForm}
+                    disabled={!roomOptions.length}
+                  >
+                    Book Now
+                  </button>
+                ) : (
+                  <button type="button" className="btn-outline w-full" onClick={() => setShowBookingForm(false)}>
+                    Hide booking form
+                  </button>
+                )}
+              </div>
             ) : (
-              <StickyReservation property={property} selectedRoom={selectedRoom} pricePerNight={property.priceFrom} />
+              <div>
+                <p className="mb-3 text-xs text-slate-500">Sign in to book this {propertyLabel.toLowerCase()}.</p>
+                <Link to="/login" className="btn-primary block w-full text-center">
+                  Sign in to book
+                </Link>
+              </div>
             )}
           </div>
         </div>
+      </article>
+
+      <div className="mt-8">
+        <div className="flex gap-6 border-b border-border">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`pb-3 text-sm font-medium ${tab === t.id ? 'tab-active' : 'text-slate-500'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'overview' && (
+          <div className="mt-6 max-w-3xl space-y-6">
+            <p className="leading-relaxed text-slate-700">{property.description}</p>
+            {property.amenities?.length > 0 && (
+              <div>
+                <h3 className="font-bold">Most popular facilities</h3>
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {property.amenities.map((a) => {
+                    const Icon = amenityIcons[a] || Wifi;
+                    return (
+                      <span key={a} className="flex items-center gap-2 text-sm">
+                        <Icon size={18} className="text-primary" />
+                        {a}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'rooms' && (
+          <div className="mt-6 max-w-3xl space-y-4">
+            <h3 className="font-bold">Select your room</h3>
+            {roomOptions.map((room) => (
+              <RoomCard key={room._id} room={room} selected={selectedRoom?._id === room._id} onSelect={setSelectedRoom} />
+            ))}
+          </div>
+        )}
+
+        {tab === 'reviews' && (
+          <div className="mt-6 max-w-3xl card p-6">
+            <ReviewScore
+              score={property.score || property.rating}
+              label={property.scoreLabel}
+              reviewCount={property.reviewCount}
+              size="lg"
+            />
+            <p className="mt-4 text-slate-600">Guests loved the location, cleanliness and friendly staff.</p>
+          </div>
+        )}
+
+        {tab === 'policies' && (
+          <div className="mt-6 max-w-3xl card space-y-2 p-6 text-sm text-slate-600">
+            <p>
+              <strong>Check-in:</strong> {property.checkInTime || '14:00'} · <strong>Check-out:</strong>{' '}
+              {property.checkOutTime || '11:00'}
+            </p>
+            <p>Free cancellation available on select room rates. GST 12% applicable.</p>
+          </div>
+        )}
       </div>
+
+      {isAuthenticated && showBookingForm && (
+        <div id="hotel-guest-form" className="mt-10 scroll-mt-24 border-t border-slate-100 pt-10">
+          <HotelGuestBookingForm hotel={property} rooms={roomOptions} initialRoomId={selectedRoom?._id} />
+        </div>
+      )}
     </div>
   );
 }

@@ -45,7 +45,7 @@ export const mapDriverMine = (doc) =>
 export const mapHomestayMine = (doc) => {
   const roomPrices = (doc.rooms || []).map((r) => r.basePrice);
   return toMineListing(doc, {
-    from: num(doc.priceFrom) ?? minOf(roomPrices),
+    from: num(doc.priceFrom) ?? num(doc.priceRangeFrom) ?? minOf(roomPrices),
   });
 };
 

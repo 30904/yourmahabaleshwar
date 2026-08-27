@@ -18,11 +18,23 @@ import { success, error } from '../utils/apiResponse.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const createHotelBooking = async (req, res) => {
-  const { hotelId, roomId, checkIn, checkOut, guests } = req.body;
+  const { hotelId, roomId, checkIn, checkOut, guests, guestRegistration } = req.body;
   const room = await Room.findById(roomId);
   if (!room) return error(res, 'Room not found', 404);
   const hotel = await Hotel.findById(hotelId);
   if (!hotel) return error(res, 'Hotel not found', 404);
+
+  const lead = guestRegistration?.leadGuest || {};
+  if (guestRegistration) {
+    if (!String(lead.fullName || '').trim()) return error(res, 'Lead guest full name is required', 400);
+    if (!String(lead.mobile || '').trim()) return error(res, 'Lead guest mobile is required', 400);
+    if (!String(guestRegistration?.idProof?.type || '').trim() || !String(guestRegistration?.idProof?.number || '').trim()) {
+      return error(res, 'ID proof type and number are required', 400);
+    }
+    if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
+      return error(res, 'Please accept the Terms and Conditions', 400);
+    }
+  }
 
   if (rangeHasBlocked(room.blockedDates, checkIn, checkOut)) {
     return error(res, 'Selected dates are blocked', 400);
@@ -43,6 +55,55 @@ export const createHotelBooking = async (req, res) => {
   const pricing = await calculateTotalAsync(subtotal);
   const commissionRate =
     hotel.commissionRate != null ? hotel.commissionRate / 100 : await getDefaultCommissionRate();
+
+  const adults = Number(guests?.adults ?? guestRegistration?.adults ?? 1) || 1;
+  const children = Number(guests?.children ?? guestRegistration?.children ?? 0) || 0;
+
+  let registration;
+  if (guestRegistration) {
+    registration = {
+      formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
+      checkInTime: guestRegistration?.checkInTime || hotel.checkInTime || '14:00',
+      checkOutTime: guestRegistration?.checkOutTime || hotel.checkOutTime || '11:00',
+      leadGuest: {
+        fullName: String(lead.fullName || '').trim(),
+        age: lead.age != null ? Number(lead.age) : undefined,
+        gender: lead.gender || '',
+        mobile: String(lead.mobile || '').trim(),
+        email: String(lead.email || '').trim(),
+        address: String(lead.address || '').trim(),
+        cityState: String(lead.cityState || '').trim(),
+        pincode: String(lead.pincode || '').trim(),
+        comingFrom: String(lead.comingFrom || '').trim(),
+        goingTo: String(lead.goingTo || '').trim(),
+        purpose: lead.purpose || '',
+      },
+      idProof: {
+        type: guestRegistration?.idProof?.type || '',
+        number: String(guestRegistration?.idProof?.number || '').trim(),
+        nationality: guestRegistration?.idProof?.nationality || 'INDIAN',
+      },
+      coTravellers: Array.isArray(guestRegistration?.coTravellers)
+        ? guestRegistration.coTravellers
+            .filter((c) => String(c?.fullName || '').trim())
+            .map((c) => ({
+              fullName: String(c.fullName).trim(),
+              age: c.age != null ? Number(c.age) : undefined,
+              gender: c.gender || '',
+              relationship: String(c.relationship || '').trim(),
+            }))
+        : [],
+      roomLabel: guestRegistration?.roomLabel || room.name,
+      totalNights: nights,
+      tariff: nightPrice,
+      advanceAmount: guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
+      paymentMode: guestRegistration?.paymentMode || 'ONLINE',
+      acceptedTermsAt: guestRegistration?.acceptedTermsAt
+        ? new Date(guestRegistration.acceptedTermsAt)
+        : new Date(),
+    };
+  }
+
   const booking = await Booking.create({
     customer: req.user._id,
     vendor: hotel.vendor,
@@ -51,7 +112,8 @@ export const createHotelBooking = async (req, res) => {
     room: roomId,
     checkIn,
     checkOut,
-    guests,
+    guests: { adults, children },
+    ...(registration ? { guestRegistration: registration } : {}),
     ...pricing,
     commission: Math.round(pricing.subtotal * commissionRate),
   });
@@ -164,7 +226,7 @@ export const createTaxiBooking = async (req, res) => {
 };
 
 export const createHomestayBooking = async (req, res) => {
-  const { homestayId, roomId, checkIn, checkOut, guests } = req.body;
+  const { homestayId, roomId, checkIn, checkOut, guests, guestRegistration } = req.body;
   const homestay = await Homestay.findById(homestayId);
   if (!homestay) return error(res, 'Homestay not found', 404);
 
@@ -174,6 +236,16 @@ export const createHomestayBooking = async (req, res) => {
 
   const room = (homestay.rooms || []).find((r) => String(r._id) === String(roomId));
   if (!room) return error(res, 'Room not found', 404);
+
+  const lead = guestRegistration?.leadGuest || {};
+  if (!String(lead.fullName || '').trim()) return error(res, 'Lead guest full name is required', 400);
+  if (!String(lead.mobile || '').trim()) return error(res, 'Lead guest mobile is required', 400);
+  if (!String(guestRegistration?.idProof?.type || '').trim() || !String(guestRegistration?.idProof?.number || '').trim()) {
+    return error(res, 'ID proof type and number are required', 400);
+  }
+  if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
+    return error(res, 'Please accept the Terms and Conditions', 400);
+  }
 
   const conflict = await hasBookingConflict({
     type: BOOKING_TYPES.HOMESTAY,
@@ -189,6 +261,51 @@ export const createHomestayBooking = async (req, res) => {
   const nights = getNights(checkIn, checkOut);
   const subtotal = room.basePrice * nights;
   const pricing = await calculateTotalAsync(subtotal);
+  const adults = Number(guests?.adults ?? guestRegistration?.adults ?? 1) || 1;
+  const children = Number(guests?.children ?? guestRegistration?.children ?? 0) || 0;
+
+  const registration = {
+    formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
+    checkInTime: guestRegistration?.checkInTime || homestay.checkInTime || '14:00',
+    checkOutTime: guestRegistration?.checkOutTime || homestay.checkOutTime || '11:00',
+    leadGuest: {
+      fullName: String(lead.fullName || '').trim(),
+      age: lead.age != null ? Number(lead.age) : undefined,
+      gender: lead.gender || '',
+      mobile: String(lead.mobile || '').trim(),
+      email: String(lead.email || '').trim(),
+      address: String(lead.address || '').trim(),
+      cityState: String(lead.cityState || '').trim(),
+      pincode: String(lead.pincode || '').trim(),
+      comingFrom: String(lead.comingFrom || '').trim(),
+      goingTo: String(lead.goingTo || '').trim(),
+      purpose: lead.purpose || '',
+    },
+    idProof: {
+      type: guestRegistration?.idProof?.type || '',
+      number: String(guestRegistration?.idProof?.number || '').trim(),
+      nationality: guestRegistration?.idProof?.nationality || 'INDIAN',
+    },
+    coTravellers: Array.isArray(guestRegistration?.coTravellers)
+      ? guestRegistration.coTravellers
+          .filter((c) => String(c?.fullName || '').trim())
+          .map((c) => ({
+            fullName: String(c.fullName).trim(),
+            age: c.age != null ? Number(c.age) : undefined,
+            gender: c.gender || '',
+            relationship: String(c.relationship || '').trim(),
+          }))
+      : [],
+    roomLabel: guestRegistration?.roomLabel || room.name,
+    totalNights: nights,
+    tariff: room.basePrice,
+    advanceAmount: guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
+    paymentMode: guestRegistration?.paymentMode || 'ONLINE',
+    acceptedTermsAt: guestRegistration?.acceptedTermsAt
+      ? new Date(guestRegistration.acceptedTermsAt)
+      : new Date(),
+  };
+
   const booking = await Booking.create({
     customer: req.user._id,
     vendor: homestay.vendor,
@@ -197,7 +314,8 @@ export const createHomestayBooking = async (req, res) => {
     homestayRoomId: String(roomId),
     checkIn,
     checkOut,
-    guests,
+    guests: { adults, children },
+    guestRegistration: registration,
     ...pricing,
     commission: Math.round(pricing.subtotal * ((homestay.commissionRate || 10) / 100)),
   });
