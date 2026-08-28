@@ -1,6 +1,7 @@
 import Tent from '../models/Tent.js';
 import Guide from '../models/Guide.js';
 import Driver from '../models/Driver.js';
+import User from '../models/User.js';
 import Hotel from '../models/Hotel.js';
 import Homestay from '../models/Homestay.js';
 import Horse from '../models/Horse.js';
@@ -25,6 +26,7 @@ import {
 import { BOOKING_TYPES } from '../constants/booking.js';
 import { ROLES } from '../constants/roles.js';
 import { denyIfNotOwner } from '../utils/vendorListingAccess.js';
+import { publicStaySubscriptionFilter } from '../services/stayListingSubscriptionService.js';
 
 const paginate = async (Model, filter, req, enrichFn) => {
   const { search, page = 1, limit = 12, featured } = req.query;
@@ -57,6 +59,12 @@ export const getGuideBySlug = async (req, res) => {
 export const getDrivers = async (req, res) => {
   const filter = {};
   if (req.query.vehicleType) filter.vehicleType = req.query.vehicleType;
+  const vendorType = String(req.query.vendorType || '').toUpperCase();
+  if (vendorType === 'TAXI' || vendorType === 'DRIVER') {
+    const role = vendorType === 'TAXI' ? ROLES.TAXI_OPERATOR : ROLES.DRIVER;
+    const ownerIds = await User.find({ role }).distinct('_id');
+    filter.user = { $in: ownerIds };
+  }
   return success(res, await paginate(Driver, filter, req, enrichDriver));
 };
 export const getDriverBySlug = async (req, res) => {
@@ -66,9 +74,13 @@ export const getDriverBySlug = async (req, res) => {
 };
 
 export const getHomestays = async (req, res) =>
-  success(res, await paginate(Homestay, {}, req, enrichHomestay));
+  success(res, await paginate(Homestay, publicStaySubscriptionFilter(), req, enrichHomestay));
 export const getHomestayBySlug = async (req, res) => {
-  const item = await Homestay.findOne({ slug: req.params.slug, isActive: { $ne: false } });
+  const item = await Homestay.findOne({
+    slug: req.params.slug,
+    isActive: { $ne: false },
+    ...publicStaySubscriptionFilter(),
+  });
   if (!item) return error(res, 'Homestay not found', 404);
   return success(res, enrichHomestay(item));
 };
@@ -187,13 +199,13 @@ export const getMyAvailability = async (req, res) => {
           vertical: 'GUIDE',
           listingField: 'guide',
           bookingType: BOOKING_TYPES.GUIDE,
-          blockedDates: [],
+          blockedDates: doc.blockedDates || [],
           from,
           to,
         })
       );
     }
-  } else if (role === ROLES.DRIVER) {
+  } else if (role === ROLES.TAXI_OPERATOR || role === ROLES.DRIVER) {
     const docs = await Driver.find({ user: owner }).sort('-createdAt').limit(200);
     for (const doc of docs) {
       listings.push(
@@ -204,7 +216,7 @@ export const getMyAvailability = async (req, res) => {
           vertical: 'TAXI',
           listingField: 'driver',
           bookingType: BOOKING_TYPES.TAXI,
-          blockedDates: [],
+          blockedDates: doc.blockedDates || [],
           from,
           to,
         })
@@ -261,6 +273,10 @@ export const getListingAvailability = async (req, res) => {
     listingField = 'guide';
     bookingType = BOOKING_TYPES.GUIDE;
   } else if (type === 'driver') {
+    const driver = await Driver.findById(id);
+    if (!driver) return error(res, 'Not found', 404);
+    blockedDates = driver.blockedDates || [];
+    capacity = 1;
     listingField = 'driver';
     bookingType = BOOKING_TYPES.TAXI;
   } else {
@@ -295,6 +311,9 @@ export const updateBlockedDates = async (req, res) => {
   } else if (type === 'horse') {
     doc = await Horse.findById(id);
     ownerField = 'operator';
+  } else if (type === 'driver') {
+    doc = await Driver.findById(id);
+    ownerField = 'user';
   } else if (type === 'room') {
     doc = await Room.findById(id);
   } else {
@@ -330,11 +349,11 @@ export const globalSearch = async (req, res) => {
   const regex = { $regex: q || 'Mahabaleshwar', $options: 'i' };
   const cap = Number(limit);
   const [hotelsRaw, tentsRaw, guidesRaw, driversRaw, homestaysRaw, horsesRaw] = await Promise.all([
-    Hotel.find({ isActive: true, name: regex }).limit(cap),
+    Hotel.find({ isActive: true, name: regex, ...publicStaySubscriptionFilter() }).limit(cap),
     Tent.find({ isActive: { $ne: false }, name: regex }).limit(cap),
     Guide.find({ isActive: { $ne: false }, name: regex }).limit(cap),
     Driver.find({ isActive: { $ne: false }, name: regex }).limit(cap),
-    Homestay.find({ isActive: { $ne: false }, name: regex }).limit(cap),
+    Homestay.find({ isActive: { $ne: false }, name: regex, ...publicStaySubscriptionFilter() }).limit(cap),
     Horse.find({ isActive: { $ne: false }, name: regex }).limit(cap),
   ]);
   const hotels = await attachHotelPrices(hotelsRaw);

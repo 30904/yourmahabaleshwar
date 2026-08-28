@@ -16,8 +16,8 @@ export default function HomeServices() {
     fetchGuides({ limit: 1, featured: 'true' })
       .then((list) => setGuide(list[0] || dummyGuides[0]))
       .catch(() => setGuide(dummyGuides[0]));
-    fetchDrivers({ limit: 1 })
-      .then((list) => setDriver(list[1] || list[0] || dummyDrivers[1]))
+    fetchDrivers({ limit: 1, vendorType: 'TAXI' })
+      .then((list) => setDriver(list[0] || dummyDrivers[1]))
       .catch(() => setDriver(dummyDrivers[1]));
   }, []);
 

@@ -2,6 +2,7 @@ import { useRoutes, Navigate } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import PropertyListPage from '../pages/properties/PropertyListPage';
 import PropertyFormPage from '../pages/properties/PropertyFormPage';
+import AdminListingFormPage from '../pages/listings/AdminListingFormPage';
 import AmenitiesPage from '../pages/properties/AmenitiesPage';
 import RoomTypesPage from '../pages/properties/RoomTypesPage';
 import BookingListPage from '../pages/bookings/BookingListPage';
@@ -39,17 +40,23 @@ const adminRouteConfig = [
   { path: 'properties/homestays', element: <HomestayHorseListPage kind="homestays" /> },
   { path: 'properties/horses', element: <HomestayHorseListPage kind="horses" /> },
   { path: 'properties/tents', element: <PropertyListPage typeFilter="tents" /> },
-  { path: 'properties/new', element: <PropertyFormPage /> },
+  { path: 'properties/new', element: <Navigate to="/admin/listings/new?type=HOTEL" replace /> },
   { path: 'properties/edit/:id', element: <PropertyFormPage /> },
+  { path: 'listings/new', element: <AdminListingFormPage /> },
+  { path: 'listings/:vertical/:id/edit', element: <AdminListingFormPage /> },
   { path: 'properties/amenities', element: <AmenitiesPage /> },
   { path: 'properties/room-types', element: <RoomTypesPage /> },
   { path: 'guides', element: <GuideListPage /> },
   { path: 'guides/kyc-pending', element: <GuideListPage kycFilter="pending" /> },
   { path: 'guides/approved', element: <GuideListPage kycFilter="approved" /> },
   { path: 'guides/packages', element: <GuidePackagesPage /> },
-  { path: 'taxi', element: <DriverListPage /> },
-  { path: 'taxi/kyc-pending', element: <KycPage /> },
+  { path: 'taxi', element: <DriverListPage vendorType="TAXI" /> },
+  { path: 'taxi/kyc-pending', element: <DriverListPage vendorType="TAXI" kycFilter="pending" /> },
+  { path: 'taxi/approved', element: <DriverListPage vendorType="TAXI" kycFilter="approved" /> },
   { path: 'taxi/hourly', element: <TaxiHourlyPage /> },
+  { path: 'drivers', element: <DriverListPage vendorType="DRIVER" /> },
+  { path: 'drivers/kyc-pending', element: <DriverListPage vendorType="DRIVER" kycFilter="pending" /> },
+  { path: 'drivers/approved', element: <DriverListPage vendorType="DRIVER" kycFilter="approved" /> },
   { path: 'bookings', element: <BookingListPage /> },
   { path: 'bookings/hotels', element: <BookingListPage type="HOTEL" /> },
   { path: 'bookings/tents', element: <BookingListPage type="TENT" /> },

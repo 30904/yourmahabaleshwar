@@ -18,7 +18,7 @@ export const listingStatusI18nKey = (status) => {
   return 'vendor.listingPending';
 };
 
-const APPROVAL_GATED_VERTICALS = new Set(['HOTEL', 'RESORT', 'HOMESTAY', 'TENT', 'HORSE']);
+const APPROVAL_GATED_VERTICALS = new Set(['HOTEL', 'RESORT', 'HOMESTAY', 'TENT', 'HORSE', 'GUIDE', 'TAXI', 'DRIVER']);
 
 export const canVendorEditListing = (item) => {
   const vertical = String(item?.vertical || item?.listingType || '').toUpperCase();

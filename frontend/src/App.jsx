@@ -13,6 +13,7 @@ import HomestayDetailPage from './pages/public/HomestayDetailPage';
 import TentsPage from './pages/public/TentsPage';
 import GuidesPage from './pages/public/GuidesPage';
 import TaxiPage from './pages/public/TaxiPage';
+import DriversPage from './pages/public/DriversPage';
 import HorsesPage from './pages/public/HorsesPage';
 import HorseDetailPage from './pages/public/HorseDetailPage';
 // Shop pages — coming soon (keep files; routes disabled until launch)
@@ -50,6 +51,7 @@ import VendorKYC from './dashboards/vendor/VendorKYC';
 import VendorAvailability from './dashboards/vendor/VendorAvailability';
 import VendorReviews from './dashboards/vendor/VendorReviews';
 import VendorWallet from './dashboards/vendor/VendorWallet';
+import VendorMySubscription from './dashboards/vendor/VendorMySubscription';
 
 import AdminOverview from './dashboards/admin/AdminOverview';
 import AdminBookings from './dashboards/admin/AdminBookings';
@@ -72,6 +74,7 @@ const vendorRoles = [
   ROLES.HOMESTAY_VENDOR,
   ROLES.TENT_OPERATOR,
   ROLES.GUIDE,
+  ROLES.TAXI_OPERATOR,
   ROLES.DRIVER,
   ROLES.HORSE_OPERATOR,
   ROLES.PRODUCT_VENDOR,
@@ -102,6 +105,8 @@ export default function App() {
         <Route path="guides/:slug" element={<GuideDetailPage />} />
         <Route path="taxi" element={<TaxiPage />} />
         <Route path="taxi/:slug" element={<TaxiDetailPage />} />
+        <Route path="drivers" element={<DriversPage />} />
+        <Route path="drivers/:slug" element={<TaxiDetailPage />} />
         <Route path="horses" element={<HorsesPage />} />
         <Route path="horses/:slug" element={<HorseDetailPage />} />
         {/* Shop pages — coming soon
@@ -164,6 +169,7 @@ export default function App() {
         <Route path="availability" element={<VendorAvailability />} />
         <Route path="reviews" element={<VendorReviews />} />
         <Route path="wallet" element={<VendorWallet />} />
+        <Route path="subscription" element={<VendorMySubscription />} />
         <Route path="kyc" element={<VendorKYC />} />
       </Route>
 

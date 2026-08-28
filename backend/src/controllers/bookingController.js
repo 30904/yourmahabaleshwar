@@ -167,9 +167,16 @@ export const createTentBooking = async (req, res) => {
 };
 
 export const createGuideBooking = async (req, res) => {
-  const { guideId, guidePackage, bikeAddon, checkIn } = req.body;
+  const { guideId, guidePackage, bikeAddon, checkIn, guestRegistration } = req.body;
   const guide = await Guide.findById(guideId);
   if (!guide) return error(res, 'Guide not found', 404);
+
+  const lead = guestRegistration?.leadGuest || {};
+  if (!String(lead.fullName || '').trim()) return error(res, 'Customer full name is required', 400);
+  if (!String(lead.mobile || '').trim()) return error(res, 'Mobile number is required', 400);
+  if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
+    return error(res, 'Please accept the Terms and Conditions', 400);
+  }
 
   const conflict = await hasBookingConflict({
     type: BOOKING_TYPES.GUIDE,
@@ -180,26 +187,96 @@ export const createGuideBooking = async (req, res) => {
   });
   if (conflict) return error(res, 'Guide not available on selected date', 400);
 
-  let subtotal = guidePackage === '12HR' ? guide.package12hr : guide.package6hr;
-  if (bikeAddon) subtotal += guide.bikeAddonPrice;
+  const packageType = guidePackage === '12HR' ? '12HR' : '6HR';
+  const useBikeAddon = bikeAddon === true || bikeAddon === 'true' || guestRegistration?.tourDetails?.bikeAddon === true;
+  let subtotal = packageType === '12HR' ? guide.package12hr : guide.package6hr;
+  const bikeAddonPrice = useBikeAddon ? guide.bikeAddonPrice || 0 : 0;
+  if (useBikeAddon) subtotal += bikeAddonPrice;
   const pricing = await calculateTotalAsync(subtotal);
+
+  const registration = {
+    formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
+    leadGuest: {
+      fullName: String(lead.fullName || '').trim(),
+      age: lead.age != null ? Number(lead.age) : undefined,
+      gender: lead.gender || '',
+      mobile: String(lead.mobile || '').trim(),
+      email: String(lead.email || '').trim(),
+      address: String(lead.address || '').trim(),
+      cityState: String(lead.cityState || '').trim(),
+      pincode: String(lead.pincode || '').trim(),
+      comingFrom: String(lead.comingFrom || '').trim(),
+      goingTo: String(lead.goingTo || '').trim(),
+      purpose: lead.purpose || 'TOURISM',
+    },
+    idProof: guestRegistration?.idProof?.type
+      ? {
+          type: guestRegistration.idProof.type,
+          number: String(guestRegistration.idProof.number || '').trim(),
+          nationality: guestRegistration.idProof.nationality || 'INDIAN',
+        }
+      : undefined,
+    coTravellers: Array.isArray(guestRegistration?.coTravellers)
+      ? guestRegistration.coTravellers
+          .filter((c) => String(c?.fullName || '').trim())
+          .map((c) => ({
+            fullName: String(c.fullName).trim(),
+            age: c.age != null ? Number(c.age) : undefined,
+            gender: c.gender || '',
+            relationship: String(c.relationship || '').trim(),
+          }))
+      : [],
+    advanceAmount: guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
+    paymentMode: guestRegistration?.paymentMode || 'ONLINE',
+    acceptedTermsAt: guestRegistration?.acceptedTermsAt
+      ? new Date(guestRegistration.acceptedTermsAt)
+      : new Date(),
+    tourDetails: {
+      packageType,
+      bikeAddon: useBikeAddon,
+      startTime: guestRegistration?.tourDetails?.startTime || guestRegistration?.checkInTime || '',
+      touristCount: Number(guestRegistration?.tourDetails?.touristCount ?? guestRegistration?.adults ?? 1) || 1,
+      pickupLocation: String(guestRegistration?.tourDetails?.pickupLocation || '').trim(),
+      preferredSpots: Array.isArray(guestRegistration?.tourDetails?.preferredSpots)
+        ? guestRegistration.tourDetails.preferredSpots.filter(Boolean)
+        : [],
+      specialRequests: String(guestRegistration?.tourDetails?.specialRequests || '').trim(),
+      packagePrice: packageType === '12HR' ? guide.package12hr : guide.package6hr,
+      bikeAddonPrice: useBikeAddon ? bikeAddonPrice : 0,
+    },
+  };
+
+  const adults = Number(guestRegistration?.adults ?? registration.tourDetails.touristCount ?? 1) || 1;
+
   const booking = await Booking.create({
     customer: req.user._id,
     vendor: guide.user,
     type: BOOKING_TYPES.GUIDE,
     guide: guideId,
-    guidePackage,
-    bikeAddon,
+    guidePackage: packageType,
+    bikeAddon: useBikeAddon,
     checkIn,
+    guests: { adults, children: 0 },
+    guestRegistration: registration,
     ...pricing,
+    commission: Math.round(pricing.subtotal * ((guide.commissionRate || 12) / 100)),
   });
   return success(res, booking, 'Guide booking created', 201);
 };
 
 export const createTaxiBooking = async (req, res) => {
-  const { driverId, taxiType, hours, checkIn } = req.body;
+  const { driverId, taxiType, hours, checkIn, guestRegistration } = req.body;
   const driver = await Driver.findById(driverId);
   if (!driver) return error(res, 'Driver not found', 404);
+
+  const lead = guestRegistration?.leadGuest || {};
+  if (guestRegistration) {
+    if (!String(lead.fullName || '').trim()) return error(res, 'Lead guest full name is required', 400);
+    if (!String(lead.mobile || '').trim()) return error(res, 'Lead guest mobile is required', 400);
+    if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
+      return error(res, 'Please accept the Terms and Conditions', 400);
+    }
+  }
 
   const conflict = await hasBookingConflict({
     type: BOOKING_TYPES.TAXI,
@@ -210,17 +287,83 @@ export const createTaxiBooking = async (req, res) => {
   });
   if (conflict) return error(res, 'Driver not available on selected date', 400);
 
-  const subtotal = taxiType === 'HOURLY' ? driver.hourlyRate * (hours || 1) : driver.perTripPrice;
+  const tripType =
+    taxiType === 'HOURLY' || guestRegistration?.taxiDetails?.tripType === 'HOURLY' ? 'HOURLY' : 'PER_TRIP';
+  const tripHours =
+    tripType === 'HOURLY'
+      ? Number(hours || guestRegistration?.taxiDetails?.hours || 1) || 1
+      : undefined;
+  const subtotal =
+    tripType === 'HOURLY' ? driver.hourlyRate * (tripHours || 1) : driver.perTripPrice;
   const pricing = await calculateTotalAsync(subtotal);
+
+  const registration = guestRegistration
+    ? {
+        formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
+        checkInTime: guestRegistration?.checkInTime || guestRegistration?.taxiDetails?.startTime || '',
+        leadGuest: {
+          fullName: String(lead.fullName || '').trim(),
+          age: lead.age != null ? Number(lead.age) : undefined,
+          gender: lead.gender || '',
+          mobile: String(lead.mobile || '').trim(),
+          email: String(lead.email || '').trim(),
+          address: String(lead.address || '').trim(),
+          cityState: String(lead.cityState || '').trim(),
+          pincode: String(lead.pincode || '').trim(),
+          comingFrom: String(lead.comingFrom || '').trim(),
+          goingTo: String(lead.goingTo || '').trim(),
+          purpose: lead.purpose || 'TOURISM',
+        },
+        coTravellers: Array.isArray(guestRegistration?.coTravellers)
+          ? guestRegistration.coTravellers
+              .filter((c) => String(c?.fullName || '').trim())
+              .map((c) => ({
+                fullName: String(c.fullName).trim(),
+                age: c.age != null ? Number(c.age) : undefined,
+                gender: c.gender || '',
+                relationship: String(c.relationship || '').trim(),
+              }))
+          : [],
+        advanceAmount:
+          guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
+        paymentMode: guestRegistration?.paymentMode || 'ONLINE',
+        acceptedTermsAt: guestRegistration?.acceptedTermsAt
+          ? new Date(guestRegistration.acceptedTermsAt)
+          : new Date(),
+        taxiDetails: {
+          tripType,
+          hours: tripHours,
+          startTime: guestRegistration?.taxiDetails?.startTime || guestRegistration?.checkInTime || '',
+          passengerCount:
+            Number(guestRegistration?.taxiDetails?.passengerCount ?? guestRegistration?.adults ?? 1) || 1,
+          pickupLocation: String(guestRegistration?.taxiDetails?.pickupLocation || lead.comingFrom || '').trim(),
+          dropLocation: String(guestRegistration?.taxiDetails?.dropLocation || lead.goingTo || '').trim(),
+          preferredDestinations: Array.isArray(guestRegistration?.taxiDetails?.preferredDestinations)
+            ? guestRegistration.taxiDetails.preferredDestinations.filter(Boolean)
+            : [],
+          specialRequests: String(guestRegistration?.taxiDetails?.specialRequests || '').trim(),
+          tripPrice: subtotal,
+          hourlyRate: driver.hourlyRate || 0,
+          perTripPrice: driver.perTripPrice || 0,
+        },
+      }
+    : undefined;
+
+  const adults =
+    Number(guestRegistration?.adults ?? registration?.taxiDetails?.passengerCount ?? 1) || 1;
+
   const booking = await Booking.create({
     customer: req.user._id,
     vendor: driver.user,
     type: BOOKING_TYPES.TAXI,
     driver: driverId,
-    taxiType,
-    hours,
+    taxiType: tripType,
+    hours: tripHours,
     checkIn,
+    guests: { adults, children: 0 },
+    guestRegistration: registration,
     ...pricing,
+    commission: Math.round(pricing.subtotal * ((driver.commissionRate || 8) / 100)),
   });
   return success(res, booking, 'Taxi booking created', 201);
 };
@@ -323,15 +466,25 @@ export const createHomestayBooking = async (req, res) => {
 };
 
 export const createHorseBooking = async (req, res) => {
-  const { horseId, routeId, checkIn } = req.body;
+  const { horseId, routeId, checkIn, guestRegistration } = req.body;
   const horse = await Horse.findById(horseId);
   if (!horse) return error(res, 'Horse listing not found', 404);
+
+  const lead = guestRegistration?.leadGuest || {};
+  if (guestRegistration) {
+    if (!String(lead.fullName || '').trim()) return error(res, 'Customer full name is required', 400);
+    if (!String(lead.mobile || '').trim()) return error(res, 'Mobile number is required', 400);
+    if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
+      return error(res, 'Please accept the Terms and Conditions', 400);
+    }
+  }
 
   if (rangeHasBlocked(horse.blockedDates, checkIn, checkIn)) {
     return error(res, 'Selected date is blocked', 400);
   }
 
-  const route = (horse.routes || []).find((r) => String(r._id) === String(routeId));
+  const resolvedRouteId = routeId || guestRegistration?.horseDetails?.routeId;
+  const route = (horse.routes || []).find((r) => String(r._id) === String(resolvedRouteId));
   if (!route) return error(res, 'Route not found', 404);
 
   const conflict = await hasBookingConflict({
@@ -344,13 +497,65 @@ export const createHorseBooking = async (req, res) => {
   if (conflict) return error(res, 'No slots available on selected date', 400);
 
   const pricing = await calculateTotalAsync(route.price);
+
+  const registration = guestRegistration
+    ? {
+        formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
+        checkInTime: guestRegistration?.horseDetails?.startTime || guestRegistration?.checkInTime || '',
+        leadGuest: {
+          fullName: String(lead.fullName || '').trim(),
+          age: lead.age != null ? Number(lead.age) : undefined,
+          gender: lead.gender || '',
+          mobile: String(lead.mobile || '').trim(),
+          email: String(lead.email || '').trim(),
+          address: String(lead.address || '').trim(),
+          cityState: String(lead.cityState || '').trim(),
+          pincode: String(lead.pincode || '').trim(),
+          comingFrom: String(lead.comingFrom || '').trim(),
+          goingTo: String(lead.goingTo || '').trim(),
+          purpose: lead.purpose || 'TOURISM',
+        },
+        coTravellers: Array.isArray(guestRegistration?.coTravellers)
+          ? guestRegistration.coTravellers
+              .filter((c) => String(c?.fullName || '').trim())
+              .map((c) => ({
+                fullName: String(c.fullName).trim(),
+                age: c.age != null ? Number(c.age) : undefined,
+                gender: c.gender || '',
+                relationship: String(c.relationship || '').trim(),
+              }))
+          : [],
+        advanceAmount:
+          guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
+        paymentMode: guestRegistration?.paymentMode || 'ONLINE',
+        acceptedTermsAt: guestRegistration?.acceptedTermsAt
+          ? new Date(guestRegistration.acceptedTermsAt)
+          : new Date(),
+        horseDetails: {
+          routeId: String(resolvedRouteId),
+          routeName: route.name,
+          durationMinutes: route.durationMinutes || 30,
+          startTime: guestRegistration?.horseDetails?.startTime || guestRegistration?.checkInTime || '',
+          riderCount: Number(guestRegistration?.horseDetails?.riderCount ?? guestRegistration?.adults ?? 1) || 1,
+          meetingPoint: String(guestRegistration?.horseDetails?.meetingPoint || '').trim(),
+          specialRequests: String(guestRegistration?.horseDetails?.specialRequests || '').trim(),
+          safetyAcknowledged: guestRegistration?.horseDetails?.safetyAcknowledged === true,
+          routePrice: route.price,
+        },
+      }
+    : undefined;
+
+  const adults = Number(guestRegistration?.adults ?? registration?.horseDetails?.riderCount ?? 1) || 1;
+
   const booking = await Booking.create({
     customer: req.user._id,
     vendor: horse.operator,
     type: BOOKING_TYPES.HORSE,
     horse: horseId,
-    horseRouteId: String(routeId),
+    horseRouteId: String(resolvedRouteId),
     checkIn,
+    guests: { adults, children: 0 },
+    ...(registration ? { guestRegistration: registration } : {}),
     ...pricing,
     commission: Math.round(pricing.subtotal * ((horse.commissionRate || 10) / 100)),
   });

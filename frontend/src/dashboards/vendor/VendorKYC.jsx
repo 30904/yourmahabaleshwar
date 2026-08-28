@@ -12,7 +12,8 @@ const ROLE_TO_VENDOR_TYPE = {
   HOMESTAY_VENDOR: 'HOMESTAY',
   TENT_OPERATOR: 'TENT',
   GUIDE: 'GUIDE',
-  DRIVER: 'TAXI',
+  TAXI_OPERATOR: 'TAXI',
+  DRIVER: 'DRIVER',
   HORSE_OPERATOR: 'HORSE',
 };
 
@@ -75,6 +76,15 @@ const FALLBACK_DOCS = {
     { code: 'INSURANCE', label: 'Insurance' },
     { code: 'FITNESS', label: 'Fitness' },
     { code: 'PERMIT', label: 'Permit' },
+    { code: 'BANK', label: 'Bank Proof' },
+  ],
+  DRIVER: [
+    { code: 'LICENSE', label: 'Driving License' },
+    { code: 'AADHAAR', label: 'Aadhaar Card' },
+    { code: 'PAN', label: 'PAN Card' },
+    { code: 'RC', label: 'Vehicle RC' },
+    { code: 'INSURANCE', label: 'Insurance' },
+    { code: 'PUC', label: 'PUC Certificate' },
     { code: 'BANK', label: 'Bank Proof' },
   ],
   HORSE: [

@@ -59,7 +59,7 @@ export const adminNavGroups = [
       { to: '/admin/properties/homestays', label: 'Homestays', icon: BedDouble },
       { to: '/admin/properties/horses', label: 'Horse rides', icon: Trees },
       { to: '/admin/properties/tents', label: 'Tents', icon: Tent },
-      { to: '/admin/properties/new', label: 'Add Property', icon: PlusCircle },
+      { to: '/admin/listings/new?type=HOTEL', label: 'Add Listing', icon: PlusCircle },
       { to: '/admin/properties/amenities', label: 'Amenities', icon: Sparkles },
       { to: '/admin/properties/room-types', label: 'Room Types', icon: BedDouble },
     ],
@@ -76,11 +76,21 @@ export const adminNavGroups = [
   },
   {
     id: 'taxi',
-    label: 'Taxi & Drivers',
+    label: 'Taxi Management',
     items: [
-      { to: '/admin/taxi', label: 'Taxi Drivers', icon: Car },
+      { to: '/admin/taxi', label: 'All Taxi Listings', icon: Car },
       { to: '/admin/taxi/kyc-pending', label: 'Pending KYC', icon: Clock },
+      { to: '/admin/taxi/approved', label: 'Approved Taxi', icon: UserCheck },
       { to: '/admin/taxi/hourly', label: 'Hourly Services', icon: Clock },
+    ],
+  },
+  {
+    id: 'drivers',
+    label: 'Driver Management',
+    items: [
+      { to: '/admin/drivers', label: 'All Drivers', icon: Car },
+      { to: '/admin/drivers/kyc-pending', label: 'Pending KYC', icon: Clock },
+      { to: '/admin/drivers/approved', label: 'Approved Drivers', icon: UserCheck },
     ],
   },
   {

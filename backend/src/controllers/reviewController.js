@@ -114,7 +114,7 @@ const vendorReviewFilter = async (user) => {
   } else if (role === ROLES.GUIDE) {
     const ids = await Guide.find({ user: owner }).distinct('_id');
     if (ids.length) or.push({ guide: { $in: ids } });
-  } else if (role === ROLES.DRIVER) {
+  } else if (role === ROLES.TAXI_OPERATOR || role === ROLES.DRIVER) {
     const ids = await Driver.find({ user: owner }).distinct('_id');
     if (ids.length) or.push({ driver: { $in: ids } });
   }

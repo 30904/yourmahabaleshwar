@@ -13,6 +13,7 @@ const primaryLinks = [
   { to: '/tents', key: 'tents' },
   { to: '/guides', key: 'guides' },
   { to: '/taxi', key: 'taxi' },
+  { to: '/drivers', key: 'driver' },
   { to: '/horses', key: 'horses' },
 ];
 
@@ -36,7 +37,7 @@ export default function Navbar() {
   const dash =
     user?.role === 'SUPER_ADMIN' || user?.role === 'OFFICE_STAFF_HOTEL' || user?.role === 'OFFICE_STAFF_GUIDE'
       ? '/admin'
-      : ['HOTEL_VENDOR', 'HOMESTAY_VENDOR', 'TENT_OPERATOR', 'GUIDE', 'DRIVER', 'HORSE_OPERATOR', 'PRODUCT_VENDOR'].includes(
+      : ['HOTEL_VENDOR', 'HOMESTAY_VENDOR', 'TENT_OPERATOR', 'GUIDE', 'TAXI_OPERATOR', 'DRIVER', 'HORSE_OPERATOR', 'PRODUCT_VENDOR'].includes(
           user?.role
         )
         ? '/dashboard/vendor'
@@ -74,8 +75,10 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 overflow-x-clip border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur-md">
-      <div className="page-container flex min-h-[72px] items-center gap-2 py-2 sm:min-h-[80px] sm:gap-3">
-        <Logo variant="navbar" />
+      <div className="nav-bar-inner">
+        <div className="shrink-0">
+          <Logo variant="navbar" />
+        </div>
 
         <nav className="nav-desktop">
           {primaryLinks.map((l) => (
@@ -88,7 +91,7 @@ export default function Navbar() {
             </NavLink>
           ))}
 
-          <div className="relative" ref={shopRef}>
+          <div className="nav-shop-wrap relative shrink-0" ref={shopRef}>
             <button
               type="button"
               className={`nav-link inline-flex items-center gap-0.5 ${shopActive ? 'nav-link-active' : ''}`}
@@ -99,7 +102,7 @@ export default function Navbar() {
               <ChevronDown size={14} className={`transition ${shopOpen ? 'rotate-180' : ''}`} />
             </button>
             {shopOpen && (
-              <div className="absolute left-1/2 top-full z-50 mt-1 w-56 -translate-x-1/2 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
                 {shopLinks.map((l) =>
                   l.comingSoon ? (
                     <span
@@ -129,9 +132,10 @@ export default function Navbar() {
           </div>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
-          <Link to="/register-vendor" className="nav-btn-outline !px-2.5 !py-1.5 !text-[13px] xl:!px-3">
-            {t('nav.listProperty')}
+        <div className="nav-actions">
+          <Link to="/register-vendor" className="nav-btn-outline !px-2 !py-1.5 !text-[12px] xl:!px-2.5 xl:!text-[13px]">
+            <span className="2xl:hidden">{t('nav.listPropertyShort')}</span>
+            <span className="hidden 2xl:inline">{t('nav.listProperty')}</span>
           </Link>
           <div className="hidden items-center gap-0.5 sm:flex">
             <button
@@ -149,14 +153,14 @@ export default function Navbar() {
               मर
             </button>
           </div>
-          <NavLink to="/faq" className="nav-icon-btn hidden sm:flex" aria-label="Help">
+          <NavLink to="/faq" className="nav-icon-btn hidden 2xl:flex" aria-label="Help">
             <HelpCircle size={18} />
           </NavLink>
 
           {isAuthenticated && (
             <>
               {user?.role === 'CUSTOMER' && (
-                <NavLink to="/dashboard/customer/favorites" className="nav-icon-btn hidden sm:flex" aria-label="Favorites">
+                <NavLink to="/dashboard/customer/favorites" className="nav-icon-btn hidden 2xl:flex" aria-label="Favorites">
                   <Heart size={18} />
                 </NavLink>
               )}
@@ -208,11 +212,11 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <>
-              <NavLink to={dash} className="nav-btn-outline !inline-flex !gap-1.5 !px-2.5 !py-1.5 !text-[13px]">
+              <NavLink to={dash} className="nav-btn-outline !inline-flex !gap-1.5 !px-2 !py-1.5 !text-[13px] xl:!px-2.5">
                 <User size={16} />
-                <span className="max-w-[5rem] truncate">{user?.name?.split(' ')[0]}</span>
+                <span className="hidden max-w-[5rem] truncate 2xl:inline">{user?.name?.split(' ')[0]}</span>
               </NavLink>
-              <button type="button" onClick={logout} className="nav-text-link hidden sm:inline">
+              <button type="button" onClick={logout} className="nav-text-link hidden 2xl:inline">
                 {t('nav.signOut')}
               </button>
             </>

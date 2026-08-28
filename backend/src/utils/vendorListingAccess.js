@@ -29,6 +29,7 @@ export const stripOwnerOnUpdate = (req, data, ownerField) => {
     delete next.isActive;
     delete next.approvalStatus;
     delete next.commissionRate;
+    delete next.renewalPrice;
   }
   return next;
 };

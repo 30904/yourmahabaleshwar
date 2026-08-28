@@ -105,6 +105,16 @@ export default function PropertyListPage({ typeFilter }) {
       label: 'Price',
       render: (r) => formatCurrency(r.priceFrom || r.pricePerNight),
     },
+    ...(typeFilter !== 'tents'
+      ? [
+          {
+            key: 'renewalPrice',
+            label: 'Sub. renewal',
+            render: (r) =>
+              r.listingType === 'TENT' ? '—' : r.renewalPrice != null ? formatCurrency(r.renewalPrice) : 'Not set',
+          },
+        ]
+      : []),
     {
       key: 'status',
       label: 'Status',
@@ -146,9 +156,9 @@ export default function PropertyListPage({ typeFilter }) {
         subtitle="Open View or Edit to review documents, set commission, and approve or reject."
         breadcrumbs={[{ label: 'Admin', to: '/admin' }, { label: title }]}
         actions={
-          <Link to="/admin/properties/new" className="admin-btn-primary">
+          <Link to="/admin/listings/new?type=HOTEL" className="admin-btn-primary">
             <Plus size={18} />
-            Add Property
+            Add Listing
           </Link>
         }
       />

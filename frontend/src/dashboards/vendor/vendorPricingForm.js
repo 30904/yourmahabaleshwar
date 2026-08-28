@@ -35,7 +35,7 @@ export const pricingDraftFromListing = (vertical, doc) => {
       bikeAddonPrice: doc.bikeAddonPrice ?? doc.prices?.bikeAddonPrice ?? 0,
     };
   }
-  if (type === 'TAXI') {
+  if (type === 'TAXI' || type === 'DRIVER') {
     return {
       perTripPrice: doc.perTripPrice ?? doc.prices?.perTrip ?? '',
       hourlyRate: doc.hourlyRate ?? doc.prices?.hourly ?? '',
@@ -73,7 +73,7 @@ export const validatePricingDraft = (vertical, draft) => {
   if (type === 'GUIDE') {
     return gt0(draft.package6hr, '6-hour package') || gt0(draft.package12hr, '12-hour package');
   }
-  if (type === 'TAXI') {
+  if (type === 'TAXI' || type === 'DRIVER') {
     return gt0(draft.perTripPrice, 'Per-trip fare') || gt0(draft.hourlyRate, 'Hourly rate');
   }
   if (type === 'HORSE') {
@@ -108,7 +108,7 @@ export const pricingPayloadFromDraft = (vertical, draft) => {
       bikeAddonPrice: num(draft.bikeAddonPrice),
     };
   }
-  if (type === 'TAXI') {
+  if (type === 'TAXI' || type === 'DRIVER') {
     return {
       perTripPrice: num(draft.perTripPrice),
       hourlyRate: num(draft.hourlyRate),

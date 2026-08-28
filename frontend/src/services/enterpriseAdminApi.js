@@ -18,9 +18,9 @@ export const createAdminProperty = (payload) =>
 export const updateAdminProperty = (id, payload) =>
   api.put(`/admin/enterprise/properties/${id}`, payload).then((r) => r.data.data);
 
-export const setAdminPropertyActive = (id, { isActive, listingType, commissionRate }) =>
+export const setAdminPropertyActive = (id, { isActive, listingType, commissionRate, renewalPrice }) =>
   api
-    .patch(`/admin/enterprise/properties/${id}/status`, { isActive, listingType, commissionRate })
+    .patch(`/admin/enterprise/properties/${id}/status`, { isActive, listingType, commissionRate, renewalPrice })
     .then((r) => r.data.data);
 
 export const fetchAdminBookings = (params) =>

@@ -17,6 +17,8 @@ export default function SettingsPage() {
         ...data,
         commissionPercent: Number(data.commissionPercent),
         gstPercent: Number(data.gstPercent),
+        stayListingDefaultRenewalPrice: Number(data.stayListingDefaultRenewalPrice),
+        staySubscriptionWarningDays: Number(data.staySubscriptionWarningDays),
         whatsappEnabled: data.whatsappEnabled === true || data.whatsappEnabled === 'true',
       });
       toast.success('Settings saved');
@@ -66,6 +68,21 @@ export default function SettingsPage() {
         <label className="flex items-center gap-2 text-sm sm:col-span-2">
           <input type="checkbox" {...register('whatsappEnabled')} /> Enable WhatsApp campaigns
         </label>
+      </div>
+
+      <div className="admin-card grid gap-4 p-6 sm:grid-cols-2">
+        <h3 className="sm:col-span-2 font-semibold text-slate-900">Stay listing subscriptions</h3>
+        <label className="admin-label">
+          Default year-2+ renewal price (₹/year)
+          <input type="number" min="0" className="admin-input" {...register('stayListingDefaultRenewalPrice')} />
+        </label>
+        <label className="admin-label">
+          Ending-soon warning (days)
+          <input type="number" min="1" className="admin-input" {...register('staySubscriptionWarningDays')} />
+        </label>
+        <p className="sm:col-span-2 text-sm text-slate-500">
+          Used only when a listing has no price set yet. Each hotel, resort and homestay should have its own renewal price configured in the listing review screen.
+        </p>
       </div>
 
       <div className="admin-card grid gap-4 p-6 sm:grid-cols-2">

@@ -42,9 +42,9 @@ export default function AdminHeader({ onMenuClick, breadcrumbs = [] }) {
         <button type="button" className="admin-header-btn hidden sm:flex" aria-label="Messages">
           <MessageSquare size={20} />
         </button>
-        <button type="button" className="admin-btn-primary hidden sm:inline-flex" onClick={() => navigate('/admin/properties/new')}>
+        <button type="button" className="admin-btn-primary hidden sm:inline-flex" onClick={() => navigate('/admin/listings/new?type=HOTEL')}>
           <Plus size={18} />
-          Add Property
+          Add Listing
         </button>
         <div className="relative">
           <button type="button" className="admin-profile-btn" onClick={() => setProfileOpen(!profileOpen)}>

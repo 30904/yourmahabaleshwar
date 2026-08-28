@@ -15,6 +15,7 @@ const roleRedirect = {
   HOMESTAY_VENDOR: '/dashboard/vendor',
   TENT_OPERATOR: '/dashboard/vendor',
   GUIDE: '/dashboard/vendor',
+  TAXI_OPERATOR: '/dashboard/vendor',
   DRIVER: '/dashboard/vendor',
   HORSE_OPERATOR: '/dashboard/vendor',
   CUSTOMER: '/dashboard/customer',

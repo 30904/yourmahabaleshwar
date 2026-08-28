@@ -30,6 +30,7 @@ import {
   stripOwnerOnUpdate,
 } from '../utils/vendorListingAccess.js';
 import { APPROVAL_STATUS, denyIfVendorCannotEdit, stampPendingIfVendor } from '../utils/listingApproval.js';
+import { maybeStartSubscriptionAfterCreate } from '../services/stayListingSubscriptionService.js';
 import {
   mapDriverMine,
   mapGuideMine,
@@ -91,7 +92,7 @@ export const registerVendor = async (req, res) => {
       HOMESTAY: ROLES.HOMESTAY_VENDOR,
       TENT: ROLES.TENT_OPERATOR,
       GUIDE: ROLES.GUIDE,
-      TAXI: ROLES.DRIVER,
+      TAXI: ROLES.TAXI_OPERATOR,
       DRIVER: ROLES.DRIVER,
       HORSE: ROLES.HORSE_OPERATOR,
       PRODUCT: ROLES.PRODUCT_VENDOR,
@@ -375,7 +376,15 @@ const crudGetMine = (Model, ownerField) => async (req, res) => {
 
 export const createHomestay = async (req, res) => {
   req.body = stampPendingIfVendor(req, req.body);
-  return crudCreate(Homestay, 'vendor')(req, res);
+  try {
+    const data = stampOwnerOnCreate(req, { ...req.body }, 'vendor');
+    if (!data.slug && data.name) data.slug = slugify(data.name);
+    const doc = await Homestay.create(data);
+    await maybeStartSubscriptionAfterCreate('HOMESTAY', doc);
+    return success(res, doc, 'Created', 201);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
 };
 export const updateHomestay = crudUpdate(Homestay, 'vendor', { requireApproved: true });
 export const deleteHomestay = crudDelete(Homestay, 'vendor');
@@ -400,14 +409,20 @@ export const deleteTent = crudDelete(Tent, 'operator');
 export const listMyTents = crudListMine(Tent, 'operator', mapTentMine);
 export const getMyTent = crudGetMine(Tent, 'operator');
 
-export const createGuide = crudCreate(Guide, 'user');
-export const updateGuide = crudUpdate(Guide, 'user');
+export const createGuide = async (req, res) => {
+  req.body = stampPendingIfVendor(req, req.body);
+  return crudCreate(Guide, 'user')(req, res);
+};
+export const updateGuide = crudUpdate(Guide, 'user', { requireApproved: true });
 export const deleteGuide = crudDelete(Guide, 'user');
 export const listMyGuides = crudListMine(Guide, 'user', mapGuideMine);
 export const getMyGuide = crudGetMine(Guide, 'user');
 
-export const createDriver = crudCreate(Driver, 'user');
-export const updateDriver = crudUpdate(Driver, 'user');
+export const createDriver = async (req, res) => {
+  req.body = stampPendingIfVendor(req, req.body);
+  return crudCreate(Driver, 'user')(req, res);
+};
+export const updateDriver = crudUpdate(Driver, 'user', { requireApproved: true });
 export const deleteDriver = crudDelete(Driver, 'user');
 export const listMyDrivers = crudListMine(Driver, 'user', mapDriverMine);
 export const getMyDriver = crudGetMine(Driver, 'user');

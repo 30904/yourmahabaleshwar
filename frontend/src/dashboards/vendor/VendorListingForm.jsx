@@ -12,6 +12,8 @@ import Skeleton from '../../components/ui/Skeleton';
 import {
   ROLE_CREATE_VERTICALS,
   ROLE_DEFAULT_VERTICAL,
+  ADMIN_CREATE_VERTICALS,
+  adminListingListPath,
   createVendorListing,
   fetchMyVendorListing,
   updateVendorListing,
@@ -31,11 +33,17 @@ import {
 } from './vendorListingFormConfig';
 import HotelResortRegistrationFields from './HotelResortRegistrationFields';
 import HomestayRegistrationFields from './HomestayRegistrationFields';
+import GuideRegistrationFields from './GuideRegistrationFields';
+import DriverRegistrationFields from './DriverRegistrationFields';
+import TaxiRegistrationFields from './TaxiRegistrationFields';
+import HorseRegistrationFields from './HorseRegistrationFields';
+import FormLanguageToggle from '../../components/common/FormLanguageToggle';
 import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
 
-const LISTINGS_PATH = '/dashboard/vendor/listings';
+const VENDOR_LISTINGS_PATH = '/dashboard/vendor/listings';
+const ADMIN_LISTINGS_BASE = '/admin/listings';
 
-export default function VendorListingForm() {
+export default function VendorListingForm({ adminMode = false } = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -43,7 +51,9 @@ export default function VendorListingForm() {
   const [searchParams] = useSearchParams();
   const isEdit = Boolean(id);
 
-  const allowedVerticals = ROLE_CREATE_VERTICALS[user?.role] || [];
+  const allowedVerticals = adminMode ? ADMIN_CREATE_VERTICALS : ROLE_CREATE_VERTICALS[user?.role] || [];
+  const listingsBase = adminMode ? ADMIN_LISTINGS_BASE : VENDOR_LISTINGS_PATH;
+  const listPathFor = (v) => (adminMode ? adminListingListPath(v) : VENDOR_LISTINGS_PATH);
   const requested = String(verticalParam || searchParams.get('type') || ROLE_DEFAULT_VERTICAL[user?.role] || '')
     .toUpperCase();
   const vertical = allowedVerticals.includes(requested) ? requested : allowedVerticals[0];
@@ -62,16 +72,16 @@ export default function VendorListingForm() {
     setLoading(true);
     fetchMyVendorListing(vertical, id)
       .then((doc) => {
-        if (!canVendorEditListing({ ...doc, vertical })) {
+        if (!adminMode && !canVendorEditListing({ ...doc, vertical })) {
           toast.error(t('vendor.listingEditLocked'));
-          navigate(LISTINGS_PATH, { replace: true });
+          navigate(listPathFor(vertical), { replace: true });
           return;
         }
         setForm(toFormValues(vertical, doc));
       })
       .catch(() => {
         toast.error(t('vendor.listingLoadFailed'));
-        navigate(LISTINGS_PATH, { replace: true });
+        navigate(listPathFor(vertical), { replace: true });
       })
       .finally(() => setLoading(false));
   }, [isEdit, vertical, id, navigate, t]);
@@ -106,6 +116,16 @@ export default function VendorListingForm() {
     });
   };
 
+  const toggleLanguage = (name) => {
+    setForm((prev) => {
+      const languages = prev.languages || [];
+      return {
+        ...prev,
+        languages: languages.includes(name) ? languages.filter((l) => l !== name) : [...languages, name],
+      };
+    });
+  };
+
   const title = useMemo(() => {
     const kind = t(VERTICAL_LABEL_KEY[vertical] || 'vendor.listings');
     return isEdit ? t('vendor.editListing', { kind }) : t('vendor.createListingKind', { kind });
@@ -132,9 +152,9 @@ export default function VendorListingForm() {
         toast.success(t('vendor.listingUpdated'));
       } else {
         await createVendorListing(saveVertical, payload);
-        toast.success(t('vendor.listingCreated'));
+        toast.success(adminMode ? t('admin.listingCreatedApproved') : t('vendor.listingCreated'));
       }
-      navigate(LISTINGS_PATH);
+      navigate(listPathFor(saveVertical));
     } catch (err) {
       toast.error(err.response?.data?.message || t('vendor.listingSaveFailed'));
     } finally {
@@ -150,28 +170,73 @@ export default function VendorListingForm() {
 
   const isHotelResort = vertical === 'HOTEL' || vertical === 'RESORT';
   const isHomestay = vertical === 'HOMESTAY';
-  const usePartnerForm = isHotelResort || isHomestay;
+  const isGuide = vertical === 'GUIDE';
+  const isTaxi = vertical === 'TAXI';
+  const isDriver = vertical === 'DRIVER';
+  const isDriverVertical = isTaxi || isDriver;
+  const isHorse = vertical === 'HORSE';
+  const usePartnerForm = isHotelResort || isHomestay || isGuide || isDriverVertical || isHorse;
   const showAmenities = ['TENT'].includes(vertical);
   const showRooms = false;
   const isOnboarding = searchParams.get('onboarding') === '1';
 
   return (
     <div>
-      <Link to={LISTINGS_PATH} className="text-sm font-medium text-primary hover:underline">
-        {t('common.back')}
-      </Link>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <Link to={listPathFor(vertical)} className="text-sm font-medium text-primary hover:underline">
+          {t('common.back')}
+        </Link>
+        {usePartnerForm && <FormLanguageToggle />}
+      </div>
       <h2 className="mt-4 text-xl font-bold text-slate-900">{title}</h2>
       <p className="mt-1 text-sm text-slate-500">
         {isHotelResort
-          ? 'Complete the hotel/resort registration form. Your listing stays pending until admin approval.'
+          ? t('vendor.hotelFormHint')
           : isHomestay
-            ? 'Complete the homestay registration form. Your listing stays pending until admin approval.'
-            : t('vendor.listingFormHint')}
+            ? t('vendor.homestayFormHint')
+            : isGuide
+              ? t('vendor.guideFormHint')
+              : isTaxi
+                ? t('vendor.taxiFormHint')
+                : isDriver
+                  ? t('vendor.driverFormHint')
+                  : isHorse
+                  ? t('vendor.horseFormHint')
+                  : t('vendor.listingFormHint')}
       </p>
       {isOnboarding && usePartnerForm && (
         <p className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-700">
-          Welcome. Finish this registration form to submit your property. You can upload KYC documents anytime from the KYC page.
+          {isGuide
+            ? t('vendor.guideOnboardingWelcome')
+            : isTaxi
+              ? t('vendor.taxiOnboardingWelcome')
+              : isDriver
+                ? t('vendor.driverOnboardingWelcome')
+                : isHorse
+                ? t('vendor.horseOnboardingWelcome')
+                : isHomestay
+              ? t('vendor.homestayOnboardingWelcome')
+              : isHotelResort
+                ? t('vendor.hotelOnboardingWelcome')
+                : 'Welcome. Finish this registration form to submit your property. You can upload KYC documents anytime from the KYC page.'}
         </p>
+      )}
+
+      {adminMode && !isEdit && (
+        <Card className="mt-6">
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('admin.listingType')}</label>
+          <select
+            className="input-field max-w-xs"
+            value={vertical}
+            onChange={(e) => navigate(`${ADMIN_LISTINGS_BASE}/new?type=${e.target.value}`)}
+          >
+            {ADMIN_CREATE_VERTICALS.map((value) => (
+              <option key={value} value={value}>
+                {t(VERTICAL_LABEL_KEY[value])}
+              </option>
+            ))}
+          </select>
+        </Card>
       )}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-6">
@@ -200,6 +265,26 @@ export default function VendorListingForm() {
             toggleAmenity={toggleAmenity}
             isEdit={isEdit}
           />
+        ) : isGuide ? (
+          <GuideRegistrationFields
+            form={form}
+            setField={setField}
+            toggleLanguage={toggleLanguage}
+            isEdit={isEdit}
+          />
+        ) : isTaxi ? (
+          <TaxiRegistrationFields form={form} setField={setField} isEdit={isEdit} />
+        ) : isDriver ? (
+          <DriverRegistrationFields form={form} setField={setField} isEdit={isEdit} />
+        ) : isHorse ? (
+          <HorseRegistrationFields
+            form={form}
+            setField={setField}
+            isEdit={isEdit}
+            addRoute={(route) => addRow('routes', () => route)}
+            updateRoute={(index, patch) => updateRow('routes', index, patch)}
+            removeRoute={(index) => removeRow('routes', index)}
+          />
         ) : (
           <>
         {!isEdit && allowedVerticals.length > 1 && (
@@ -208,7 +293,7 @@ export default function VendorListingForm() {
             <select
               className="input-field max-w-xs"
               value={vertical}
-              onChange={(e) => navigate(`${LISTINGS_PATH}/new?type=${e.target.value}`)}
+              onChange={(e) => navigate(`${listingsBase}/new?type=${e.target.value}`)}
             >
               {allowedVerticals.map((value) => (
                 <option key={value} value={value}>
@@ -256,34 +341,6 @@ export default function VendorListingForm() {
             </>
           )}
 
-          {vertical === 'GUIDE' && (
-            <>
-              <Input className="sm:col-span-2" label={t('vendor.bio')} value={form.bio} onChange={(e) => setField('bio', e.target.value)} />
-              <Input label={t('vendor.languages')} value={form.languages} onChange={(e) => setField('languages', e.target.value)} />
-              <Input label={t('vendor.specialties')} value={form.specialties} onChange={(e) => setField('specialties', e.target.value)} />
-              <Input label={t('vendor.package6hr')} type="number" min="1" value={form.package6hr} onChange={(e) => setField('package6hr', e.target.value)} />
-              <Input label={t('vendor.package12hr')} type="number" min="1" value={form.package12hr} onChange={(e) => setField('package12hr', e.target.value)} />
-              <Input label={t('vendor.bikeAddon')} type="number" min="0" value={form.bikeAddonPrice} onChange={(e) => setField('bikeAddonPrice', e.target.value)} />
-            </>
-          )}
-
-          {vertical === 'TAXI' && (
-            <>
-              <Input label={t('vendor.phone')} value={form.phone} onChange={(e) => setField('phone', e.target.value)} />
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('vendor.vehicleType')}</label>
-                <select className="input-field" value={form.vehicleType} onChange={(e) => setField('vehicleType', e.target.value)}>
-                  {VEHICLE_TYPES.map((value) => (
-                    <option key={value} value={value}>{value}</option>
-                  ))}
-                </select>
-              </div>
-              <Input label={t('vendor.vehicleNumber')} value={form.vehicleNumber} onChange={(e) => setField('vehicleNumber', e.target.value)} />
-              <Input label={t('vendor.perTrip')} type="number" min="0" value={form.perTripPrice} onChange={(e) => setField('perTripPrice', e.target.value)} />
-              <Input label={t('vendor.hourlyRate')} type="number" min="0" value={form.hourlyRate} onChange={(e) => setField('hourlyRate', e.target.value)} />
-            </>
-          )}
-
           {vertical === 'TENT' && (
             <>
               <Input label={t('vendor.location')} value={form.location} onChange={(e) => setField('location', e.target.value)} />
@@ -300,11 +357,7 @@ export default function VendorListingForm() {
             </>
           )}
 
-          {vertical === 'HORSE' && (
-            <Input label={t('vendor.location')} value={form.location} onChange={(e) => setField('location', e.target.value)} />
-          )}
-
-          {form.description !== undefined && vertical !== 'GUIDE' && vertical !== 'TAXI' && vertical !== 'PRODUCT' && (
+          {form.description !== undefined && vertical !== 'GUIDE' && vertical !== 'TAXI' && vertical !== 'DRIVER' && vertical !== 'HORSE' && vertical !== 'PRODUCT' && (
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('vendor.description')}</label>
               <textarea
@@ -398,43 +451,9 @@ export default function VendorListingForm() {
           </Card>
         )}
 
-        {vertical === 'HORSE' && (
-          <Card>
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-slate-900">{t('vendor.routes')}</h3>
-              <Button type="button" variant="outline" className="px-3 py-1.5 text-sm" onClick={() => addRow('routes', defaultRoute)}>
-                <Plus size={14} /> {t('vendor.addRoute')}
-              </Button>
-            </div>
-            <div className="mt-4 space-y-4">
-              {(form.routes || []).map((route, index) => (
-                <div key={index} className="grid gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-3">
-                  <Input label={t('vendor.routeName')} value={route.name} onChange={(e) => updateRow('routes', index, { name: e.target.value })} />
-                  <Input label={t('vendor.durationMinutes')} type="number" min="1" value={route.durationMinutes} onChange={(e) => updateRow('routes', index, { durationMinutes: e.target.value })} />
-                  <div className="flex items-end gap-2">
-                    <Input
-                      className="flex-1"
-                      label={t('vendor.priceInr')}
-                      type="number"
-                      min="1"
-                      value={route.price}
-                      onChange={(e) => updateRow('routes', index, { price: e.target.value })}
-                    />
-                    {(form.routes || []).length > 1 && (
-                      <button type="button" className="mb-0.5 rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" onClick={() => removeRow('routes', index)} aria-label={t('vendor.remove')}>
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
         <div className="flex flex-wrap gap-3">
           <Button type="submit" disabled={saving}>{saving ? t('common.loading') : t('common.save')}</Button>
-          <Link to={LISTINGS_PATH} className="btn-outline inline-flex items-center">{t('common.cancel')}</Link>
+          <Link to={listPathFor(vertical)} className="btn-outline inline-flex items-center">{t('common.cancel')}</Link>
         </div>
       </form>
     </div>

@@ -16,6 +16,7 @@ import adminRoutes from './adminRoutes.js';
 import userRoutes from './userRoutes.js';
 import searchRoutes from './searchRoutes.js';
 import miscRoutes from './miscRoutes.js';
+import staySubscriptionRoutes from './staySubscriptionRoutes.js';
 
 const router = Router();
 
@@ -39,6 +40,7 @@ router.use('/enquiries', enquiryRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/admin', adminRoutes);
 router.use('/search', searchRoutes);
+router.use('/stay-subscriptions', staySubscriptionRoutes);
 router.use('/', miscRoutes);
 
 export default router;

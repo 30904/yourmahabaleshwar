@@ -8,6 +8,7 @@ export const VERTICAL_PATH = {
   TENT: '/tents',
   GUIDE: '/guides',
   TAXI: '/drivers',
+  DRIVER: '/drivers',
   HORSE: '/horses',
   PRODUCT: '/products',
 };
@@ -17,7 +18,8 @@ export const ROLE_DEFAULT_VERTICAL = {
   [ROLES.HOMESTAY_VENDOR]: 'HOMESTAY',
   [ROLES.TENT_OPERATOR]: 'TENT',
   [ROLES.GUIDE]: 'GUIDE',
-  [ROLES.DRIVER]: 'TAXI',
+  [ROLES.TAXI_OPERATOR]: 'TAXI',
+  [ROLES.DRIVER]: 'DRIVER',
   [ROLES.HORSE_OPERATOR]: 'HORSE',
   [ROLES.PRODUCT_VENDOR]: 'PRODUCT',
 };
@@ -27,9 +29,38 @@ export const ROLE_CREATE_VERTICALS = {
   [ROLES.HOMESTAY_VENDOR]: ['HOMESTAY'],
   [ROLES.TENT_OPERATOR]: ['TENT'],
   [ROLES.GUIDE]: ['GUIDE'],
-  [ROLES.DRIVER]: ['TAXI'],
+  [ROLES.TAXI_OPERATOR]: ['TAXI'],
+  [ROLES.DRIVER]: ['DRIVER'],
   [ROLES.HORSE_OPERATOR]: ['HORSE'],
   [ROLES.PRODUCT_VENDOR]: ['PRODUCT'],
+};
+
+export const ADMIN_CREATE_VERTICALS = [
+  'HOTEL',
+  'RESORT',
+  'HOMESTAY',
+  'TENT',
+  'GUIDE',
+  'TAXI',
+  'DRIVER',
+  'HORSE',
+  'PRODUCT',
+];
+
+export const adminListingListPath = (vertical) => {
+  const v = String(vertical || '').toUpperCase();
+  const map = {
+    HOTEL: '/admin/properties/hotels',
+    RESORT: '/admin/properties/resorts',
+    HOMESTAY: '/admin/properties/homestays',
+    TENT: '/admin/properties/tents',
+    GUIDE: '/admin/guides',
+    TAXI: '/admin/taxi',
+    DRIVER: '/admin/drivers',
+    HORSE: '/admin/properties/horses',
+    PRODUCT: '/admin/shop',
+  };
+  return map[v] || '/admin';
 };
 
 const MINE_BY_ROLE = {
@@ -40,7 +71,8 @@ const MINE_BY_ROLE = {
   [ROLES.HOMESTAY_VENDOR]: [{ path: '/homestays/mine', vertical: 'HOMESTAY', labelKey: 'vendor.types.homestay' }],
   [ROLES.TENT_OPERATOR]: [{ path: '/tents/mine', vertical: 'TENT', labelKey: 'vendor.types.tent' }],
   [ROLES.GUIDE]: [{ path: '/guides/mine', vertical: 'GUIDE', labelKey: 'vendor.types.guide' }],
-  [ROLES.DRIVER]: [{ path: '/drivers/mine', vertical: 'TAXI', labelKey: 'vendor.types.driver' }],
+  [ROLES.TAXI_OPERATOR]: [{ path: '/drivers/mine', vertical: 'TAXI', labelKey: 'vendor.types.taxi' }],
+  [ROLES.DRIVER]: [{ path: '/drivers/mine', vertical: 'DRIVER', labelKey: 'vendor.types.driver' }],
   [ROLES.HORSE_OPERATOR]: [{ path: '/horses/mine', vertical: 'HORSE', labelKey: 'vendor.types.horse' }],
   [ROLES.PRODUCT_VENDOR]: [{ path: '/products/mine', vertical: 'PRODUCT', labelKey: 'vendor.types.product' }],
 };

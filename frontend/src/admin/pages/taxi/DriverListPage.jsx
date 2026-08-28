@@ -1,104 +1,81 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
-import AdminModal from '../../components/AdminModal';
-import RowActions, { buildMasterActions } from '../../components/RowActions';
-import {
-  fetchAdminDrivers,
-  createDriver,
-  updateDriver,
-  deleteDriver,
-} from '../../../services/enterpriseAdminApi';
+import RowActions from '../../components/RowActions';
+import ListingReviewModal from '../../components/ListingReviewModal';
+import { fetchAdminDrivers, deleteDriver } from '../../../services/enterpriseAdminApi';
 import { formatCurrency } from '../../../utils/format';
+import { listingStatusOf } from '../../../utils/listingStatus';
 
-const VEHICLES = ['SEDAN', 'SUV', 'TEMPO', 'INNOVA', 'BIKE'];
-const emptyForm = {
-  name: '',
-  phone: '',
-  vehicleType: 'SEDAN',
-  vehicleNumber: '',
-  perTripPrice: 1500,
-  hourlyRate: 400,
+const COPY = {
+  TAXI: {
+    entity: 'Taxi listing',
+    entityPlural: 'taxi listings',
+    nameColumn: 'Taxi / Fleet',
+    add: 'Add taxi listing',
+    allTitle: 'All Taxi Listings',
+    pendingTitle: 'Pending Taxi KYC',
+    approvedTitle: 'Approved Taxi',
+    loadError: 'Failed to load taxi listings',
+    deleteConfirm: (name) => `Delete taxi listing "${name}"? This cannot be undone.`,
+    deleteSuccess: 'Taxi listing deleted',
+    publicPath: '/taxi',
+    listingType: 'TAXI',
+  },
+  DRIVER: {
+    entity: 'Driver',
+    entityPlural: 'drivers',
+    nameColumn: 'Driver',
+    add: 'Add driver',
+    allTitle: 'All Drivers',
+    pendingTitle: 'Pending Driver KYC',
+    approvedTitle: 'Approved Drivers',
+    loadError: 'Failed to load drivers',
+    deleteConfirm: (name) => `Delete driver "${name}"? This cannot be undone.`,
+    deleteSuccess: 'Driver deleted',
+    publicPath: '/drivers',
+    listingType: 'DRIVER',
+  },
 };
 
-export default function DriverListPage() {
+export default function DriverListPage({ vendorType = 'TAXI', kycFilter }) {
+  const navigate = useNavigate();
+  const vt = vendorType === 'DRIVER' ? 'DRIVER' : 'TAXI';
+  const copy = COPY[vt];
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState({ mode: null, row: null });
-  const { register, handleSubmit, reset } = useForm({ defaultValues: emptyForm });
+  const [review, setReview] = useState({ row: null, mode: 'view' });
+
+  const title = useMemo(() => {
+    if (kycFilter === 'pending') return copy.pendingTitle;
+    if (kycFilter === 'approved') return copy.approvedTitle;
+    return copy.allTitle;
+  }, [kycFilter, copy]);
 
   const load = () => {
     setLoading(true);
-    fetchAdminDrivers()
+    fetchAdminDrivers({
+      vendorType: vt,
+      kycStatus: kycFilter === 'pending' ? 'PENDING' : kycFilter === 'approved' ? 'APPROVED' : undefined,
+    })
       .then(setDrivers)
-      .catch(() => toast.error('Failed to load drivers'))
+      .catch(() => toast.error(copy.loadError))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     load();
-  }, []);
-
-  const openAdd = () => {
-    reset(emptyForm);
-    setModal({ mode: 'add', row: null });
-  };
-
-  const openEdit = (row) => {
-    reset({
-      name: row.name || '',
-      phone: row.phone || '',
-      vehicleType: row.vehicleType || 'SEDAN',
-      vehicleNumber: row.vehicleNumber || '',
-      perTripPrice: row.perTripPrice || 0,
-      hourlyRate: row.hourlyRate || 0,
-    });
-    setModal({ mode: 'edit', row });
-  };
-
-  const openView = (row) => setModal({ mode: 'view', row });
-
-  const onSave = async (data) => {
-    const payload = {
-      ...data,
-      perTripPrice: Number(data.perTripPrice),
-      hourlyRate: Number(data.hourlyRate),
-      isActive: true,
-    };
-    try {
-      if (modal.mode === 'edit' && modal.row) {
-        await updateDriver(modal.row._id, payload);
-        toast.success('Driver updated');
-      } else {
-        await createDriver(payload);
-        toast.success('Driver added');
-      }
-      setModal({ mode: null, row: null });
-      load();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Save failed');
-    }
-  };
-
-  const toggleActive = async (row) => {
-    try {
-      await updateDriver(row._id, { isActive: row.isActive === false });
-      toast.success(row.isActive === false ? 'Marked active' : 'Marked inactive');
-      load();
-    } catch {
-      toast.error('Update failed');
-    }
-  };
+  }, [kycFilter, vt]);
 
   const remove = async (row) => {
-    if (!window.confirm(`Delete driver "${row.name}"? This cannot be undone.`)) return;
+    if (!window.confirm(copy.deleteConfirm(row.name))) return;
     try {
       await deleteDriver(row._id);
-      toast.success('Driver deleted');
+      toast.success(copy.deleteSuccess);
       load();
     } catch {
       toast.error('Delete failed');
@@ -106,96 +83,72 @@ export default function DriverListPage() {
   };
 
   const columns = [
-    { key: 'name', label: 'Driver', render: (r) => <span className="font-semibold">{r.name}</span> },
+    { key: 'name', label: copy.nameColumn, render: (r) => <span className="font-semibold">{r.name}</span> },
+    {
+      key: 'owner',
+      label: 'Vendor',
+      render: (r) => (
+        <span className="text-slate-600">
+          {r.user?.name || '—'}
+          {r.user?.email ? <span className="block text-xs text-slate-400">{r.user.email}</span> : null}
+        </span>
+      ),
+    },
     { key: 'vehicleType', label: 'Vehicle' },
     { key: 'perTripPrice', label: 'Per trip', render: (r) => formatCurrency(r.perTripPrice) },
     { key: 'hourlyRate', label: 'Hourly', render: (r) => formatCurrency(r.hourlyRate) },
+    { key: 'kyc', label: 'KYC', render: (r) => <StatusBadge status={r.kyc?.status || 'NONE'} /> },
     {
       key: 'status',
       label: 'Status',
-      render: (r) => <StatusBadge status={r.isActive !== false ? 'ACTIVE' : 'INACTIVE'} />,
+      render: (r) => <StatusBadge status={listingStatusOf(r)} />,
     },
     {
       key: 'actions',
       label: 'Action',
       render: (r) => (
         <RowActions
-          items={buildMasterActions({
-            isActive: r.isActive !== false,
-            onView: () => openView(r),
-            onEdit: () => openEdit(r),
-            onToggleActive: () => toggleActive(r),
-            onDelete: () => remove(r),
-          })}
+          items={[
+            { key: 'view', label: 'View', onClick: () => setReview({ row: r, mode: 'view' }) },
+            { key: 'edit', label: 'Edit', onClick: () => setReview({ row: r, mode: 'edit' }) },
+            {
+              key: 'fullEdit',
+              label: 'Full form',
+              onClick: () => navigate(`/admin/listings/${vt}/${r._id}/edit`),
+            },
+            { key: 'delete', label: 'Delete', onClick: () => remove(r), tone: 'danger' },
+          ]}
         />
       ),
     },
   ];
 
-  const viewing = modal.mode === 'view' ? modal.row : null;
-
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Taxi Drivers"
-        subtitle="Vehicle fleet & driver management"
+        title={title}
+        subtitle={`Review ${copy.entityPlural}, KYC documents, commission, and approval status.`}
         actions={
-          <button type="button" className="admin-btn-primary" onClick={openAdd}>
-            <Plus size={18} /> Add Driver
-          </button>
+          <Link to={`/admin/listings/new?type=${vt}`} className="admin-btn-primary">
+            <Plus size={18} /> {copy.add}
+          </Link>
         }
       />
+
       {loading ? (
         <div className="admin-card p-12 text-center">Loading...</div>
       ) : (
         <DataTable columns={columns} data={drivers} />
       )}
 
-      <AdminModal
-        open={modal.mode === 'add' || modal.mode === 'edit'}
-        title={modal.mode === 'edit' ? 'Edit Driver' : 'Add Driver'}
-        onClose={() => setModal({ mode: null, row: null })}
-      >
-        <form onSubmit={handleSubmit(onSave)} className="grid gap-3 sm:grid-cols-2">
-          <input className="admin-input" placeholder="Name" {...register('name', { required: true })} />
-          <input className="admin-input" placeholder="Phone" {...register('phone')} />
-          <select className="admin-input" {...register('vehicleType')}>
-            {VEHICLES.map((v) => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-          <input className="admin-input" placeholder="Vehicle number" {...register('vehicleNumber')} />
-          <input type="number" className="admin-input" placeholder="Per trip (₹)" {...register('perTripPrice')} />
-          <input type="number" className="admin-input" placeholder="Hourly (₹)" {...register('hourlyRate')} />
-          <div className="flex justify-end gap-2 sm:col-span-2">
-            <button type="button" className="admin-btn-secondary" onClick={() => setModal({ mode: null, row: null })}>
-              Cancel
-            </button>
-            <button type="submit" className="admin-btn-primary">Save</button>
-          </div>
-        </form>
-      </AdminModal>
-
-      <AdminModal
-        open={!!viewing}
-        title={viewing?.name || 'Driver'}
-        onClose={() => setModal({ mode: null, row: null })}
-      >
-        {viewing && (
-          <div className="space-y-2 text-sm text-slate-700">
-            <p><span className="font-semibold">Vehicle:</span> {viewing.vehicleType} {viewing.vehicleNumber || ''}</p>
-            <p><span className="font-semibold">Phone:</span> {viewing.phone || '—'}</p>
-            <p><span className="font-semibold">Per trip:</span> {formatCurrency(viewing.perTripPrice)}</p>
-            <p><span className="font-semibold">Hourly:</span> {formatCurrency(viewing.hourlyRate)}</p>
-            <p><span className="font-semibold">Status:</span> {viewing.isActive !== false ? 'Active' : 'Inactive'}</p>
-            {viewing.slug && (
-              <a className="text-primary underline" href={`/taxi/${viewing.slug}`} target="_blank" rel="noreferrer">
-                Open public page
-              </a>
-            )}
-          </div>
-        )}
-      </AdminModal>
+      <ListingReviewModal
+        open={!!review.row}
+        mode={review.mode}
+        listingType={copy.listingType}
+        listingId={review.row?._id}
+        onClose={() => setReview({ row: null, mode: 'view' })}
+        onChanged={load}
+      />
     </div>
   );
 }

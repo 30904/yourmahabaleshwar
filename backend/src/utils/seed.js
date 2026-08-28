@@ -25,6 +25,7 @@ import { SEED_AMENITIES, SEED_ROOM_TYPES } from '../data/catalogSeedData.js';
 import { SEED_BLOGS } from '../data/blogSeedData.js';
 import { ROLES } from '../constants/roles.js';
 import { BOOKING_STATUS, BOOKING_TYPES } from '../constants/booking.js';
+import { startSubscriptionOnApproval } from '../services/stayListingSubscriptionService.js';
 
 dotenv.config();
 
@@ -118,8 +119,16 @@ const seed = async () => {
     role: ROLES.GUIDE,
   });
 
+  const taxiUser = await User.create({
+    name: 'Taxi Operator Demo',
+    email: 'taxi@demo.com',
+    phone: '9876543213',
+    password: 'Vendor@123',
+    role: ROLES.TAXI_OPERATOR,
+  });
+
   const driverUser = await User.create({
-    name: 'Driver Demo',
+    name: 'Driver Partner Demo',
     email: 'driver@demo.com',
     phone: '9876543214',
     password: 'Vendor@123',
@@ -262,17 +271,147 @@ const seed = async () => {
 
   const drivers = [];
   const vehicles = ['SEDAN', 'SUV', 'INNOVA', 'TEMPO'];
-  for (let i = 1; i <= 10; i++) {
+  drivers.push(
+    await Driver.create({
+      name: 'Rajesh Mahabaleshwar Cabs',
+      operatorName: 'Rajesh Patil',
+      slug: 'rajesh-mahabaleshwar-cabs',
+      gender: 'MALE',
+      fatherOrHusbandName: 'Suresh Patil',
+      serviceArea: 'Mahabaleshwar, Panchgani, Pune transfers',
+      vehicleType: 'INNOVA',
+      vehicleNumber: 'MH-12-AB-4521',
+      vehicle: { licenseNumber: 'MH1420100123456', licenseType: 'COMMERCIAL' },
+      contact: {
+        primaryMobile: taxiUser.phone,
+        email: taxiUser.email,
+        whatsapp: taxiUser.phone,
+        emergencyName: 'Suresh Patil',
+        emergencyMobile: '9876501234',
+      },
+      phone: taxiUser.phone,
+      address: { line1: 'Main Market Road, Mahabaleshwar', pincode: '412806' },
+      perTripPrice: 1800,
+      hourlyRate: 450,
+      experience: 8,
+      bankDetails: {
+        bankName: 'State Bank of India',
+        branch: 'Mahabaleshwar',
+        accountHolder: 'Rajesh Patil',
+        accountNumber: '123456789012',
+        ifsc: 'SBIN0001234',
+      },
+      images: [IMG('1449965400600-e5666c5e72f0')],
+      rating: 4.8,
+      reviewCount: 86,
+      user: taxiUser._id,
+      isActive: true,
+      approvalStatus: 'APPROVED',
+      isFeatured: true,
+      acceptedTermsAt: new Date(),
+      acceptedAgreementAt: new Date(),
+      declarationAcceptedAt: new Date(),
+    })
+  );
+  drivers.push(
+    await Driver.create({
+      name: 'Pending Taxi Listing',
+      slug: 'pending-taxi-listing',
+      vehicleType: 'SEDAN',
+      perTripPrice: 1200,
+      hourlyRate: 350,
+      serviceArea: 'Mahabaleshwar',
+      user: taxiUser._id,
+      isActive: false,
+      approvalStatus: 'PENDING',
+    })
+  );
+  for (let i = 1; i <= 3; i++) {
     drivers.push(
       await Driver.create({
-        name: `Driver ${i}`,
-        slug: `driver-${i}`,
+        name: `Fleet Vehicle ${i}`,
+        slug: `fleet-vehicle-${i}`,
+        vehicleType: vehicles[i % vehicles.length],
+        perTripPrice: 900 + i * 100,
+        hourlyRate: 320 + i * 20,
+        serviceArea: 'Mahabaleshwar, Panchgani',
+        rating: 4.4 + Math.random() * 0.4,
+        reviewCount: Math.floor(Math.random() * 60) + 10,
+        user: taxiUser._id,
+        isActive: true,
+        approvalStatus: 'APPROVED',
+        isAvailable: true,
+      })
+    );
+  }
+  drivers.push(
+    await Driver.create({
+      name: 'Amit Patil — Driver Partner',
+      slug: 'amit-patil-driver-partner',
+      gender: 'MALE',
+      fatherOrHusbandName: 'Ramesh Patil',
+      serviceArea: 'Mahabaleshwar local sightseeing',
+      vehicleType: 'SEDAN',
+      vehicleNumber: 'MH-12-CD-7788',
+      vehicle: { licenseNumber: 'MH1420100987654', licenseType: 'LMV' },
+      contact: {
+        primaryMobile: driverUser.phone,
+        email: driverUser.email,
+        whatsapp: driverUser.phone,
+        emergencyName: 'Ramesh Patil',
+        emergencyMobile: '9876504321',
+      },
+      phone: driverUser.phone,
+      address: { line1: 'Venna Lake Road, Mahabaleshwar', pincode: '412806' },
+      perTripPrice: 1200,
+      hourlyRate: 350,
+      experience: 5,
+      bankDetails: {
+        bankName: 'HDFC Bank',
+        branch: 'Mahabaleshwar',
+        accountHolder: 'Amit Patil',
+        accountNumber: '987654321098',
+        ifsc: 'HDFC0001234',
+      },
+      images: [IMG('1549317661-32a88f6a4d54')],
+      rating: 4.7,
+      reviewCount: 42,
+      user: driverUser._id,
+      isActive: true,
+      approvalStatus: 'APPROVED',
+      isFeatured: true,
+      acceptedTermsAt: new Date(),
+      acceptedAgreementAt: new Date(),
+      declarationAcceptedAt: new Date(),
+    })
+  );
+  drivers.push(
+    await Driver.create({
+      name: 'Pending Driver Listing',
+      slug: 'pending-driver-listing',
+      vehicleType: 'SUV',
+      perTripPrice: 1400,
+      hourlyRate: 380,
+      serviceArea: 'Mahabaleshwar',
+      user: driverUser._id,
+      isActive: false,
+      approvalStatus: 'PENDING',
+    })
+  );
+  for (let i = 1; i <= 4; i++) {
+    drivers.push(
+      await Driver.create({
+        name: `Driver Partner ${i}`,
+        slug: `driver-partner-${i}`,
         vehicleType: vehicles[i % vehicles.length],
         perTripPrice: 800 + i * 100,
         hourlyRate: 300 + i * 20,
+        serviceArea: 'Mahabaleshwar',
         rating: 4.3 + Math.random() * 0.5,
         reviewCount: Math.floor(Math.random() * 80) + 10,
         user: driverUser._id,
+        isActive: true,
+        approvalStatus: 'APPROVED',
         isAvailable: true,
       })
     );
@@ -385,7 +524,7 @@ const seed = async () => {
     {
       bookingNumber: 'YMBSEED004',
       customer: customers[2]._id,
-      vendor: driverUser._id,
+      vendor: taxiUser._id,
       type: BOOKING_TYPES.TAXI,
       status: BOOKING_STATUS.COMPLETED,
       driver: drivers[0]._id,
@@ -431,7 +570,18 @@ const seed = async () => {
   });
 
   await KYC.create({
+    user: taxiUser._id,
+    vendorType: 'TAXI',
+    aadhar: '876543210987',
+    pan: 'TAXIO1234P',
+    status: 'APPROVED',
+    reviewedBy: admin._id,
+    reviewedAt: new Date(),
+  });
+
+  await KYC.create({
     user: driverUser._id,
+    vendorType: 'DRIVER',
     aadhar: '987654321098',
     pan: 'FGHIJ5678K',
     status: 'APPROVED',
@@ -537,6 +687,8 @@ const seed = async () => {
     platformName: 'YOURMAHABALESHWAR.COM',
     commissionPercent: 10,
     gstPercent: 12,
+    stayListingDefaultRenewalPrice: { type: Number, default: 5000 },
+    staySubscriptionWarningDays: { type: Number, default: 30 },
     seoTitle: 'YOURMAHABALESHWAR.COM | Book Mahabaleshwar Stays & Experiences',
     seoDescription:
       'Book hotels, resorts, homestays, tents, guides, taxi, horse rides, strawberries and Mapro products in Mahabaleshwar.',
@@ -554,6 +706,13 @@ const seed = async () => {
     }))
   );
 
+  for (const hotel of await Hotel.find({})) {
+    await startSubscriptionOnApproval(hotel.type, hotel._id);
+  }
+  for (const homestay of await Homestay.find({})) {
+    await startSubscriptionOnApproval('HOMESTAY', homestay._id);
+  }
+
   console.log('\n✅ Seed completed successfully!\n');
   console.log('--- Demo credentials ---');
   console.log('Admin:    admin@yourmahabaleshwar.com / Admin@123');
@@ -561,6 +720,7 @@ const seed = async () => {
   console.log('Hotel:    hotel.vendor@demo.com / Vendor@123');
   console.log('Tent:     tent@demo.com / Vendor@123');
   console.log('Guide:    guide@demo.com / Vendor@123');
+  console.log('Taxi:     taxi@demo.com / Vendor@123');
   console.log('Driver:   driver@demo.com / Vendor@123');
   console.log('Homestay: homestay@demo.com / Vendor@123');
   console.log('Horse:    horse@demo.com / Vendor@123');

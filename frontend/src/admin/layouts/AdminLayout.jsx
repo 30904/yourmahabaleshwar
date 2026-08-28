@@ -6,10 +6,11 @@ import AdminHeader from '../components/AdminHeader';
 const breadcrumbMap = {
   '/admin': ['Admin', 'Dashboard'],
   '/admin/properties': ['Admin', 'Properties'],
-  '/admin/properties/new': ['Admin', 'Properties', 'Add Property'],
+  '/admin/listings/new': ['Admin', 'Listings', 'Add Listing'],
   '/admin/bookings': ['Admin', 'Bookings'],
   '/admin/guides': ['Admin', 'Guides'],
   '/admin/taxi': ['Admin', 'Taxi'],
+  '/admin/drivers': ['Admin', 'Drivers'],
   '/admin/finance': ['Admin', 'Finance'],
   '/admin/cms': ['Admin', 'CMS'],
   '/admin/settings': ['Admin', 'Settings'],

@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { MapPin, Images } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { fetchHorseBySlug, fetchReviews } from '../../services/listingsApi';
-import ImageGallery from '../../components/property/ImageGallery';
 import ReviewScore from '../../components/property/ReviewScore';
-import ServiceBookingForm from '../../components/booking/ServiceBookingForm';
+import HorseGuestBookingForm from '../../components/booking/HorseGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
 
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5f?w=900';
+
 export default function HorseDetailPage() {
   const { slug } = useParams();
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const [item, setItem] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchHorseBySlug(slug)
@@ -27,52 +33,181 @@ export default function HorseDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  useEffect(() => {
+    setShowBookingForm(false);
+    setPhotoIndex(0);
+  }, [slug]);
+
   if (loading) return <div className="page-container py-8"><Skeleton className="h-96" /></div>;
   if (!item) return <div className="page-container py-8">Not found</div>;
+
+  const images = item.images?.length ? item.images : [FALLBACK_IMG];
+  const priceFrom = item.priceFrom ?? item.routes?.[0]?.price;
+  const description = item.description || item.horseDetails;
+
+  const openBookingForm = () => {
+    if (!isAuthenticated) return;
+    setShowBookingForm(true);
+    requestAnimationFrame(() => {
+      document.getElementById('horse-guest-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   return (
     <div className="page-container py-8">
       <Seo
         title={item.name}
-        description={truncateMeta(item.description || item.horseDetails || `${item.name} — horse ride in Mahabaleshwar.`)}
+        description={truncateMeta(description || `${item.name} — horse ride in Mahabaleshwar.`)}
         image={firstImageUrl(item.images) || '/logo.png'}
         type="article"
       />
-      <h1 className="text-3xl font-bold">{item.name}</h1>
-      <ReviewScore score={item.score} label={item.scoreLabel} reviewCount={item.reviewCount} className="mt-2" />
-      <div className="mt-6"><ImageGallery images={item.images} name={item.name} /></div>
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
-        <div>
-          <p className="text-slate-700">{item.description || item.horseDetails}</p>
-          <div className="mt-6 space-y-2">
-            <h3 className="font-semibold">Routes</h3>
+
+      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid lg:grid-cols-[340px_minmax(0,1fr)_240px]">
+          <div className="relative min-h-[220px] bg-slate-100 lg:min-h-[280px]">
+            <img
+              src={images[photoIndex] || images[0]}
+              alt={item.name}
+              className="h-full w-full object-cover lg:absolute lg:inset-0"
+            />
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2 py-1 text-sm font-bold shadow"
+                  onClick={() => setPhotoIndex((i) => (i - 1 + images.length) % images.length)}
+                  aria-label="Previous photo"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2 py-1 text-sm font-bold shadow"
+                  onClick={() => setPhotoIndex((i) => (i + 1) % images.length)}
+                  aria-label="Next photo"
+                >
+                  ›
+                </button>
+                <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-white">
+                  <Images size={12} />
+                  {photoIndex + 1}/{images.length}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-slate-100 p-5 lg:border-l lg:border-t-0 lg:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="text-2xl font-bold text-primary sm:text-3xl">{item.name}</h1>
+              <ReviewScore score={item.score} label={item.scoreLabel} reviewCount={item.reviewCount} size="sm" />
+            </div>
+            <p className="flex items-start gap-1.5 text-sm text-slate-600">
+              <MapPin size={16} className="mt-0.5 shrink-0 text-primary" />
+              {item.location || 'Mahabaleshwar'}
+            </p>
+            {item.stable?.serviceArea && (
+              <p className="text-sm text-slate-600">
+                {t('horseGuestBooking.serviceArea')}: {item.stable.serviceArea}
+              </p>
+            )}
+            {item.stable?.safetyGearProvided && (
+              <span className="w-fit rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-primary">
+                {t('horseGuestBooking.safetyGearProvided')}
+              </span>
+            )}
+            {description && (
+              <p className="line-clamp-4 text-sm leading-relaxed text-slate-600">{description}</p>
+            )}
+            <div className="mt-auto grid gap-1 text-xs text-slate-500 sm:grid-cols-2">
+              {(item.routes || []).slice(0, 4).map((r) => (
+                <p key={r._id || r.name}>
+                  {r.name}: {formatCurrency(r.price)}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col justify-between gap-4 border-t border-slate-100 bg-slate-50/80 p-5 lg:border-l lg:border-t-0 lg:p-6">
+            <div className="text-right lg:text-left">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {t('horseGuestBooking.fromLabel')}
+              </p>
+              <p className="mt-1 text-2xl font-bold text-primary">
+                {priceFrom != null ? formatCurrency(priceFrom) : '—'}
+              </p>
+              <p className="text-xs text-slate-500">{t('horseGuestBooking.perRouteHint')}</p>
+            </div>
+            {isAuthenticated ? (
+              <div>
+                <p className="mb-3 text-xs text-slate-500">
+                  {showBookingForm ? t('horseGuestBooking.formClosedHint') : t('horseGuestBooking.formOpenHint')}
+                </p>
+                {!showBookingForm ? (
+                  <button type="button" className="btn-primary w-full" onClick={openBookingForm}>
+                    {t('horseGuestBooking.bookNow')}
+                  </button>
+                ) : (
+                  <button type="button" className="btn-outline w-full" onClick={() => setShowBookingForm(false)}>
+                    {t('horseGuestBooking.hideForm')}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p className="mb-3 text-xs text-slate-500">{t('horseGuestBooking.signInHint')}</p>
+                <Link to="/login" className="btn-primary block w-full text-center">
+                  {t('horseGuestBooking.signInToBook')}
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </article>
+
+      {description && (
+        <section className="mt-8">
+          <h2 className="text-lg font-bold text-slate-900">{t('horseGuestBooking.aboutTitle')}</h2>
+          <p className="mt-2 whitespace-pre-line text-slate-700">{description}</p>
+        </section>
+      )}
+
+      {(item.routes || []).length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-lg font-bold text-slate-900">{t('horseGuestBooking.routesTitle')}</h2>
+          <div className="mt-3 space-y-2">
             {(item.routes || []).map((r) => (
-              <div key={r._id || r.name} className="flex justify-between rounded-lg bg-slate-50 px-4 py-3 text-sm">
-                <span>{r.name} · {r.durationMinutes} min</span>
-                <span className="font-semibold">{formatCurrency(r.price)}</span>
+              <div key={r._id || r.name} className="flex justify-between rounded-xl border border-slate-100 bg-white px-4 py-3 text-sm shadow-sm">
+                <span>
+                  {r.name} · {r.durationMinutes} {t('horseGuestBooking.minutes')}
+                </span>
+                <span className="font-semibold text-primary">{formatCurrency(r.price)}</span>
               </div>
             ))}
           </div>
-          {reviews.length > 0 && (
-            <div className="mt-8">
-              <h3 className="font-semibold">Reviews</h3>
-              <div className="mt-3 space-y-3">
-                {reviews.map((r) => (
-                  <div key={r._id} className="rounded-xl border border-slate-100 p-4">
-                    <p className="font-medium">{r.user?.name} · {r.rating}/5</p>
-                    <p className="mt-1 text-sm text-slate-600">{r.comment}</p>
-                  </div>
-                ))}
+        </section>
+      )}
+
+      {reviews.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-lg font-bold text-slate-900">{t('horseGuestBooking.reviewsTitle')}</h2>
+          <div className="mt-3 space-y-3">
+            {reviews.map((r) => (
+              <div key={r._id} className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+                <p className="font-medium">
+                  {r.user?.name} · {r.rating}/5
+                </p>
+                <p className="mt-1 text-sm text-slate-600">{r.comment}</p>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
+        </section>
+      )}
+
+      {isAuthenticated && showBookingForm && (
+        <div id="horse-guest-form" className="mt-10 scroll-mt-24 border-t border-slate-100 pt-10">
+          <HorseGuestBookingForm item={item} />
         </div>
-        {isAuthenticated ? (
-          <ServiceBookingForm type="horse" item={item} />
-        ) : (
-          <Link to="/login" className="btn-primary h-fit text-center">Sign in to book</Link>
-        )}
-      </div>
+      )}
     </div>
   );
 }

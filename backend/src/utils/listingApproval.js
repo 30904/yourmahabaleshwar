@@ -1,5 +1,5 @@
 import { isListingAdmin } from './vendorListingAccess.js';
-import { ROLES, STAFF_ROLES } from '../constants/roles.js';
+import { STAFF_ROLES } from '../constants/roles.js';
 
 export const APPROVAL_STATUS = {
   PENDING: 'PENDING',
@@ -25,9 +25,11 @@ export const denyIfVendorCannotEdit = (req, doc) => {
   return null;
 };
 
-/** Vendor-created stay listings wait for superadmin before going live. */
+/** Vendor-created listings wait for superadmin before going live; admin-created listings go live immediately. */
 export const stampPendingIfVendor = (req, data) => {
-  if (req.user?.role === ROLES.SUPER_ADMIN) return data;
+  if (isListingAdmin(req.user)) {
+    return { ...data, isActive: true, approvalStatus: APPROVAL_STATUS.APPROVED };
+  }
   return { ...data, isActive: false, approvalStatus: APPROVAL_STATUS.PENDING };
 };
 

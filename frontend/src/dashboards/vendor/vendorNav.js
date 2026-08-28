@@ -3,6 +3,7 @@ import {
   Calendar,
   CalendarDays,
   Car,
+  CreditCard,
   FileText,
   Home,
   Languages,
@@ -21,6 +22,8 @@ export const AVAILABILITY_ROLES = [
   ROLES.HOMESTAY_VENDOR,
   ROLES.TENT_OPERATOR,
   ROLES.HORSE_OPERATOR,
+  ROLES.TAXI_OPERATOR,
+  ROLES.DRIVER,
 ];
 
 const LISTINGS_NAV = {
@@ -28,7 +31,8 @@ const LISTINGS_NAV = {
   [ROLES.HOMESTAY_VENDOR]: { labelKey: 'vendor.navHomestays', icon: Home },
   [ROLES.TENT_OPERATOR]: { labelKey: 'vendor.navTents', icon: Tent },
   [ROLES.GUIDE]: { labelKey: 'vendor.navGuides', icon: Languages },
-  [ROLES.DRIVER]: { labelKey: 'vendor.navTaxi', icon: Car },
+  [ROLES.TAXI_OPERATOR]: { labelKey: 'vendor.navTaxi', icon: Car },
+  [ROLES.DRIVER]: { labelKey: 'vendor.navDriver', icon: Car },
   [ROLES.HORSE_OPERATOR]: { labelKey: 'vendor.navHorses', icon: Trees },
   [ROLES.PRODUCT_VENDOR]: { labelKey: 'vendor.navProducts', icon: ShoppingBag },
 };
@@ -38,7 +42,8 @@ const TITLE_KEYS = {
   [ROLES.HOMESTAY_VENDOR]: 'vendor.dashHomestay',
   [ROLES.TENT_OPERATOR]: 'vendor.dashTent',
   [ROLES.GUIDE]: 'vendor.dashGuide',
-  [ROLES.DRIVER]: 'vendor.dashTaxi',
+  [ROLES.TAXI_OPERATOR]: 'vendor.dashTaxi',
+  [ROLES.DRIVER]: 'vendor.dashDriver',
   [ROLES.HORSE_OPERATOR]: 'vendor.dashHorse',
   [ROLES.PRODUCT_VENDOR]: 'vendor.dashProduct',
 };
@@ -48,6 +53,8 @@ const AVAILABILITY_TYPES = {
   [ROLES.HOMESTAY_VENDOR]: [{ value: 'homestay', label: 'Homestay' }],
   [ROLES.TENT_OPERATOR]: [{ value: 'tent', label: 'Tent' }],
   [ROLES.HORSE_OPERATOR]: [{ value: 'horse', label: 'Horse' }],
+  [ROLES.TAXI_OPERATOR]: [{ value: 'driver', label: 'Taxi fleet' }],
+  [ROLES.DRIVER]: [{ value: 'driver', label: 'Driver profile' }],
 };
 
 export function vendorDashboardTitleKey(role) {
@@ -58,7 +65,12 @@ export function roleHasAvailability(role) {
   return AVAILABILITY_ROLES.includes(role);
 }
 
+export const STAY_SUBSCRIPTION_ROLES = [ROLES.HOTEL_VENDOR, ROLES.HOMESTAY_VENDOR];
+
 export function vendorCanAccessPath(role, pathname) {
+  if (String(pathname || '').startsWith('/dashboard/vendor/subscription')) {
+    return STAY_SUBSCRIPTION_ROLES.includes(role);
+  }
   if (String(pathname || '').startsWith('/dashboard/vendor/availability')) {
     return roleHasAvailability(role);
   }
@@ -82,6 +94,13 @@ export function getVendorNav(role, t) {
       to: '/dashboard/vendor/availability',
       label: t('vendor.availability'),
       icon: CalendarDays,
+    });
+  }
+  if (STAY_SUBSCRIPTION_ROLES.includes(role)) {
+    items.push({
+      to: '/dashboard/vendor/subscription',
+      label: t('staySubscription.nav'),
+      icon: CreditCard,
     });
   }
   items.push(

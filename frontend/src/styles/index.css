@@ -35,7 +35,15 @@
 
 @layer components {
   .page-container {
-    @apply mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8;
+    @apply mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8;
+  }
+
+  .nav-bar-inner {
+    @apply mx-auto grid min-h-[72px] w-full max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 sm:min-h-[80px] sm:gap-3 sm:px-6 lg:px-8 xl:gap-3;
+  }
+
+  .nav-actions {
+    @apply flex shrink-0 items-center justify-end gap-0.5 sm:gap-1;
   }
 
   .rounded-booking {
@@ -60,7 +68,7 @@
 
   /* Nav */
   .nav-link {
-    @apply whitespace-nowrap rounded-booking px-2 py-1.5 text-[13px] font-medium text-slate-700 transition xl:px-2.5;
+    @apply shrink-0 whitespace-nowrap rounded-booking px-1.5 py-1.5 text-xs font-medium text-slate-700 transition xl:px-2 xl:text-[13px] 2xl:px-2.5;
   }
   .nav-link:hover {
     background-color: #f1f5f9;
@@ -72,7 +80,10 @@
     font-weight: 600;
   }
   .nav-desktop {
-    @apply hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex;
+    @apply hidden min-w-0 flex-nowrap items-center gap-0.5 xl:flex xl:gap-1;
+  }
+  .nav-shop-wrap {
+    @apply ml-0.5 border-l border-slate-200/80 pl-1.5 xl:ml-1 xl:pl-2;
   }
 
   .nav-icon-btn {

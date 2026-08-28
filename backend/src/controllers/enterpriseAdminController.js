@@ -20,6 +20,10 @@ import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices } from '../utils/listingEnrich.js';
 import { normalizePropertyImages } from '../utils/propertyImages.js';
 import { APPROVAL_STATUS, approvalFilter } from '../utils/listingApproval.js';
+import {
+  isStayListingType,
+  startSubscriptionOnApproval,
+} from '../services/stayListingSubscriptionService.js';
 
 function buildHotelData(body, userId) {
   const slug = body.name
@@ -248,7 +252,7 @@ export const createAdminProperty = async (req, res) => {
 /** Toggle active flag only — safe for admin list actions (does not wipe other fields). */
 export const setAdminPropertyActive = async (req, res) => {
   try {
-    const { isActive, listingType, commissionRate } = req.body;
+    const { isActive, listingType, commissionRate, renewalPrice } = req.body;
     if (typeof isActive !== 'boolean') return error(res, 'isActive boolean required', 400);
 
     const isActivating = isActive === true;
@@ -263,6 +267,9 @@ export const setAdminPropertyActive = async (req, res) => {
     if (isActivating) {
       update.commissionRate = parsedCommission;
       update.approvalStatus = APPROVAL_STATUS.APPROVED;
+      if (renewalPrice != null && Number.isFinite(Number(renewalPrice)) && isStayListingType(listingType)) {
+        update.renewalPrice = Number(renewalPrice);
+      }
     } else {
       update.approvalStatus = APPROVAL_STATUS.REJECTED;
     }
@@ -276,6 +283,9 @@ export const setAdminPropertyActive = async (req, res) => {
     if (listingType === 'HOMESTAY') {
       const doc = await Homestay.findByIdAndUpdate(req.params.id, update, { new: true });
       if (!doc) return error(res, 'Homestay not found', 404);
+      if (isActivating) {
+        await startSubscriptionOnApproval('HOMESTAY', doc._id, { renewalPrice });
+      }
       return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
     }
 
@@ -285,9 +295,24 @@ export const setAdminPropertyActive = async (req, res) => {
       return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
     }
 
+    if (listingType === 'GUIDE') {
+      const doc = await Guide.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Guide not found', 404);
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
+    }
+
+    if (listingType === 'DRIVER' || listingType === 'TAXI') {
+      const doc = await Driver.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Driver not found', 404);
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
+    }
+
     // HOTEL / RESORT
     const doc = await Hotel.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!doc) return error(res, 'Property not found', 404);
+    if (isActivating && isStayListingType(listingType || doc.type)) {
+      await startSubscriptionOnApproval(listingType || doc.type, doc._id, { renewalPrice });
+    }
     return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
   } catch (err) {
     return error(res, err.message || 'Failed to update status', 500);
@@ -307,6 +332,10 @@ export const getAdminListingReview = async (req, res) => {
       listing = await Homestay.findById(id).populate('vendor', 'name email phone');
     } else if (type === 'HORSE') {
       listing = await Horse.findById(id).populate('operator', 'name email phone');
+    } else if (type === 'GUIDE') {
+      listing = await Guide.findById(id).populate('user', 'name email phone');
+    } else if (type === 'DRIVER' || type === 'TAXI') {
+      listing = await Driver.findById(id).populate('user', 'name email phone');
     } else {
       listing = await Hotel.findById(id).populate('vendor', 'name email phone');
       if (listing) rooms = await Room.find({ hotel: listing._id });
@@ -314,7 +343,7 @@ export const getAdminListingReview = async (req, res) => {
 
     if (!listing) return error(res, 'Listing not found', 404);
 
-    const vendorUser = listing.vendor || listing.operator || null;
+    const vendorUser = listing.vendor || listing.operator || listing.user || null;
     const vendorId = vendorUser?._id || vendorUser;
     const kyc = vendorId ? await KYC.findOne({ user: vendorId }) : null;
 
@@ -342,6 +371,10 @@ export const updateAdminProperty = async (req, res) => {
 
     if (req.body.images?.length) {
       update.images = await normalizePropertyImages(req.body.images);
+    }
+
+    if (req.body.renewalPrice != null && Number.isFinite(Number(req.body.renewalPrice))) {
+      update.renewalPrice = Number(req.body.renewalPrice);
     }
 
     const hotel = await Hotel.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
@@ -405,10 +438,29 @@ export const getAdminGuides = async (req, res) => {
 };
 
 export const getAdminDrivers = async (req, res) => {
+  const { search, kycStatus, vendorType } = req.query;
   const filter = {};
-  if (req.query.search) filter.name = { $regex: req.query.search, $options: 'i' };
-  const drivers = await Driver.find(filter).populate('user', 'name email phone').sort('-createdAt');
-  return success(res, drivers);
+  if (search) filter.name = { $regex: search, $options: 'i' };
+  const vt = String(vendorType || '').toUpperCase();
+  if (vt === 'TAXI' || vt === 'DRIVER') {
+    const role = vt === 'TAXI' ? ROLES.TAXI_OPERATOR : ROLES.DRIVER;
+    const ownerIds = await User.find({ role }).distinct('_id');
+    filter.user = { $in: ownerIds };
+  }
+  const drivers = await Driver.find(filter).populate('user', 'name email phone role').sort('-createdAt');
+  let kycMap = {};
+  if (drivers.length) {
+    const kycs = await KYC.find({ user: { $in: drivers.map((d) => d.user) } });
+    kycMap = Object.fromEntries(kycs.map((k) => [k.user.toString(), k]));
+  }
+  const items = drivers.map((d) => ({
+    ...d.toObject(),
+    kyc: kycMap[d.user?._id?.toString()] || null,
+  }));
+  const filtered = kycStatus
+    ? items.filter((i) => (i.kyc?.status || 'NONE') === kycStatus.toUpperCase())
+    : items;
+  return success(res, filtered);
 };
 
 export const getAdminVendors = async (req, res) => {
@@ -420,6 +472,7 @@ export const getAdminVendors = async (req, res) => {
         ROLES.HOMESTAY_VENDOR,
         ROLES.TENT_OPERATOR,
         ROLES.GUIDE,
+        ROLES.TAXI_OPERATOR,
         ROLES.DRIVER,
         ROLES.HORSE_OPERATOR,
       ],

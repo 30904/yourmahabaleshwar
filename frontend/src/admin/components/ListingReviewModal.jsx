@@ -10,6 +10,7 @@ import {
   updateTent,
   updateHorse,
 } from '../../services/enterpriseAdminApi';
+import { adminSetStayRenewalPrice } from '../../services/staySubscriptionApi';
 import { formatCurrency } from '../../utils/format';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { listingStatusOf } from '../../utils/listingStatus';
@@ -77,6 +78,8 @@ function formFromListing(listing, rooms) {
   };
 }
 
+const STAY_LISTING_TYPES = new Set(['HOTEL', 'RESORT', 'HOMESTAY']);
+
 export default function ListingReviewModal({ open, mode = 'view', listingType, listingId, onClose, onChanged }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -85,6 +88,8 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
   const [data, setData] = useState(null);
   const [form, setForm] = useState(formFromListing(null, []));
   const [commissionRate, setCommissionRate] = useState('10');
+  const [renewalPrice, setRenewalPrice] = useState('');
+  const [savingRenewalPrice, setSavingRenewalPrice] = useState(false);
 
   const type = String(listingType || 'HOTEL').toUpperCase();
   const editable = mode === 'edit';
@@ -100,6 +105,8 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
         setForm(formFromListing(payload.listing, payload.rooms));
         const rate = payload.listing?.commissionRate;
         setCommissionRate(rate != null && rate !== '' ? String(rate) : '10');
+        const renewal = payload.listing?.renewalPrice;
+        setRenewalPrice(renewal != null && renewal !== '' ? String(renewal) : '');
       })
       .catch(() => {
         if (!cancelled) toast.error('Failed to load listing details');
@@ -115,10 +122,15 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
   const listing = data?.listing;
   const rooms = data?.rooms || [];
   const kyc = data?.kyc;
-  const vendor = data?.vendor || listing?.vendor || listing?.operator;
+  const vendor = data?.vendor || listing?.vendor || listing?.operator || listing?.user;
   const status = listingStatusOf(listing || {});
   const parsedCommission = Number(commissionRate);
   const commissionValid = commissionRate !== '' && Number.isFinite(parsedCommission) && parsedCommission >= 0;
+  const parsedRenewalPrice = Number(renewalPrice);
+  const renewalPriceValid =
+    !STAY_LISTING_TYPES.has(type) ||
+    (renewalPrice !== '' && Number.isFinite(parsedRenewalPrice) && parsedRenewalPrice >= 0);
+  const isStayListing = STAY_LISTING_TYPES.has(type);
 
   const addressText = useMemo(() => {
     if (!listing) return '';
@@ -137,6 +149,28 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
       ...prev,
       rooms: prev.rooms.map((room, i) => (i === index ? { ...room, [key]: value } : room)),
     }));
+
+  const saveRenewalPrice = async () => {
+    if (!listing || !isStayListing) return;
+    if (!renewalPriceValid) {
+      toast.error('Enter a valid renewal price for this listing');
+      return;
+    }
+    setSavingRenewalPrice(true);
+    try {
+      await adminSetStayRenewalPrice(type, listing._id, parsedRenewalPrice);
+      toast.success('Renewal price saved for this listing');
+      onChanged?.();
+      const refreshed = await fetchAdminListingReview(listingId, type);
+      setData(refreshed);
+      const saved = refreshed.listing?.renewalPrice;
+      setRenewalPrice(saved != null && saved !== '' ? String(saved) : '');
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to save renewal price');
+    } finally {
+      setSavingRenewalPrice(false);
+    }
+  };
 
   const saveEdits = async () => {
     if (!listing) return;
@@ -198,6 +232,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
           priceRangeTo: listing.priceRangeTo,
           cancellationPolicyText: listing.cancellationPolicyText,
           bankDetails: listing.bankDetails,
+          renewalPrice: isStayListing && renewalPriceValid ? parsedRenewalPrice : undefined,
         });
       } else if (type === 'HORSE') {
         await updateHorse(listing._id, {
@@ -226,6 +261,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
           images,
           rooms: roomPayload,
           vendor: listing.vendor?._id || listing.vendor,
+          renewalPrice: isStayListing && renewalPriceValid ? parsedRenewalPrice : undefined,
         });
       }
       toast.success('Listing updated');
@@ -242,8 +278,8 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
 
   const requestApprove = () => {
     if (!listing) return;
-    if (!commissionValid) {
-      toast.error('Enter a commission % before approving');
+    if (!commissionValid || !renewalPriceValid) {
+      toast.error('Enter commission and renewal price before approving');
       return;
     }
     setConfirmAction('approve');
@@ -256,8 +292,8 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
 
   const approve = async () => {
     if (!listing) return;
-    if (!commissionValid) {
-      toast.error('Enter a commission % before approving');
+    if (!commissionValid || !renewalPriceValid) {
+      toast.error('Enter commission and renewal price before approving');
       setConfirmAction(null);
       return;
     }
@@ -267,8 +303,9 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
         isActive: true,
         listingType: type,
         commissionRate: parsedCommission,
+        renewalPrice: isStayListing ? parsedRenewalPrice : undefined,
       });
-      toast.success('Listing approved and published');
+      toast.success(isStayListing ? 'Listing approved — free 1-year subscription started' : 'Listing approved and published');
       setConfirmAction(null);
       onChanged?.();
       onClose?.();
@@ -414,6 +451,97 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
                   }
                 />
                 <Info label="Owner / Partner" value={listing.ownerName} />
+                {type === 'GUIDE' && (
+                  <>
+                    <Info label="Gender" value={listing.gender} />
+                    <Info label="Father / Husband" value={listing.fatherOrHusbandName} />
+                    <Info
+                      label="Date of birth"
+                      value={listing.dateOfBirth ? new Date(listing.dateOfBirth).toLocaleDateString('en-IN') : ''}
+                    />
+                    <Info label="Primary mobile" value={listing.contact?.primaryMobile} />
+                    <Info label="Alternate mobile" value={listing.contact?.alternateMobile} />
+                    <Info label="Email" value={listing.contact?.email} />
+                    <Info label="Emergency contact" value={listing.contact?.emergencyName} />
+                    <Info label="Emergency mobile" value={listing.contact?.emergencyMobile} />
+                    <Info
+                      label="Vehicle ownership"
+                      value={[
+                        listing.vehicle?.ownsTwoWheeler === true ? 'Owns 2W' : listing.vehicle?.ownsTwoWheeler === false ? 'No 2W' : null,
+                        listing.vehicle?.ownsFourWheeler === true ? 'Owns 4W' : listing.vehicle?.ownsFourWheeler === false ? 'No 4W' : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    />
+                    <Info label="Driving skill" value={listing.vehicle?.drivingSkill} />
+                    <Info label="License type" value={listing.vehicle?.licenseType} />
+                    <Info label="License number" value={listing.vehicle?.licenseNumber} />
+                    <Info label="Experience (years)" value={listing.experience} />
+                    <Info label="Main tourism area" value={listing.mainTourismArea} />
+                    <Info
+                      label="Languages"
+                      value={[...(listing.languages || []), ...(listing.otherLanguages || [])].join(', ')}
+                    />
+                    <Info label="Specialties" value={(listing.specialties || []).join(', ')} />
+                    <Info
+                      label="Guide packages"
+                      value={`6hr ${formatCurrency(listing.package6hr || 0)} · 12hr ${formatCurrency(listing.package12hr || 0)} · Bike add-on ${formatCurrency(listing.bikeAddonPrice || 0)}`}
+                    />
+                  </>
+                )}
+                {(type === 'DRIVER' || type === 'TAXI') && (
+                  <>
+                    <Info label="Gender" value={listing.gender} />
+                    <Info label="Father / Husband" value={listing.fatherOrHusbandName} />
+                    <Info
+                      label="Date of birth"
+                      value={listing.dateOfBirth ? new Date(listing.dateOfBirth).toLocaleDateString('en-IN') : ''}
+                    />
+                    <Info label="Primary mobile" value={listing.contact?.primaryMobile || listing.phone} />
+                    <Info label="Alternate mobile" value={listing.contact?.alternateMobile} />
+                    <Info label="Email" value={listing.contact?.email} />
+                    <Info label="Emergency contact" value={listing.contact?.emergencyName} />
+                    <Info label="Emergency mobile" value={listing.contact?.emergencyMobile} />
+                    <Info label="Vehicle type" value={listing.vehicleType} />
+                    <Info label="Vehicle number" value={listing.vehicleNumber} />
+                    <Info label="License type" value={listing.vehicle?.licenseType} />
+                    <Info label="License number" value={listing.vehicle?.licenseNumber} />
+                    <Info label="Experience (years)" value={listing.experience} />
+                    <Info label="Service area" value={listing.serviceArea} />
+                    <Info
+                      label="Pricing"
+                      value={`Per trip ${formatCurrency(listing.perTripPrice || 0)} · Hourly ${formatCurrency(listing.hourlyRate || 0)}`}
+                    />
+                  </>
+                )}
+                {type === 'HORSE' && (
+                  <>
+                    <Info label="Operator name" value={listing.operatorName} />
+                    <Info label="Gender" value={listing.gender} />
+                    <Info label="Father / Husband" value={listing.fatherOrHusbandName} />
+                    <Info
+                      label="Date of birth"
+                      value={listing.dateOfBirth ? new Date(listing.dateOfBirth).toLocaleDateString('en-IN') : ''}
+                    />
+                    <Info label="Primary mobile" value={listing.contact?.primaryMobile || listing.contactPhone} />
+                    <Info label="Alternate mobile" value={listing.contact?.alternateMobile} />
+                    <Info label="Email" value={listing.contact?.email} />
+                    <Info label="Emergency contact" value={listing.contact?.emergencyName} />
+                    <Info label="Emergency mobile" value={listing.contact?.emergencyMobile} />
+                    <Info label="Service area" value={listing.stable?.serviceArea || listing.location} />
+                    <Info label="Horse count" value={listing.stable?.horseCount ?? listing.horseCount} />
+                    <Info label="Safety gear" value={listing.stable?.safetyGearProvided === false ? 'No' : 'Yes'} />
+                    <Info label="Experience (years)" value={listing.stable?.experience ?? listing.experience} />
+                    <Info label="Daily slots" value={listing.availability?.slotsPerDay} />
+                    <Info
+                      label="Routes"
+                      value={(listing.routes || [])
+                        .map((r) => `${r.name} (${r.durationMinutes || 30} min) — ${formatCurrency(r.price || 0)}`)
+                        .join(' · ')}
+                    />
+                    <Info label="Horse details" value={listing.horseDetails} />
+                  </>
+                )}
                 <Info label="Address / location" value={addressText} />
                 <Info label="Reception phone" value={listing.receptionPhone || listing.contactPhone} />
                 <Info label="WhatsApp" value={listing.whatsapp} />
@@ -587,6 +715,49 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
             {!commissionValid && <p className="text-sm text-red-600">Enter a valid commission of 0 or more.</p>}
           </section>
 
+          {isStayListing && (
+            <section className="space-y-3 border-t border-slate-200 pt-4">
+              <h4 className="admin-section-title">Listing subscription — this property only</h4>
+              <p className="text-sm text-slate-600">
+                First year is free when approved. Set a separate yearly renewal price for <strong>this listing only</strong> — each hotel, resort and homestay can have a different price.
+              </p>
+              {listing?.subscriptionExpiresAt && (
+                <Info
+                  label="Current subscription"
+                  value={`${listing.subscriptionStatus || 'NONE'} · until ${new Date(listing.subscriptionExpiresAt).toLocaleDateString('en-IN')}`}
+                />
+              )}
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="admin-label min-w-[220px] flex-1 max-w-xs">
+                  Year 2+ renewal price for this listing (₹/year)
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="admin-input"
+                    value={renewalPrice}
+                    onChange={(e) => setRenewalPrice(e.target.value)}
+                    placeholder="e.g. 4500"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="admin-btn-secondary"
+                  onClick={saveRenewalPrice}
+                  disabled={savingRenewalPrice || !renewalPriceValid}
+                >
+                  {savingRenewalPrice ? 'Saving…' : 'Save renewal price'}
+                </button>
+              </div>
+              {!renewalPriceValid && <p className="text-sm text-red-600">Enter a valid renewal price for this listing.</p>}
+              {listing?.renewalPrice != null && (
+                <p className="text-xs text-slate-500">
+                  Saved for this listing: {formatCurrency(listing.renewalPrice)}/year
+                </p>
+              )}
+            </section>
+          )}
+
           <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-4">
             <button type="button" className="admin-btn-secondary" onClick={onClose}>
               Close
@@ -598,7 +769,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
               type="button"
               className="admin-btn-success"
               onClick={requestApprove}
-              disabled={!!acting || !commissionValid}
+              disabled={!!acting || !commissionValid || !renewalPriceValid}
             >
               Approve
             </button>

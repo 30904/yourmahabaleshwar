@@ -178,7 +178,7 @@ function PricingFields({ vertical, draft, t, onField, onRow }) {
       </>
     );
   }
-  if (vertical === 'TAXI') {
+  if (vertical === 'TAXI' || vertical === 'DRIVER') {
     return (
       <>
         <Input label={t('vendor.perTrip')} type="number" min="1" value={draft.perTripPrice} onChange={(e) => onField('perTripPrice', e.target.value)} />

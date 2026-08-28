@@ -6,6 +6,7 @@ import { attachHotelPrices, enrichHotel } from '../utils/listingEnrich.js';
 import { mapHotelMine } from '../utils/vendorMineListings.js';
 import { denyIfNotOwner, stampOwnerOnCreate, stripOwnerOnUpdate } from '../utils/vendorListingAccess.js';
 import { APPROVAL_STATUS, denyIfVendorCannotEdit, stampPendingIfVendor } from '../utils/listingApproval.js';
+import { maybeStartSubscriptionAfterCreate, publicStaySubscriptionFilter } from '../services/stayListingSubscriptionService.js';
 
 const listMyStayProperties = (forcedType) => async (req, res) => {
   const requested = String(forcedType || req.query.type || '').toUpperCase();
@@ -69,7 +70,7 @@ export const getMyResort = getMyStayProperty('RESORT');
 
 export const getHotels = async (req, res) => {
   const { type, featured, search, page = 1, limit = 12 } = req.query;
-  const filter = { isActive: true };
+  const filter = { isActive: true, ...publicStaySubscriptionFilter() };
   if (type) filter.type = type.toUpperCase();
   if (featured === 'true') filter.isFeatured = true;
   if (search) filter.name = { $regex: search, $options: 'i' };
@@ -83,7 +84,7 @@ export const getHotels = async (req, res) => {
 };
 
 export const getHotelBySlug = async (req, res) => {
-  const hotel = await Hotel.findOne({ slug: req.params.slug, isActive: true });
+  const hotel = await Hotel.findOne({ slug: req.params.slug, isActive: true, ...publicStaySubscriptionFilter() });
   if (!hotel) return error(res, 'Hotel not found', 404);
   const rooms = await Room.find({ hotel: hotel._id, isActive: { $ne: false } });
   const minPrice = rooms.length ? Math.min(...rooms.map((r) => r.basePrice)) : null;
@@ -99,6 +100,7 @@ export const createHotel = async (req, res) => {
     const hotel = await Hotel.create(payload);
     await syncHotelRooms(hotel._id, rooms);
     const savedRooms = await Room.find({ hotel: hotel._id });
+    await maybeStartSubscriptionAfterCreate(hotel.type || 'HOTEL', hotel);
     return success(res, { ...hotel.toObject(), rooms: savedRooms }, 'Hotel created', 201);
   } catch (err) {
     if (err.code === 11000) return error(res, 'A listing with this name already exists', 400);

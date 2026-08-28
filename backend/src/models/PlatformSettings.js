@@ -35,6 +35,8 @@ const platformSettingsSchema = new mongoose.Schema(
       enum: ['SUBSCRIPTION', 'POINTS', 'BOTH'],
       default: 'BOTH',
     },
+    stayListingDefaultRenewalPrice: { type: Number, default: 5000 },
+    staySubscriptionWarningDays: { type: Number, default: 30 },
   },
   { timestamps: true }
 );

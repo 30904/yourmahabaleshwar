@@ -5,6 +5,7 @@ export const ROUTES = {
   RESORTS: '/resorts',
   TENTS: '/tents',
   GUIDES: '/guides',
+  DRIVERS: '/drivers',
   TAXI: '/taxi',
   DRIVER_ENQUIRY: '/driver-enquiry',
   HOURLY_ENQUIRY: '/hourly-enquiry',

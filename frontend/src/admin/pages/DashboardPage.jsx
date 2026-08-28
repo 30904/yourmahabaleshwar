@@ -143,9 +143,9 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to="/admin/properties/new" className="admin-dash-hero-btn admin-dash-hero-btn-primary">
+            <Link to="/admin/listings/new?type=HOTEL" className="admin-dash-hero-btn admin-dash-hero-btn-primary">
               <Plus size={16} />
-              Add Property
+              Add Listing
             </Link>
             <Link to="/admin/bookings" className="admin-dash-hero-btn admin-dash-hero-btn-ghost">
               View Bookings
@@ -456,7 +456,7 @@ export default function DashboardPage() {
         <h3 className="admin-card-title mb-4">Quick Actions</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { to: '/admin/properties/new', label: 'Add Property', desc: 'Hotel, resort or listing', icon: Building2 },
+            { to: '/admin/listings/new?type=HOTEL', label: 'Add Listing', desc: 'Hotel, resort, guide, taxi & more', icon: Building2 },
             { to: '/admin/bookings', label: 'Manage Bookings', desc: 'View & update status', icon: Calendar },
             { to: '/admin/vendors', label: 'Vendors', desc: 'Partner accounts', icon: Store },
             { to: '/admin/cms', label: 'CMS & Banners', desc: 'Homepage content', icon: MapPin },

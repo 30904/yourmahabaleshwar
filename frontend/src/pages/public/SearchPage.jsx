@@ -86,11 +86,12 @@ export default function SearchPage() {
             {total === 0 && <p className="text-slate-500">No results found. Try a different search.</p>}
           </div>
         )}
-        <div className="mt-10 grid gap-4 sm:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Link to="/homestays" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Homestays</Link>
           <Link to="/tents" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Browse tents</Link>
-          <Link to="/horses" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Horse rides</Link>
           <Link to="/taxi" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Book taxi</Link>
+          <Link to="/drivers" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Book driver</Link>
+          <Link to="/horses" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Horse rides</Link>
         </div>
       </div>
     </div>
