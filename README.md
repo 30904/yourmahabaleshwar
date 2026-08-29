@@ -117,3 +117,5 @@ See `backend/.env.example` and `frontend/.env.example` for Razorpay, Fast2SMS, M
 ## License
 
 Proprietary — YOURMAHABALESHWAR.COM
+
+<!-- Updated August 29, 2026 -->
