@@ -6,11 +6,18 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
+import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { createHorseBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import {
+  DEFAULT_HORSE_PACKAGE_ID,
+  HORSE_CLIENT_PACKAGES,
+  openHorseRoutesForI18n,
+} from '../../constants/horseClientRateChart';
+import { useGroupMemberSync } from '../../hooks/useCoTravellerSync';
 
 const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: '' });
 
@@ -52,7 +59,7 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
   );
 }
 
-export default function HorseGuestBookingForm({ item }) {
+export default function HorseGuestBookingForm({ item, openMode = false }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -60,7 +67,9 @@ export default function HorseGuestBookingForm({ item }) {
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
 
-  const routes = item?.routes || [];
+  const openModeRoutes = useMemo(() => openHorseRoutesForI18n(t), [t, i18n.language]);
+
+  const routes = openMode ? openModeRoutes : item?.routes || [];
   const defaultRouteId = routes[0] ? routeKey(routes[0], 0) : '';
 
   const termsSummary = useMemo(() => {
@@ -118,23 +127,18 @@ export default function HorseGuestBookingForm({ item }) {
   const dateBlocked = form.rideDate && unavailable.includes(form.rideDate);
 
   useEffect(() => {
-    if (!item?._id || !form.rideDate) return;
+    if (openMode || !item?._id || !form.rideDate) return;
     fetchAvailability('horse', item._id, form.rideDate, form.rideDate)
       .then((d) => setUnavailable(d.unavailable || []))
       .catch(() => setUnavailable([]));
-  }, [item?._id, form.rideDate]);
+  }, [openMode, item?._id, form.rideDate]);
 
   useEffect(() => {
-    const extra = Math.max(0, Number(form.riderCount || 1) - 1);
-    setForm((prev) => {
-      const current = prev.groupMembers || [];
-      if (current.length === extra) return prev;
-      const next = [...current];
-      while (next.length < extra) next.push(emptyMember());
-      while (next.length > extra) next.pop();
-      return { ...prev, groupMembers: next };
-    });
-  }, [form.riderCount]);
+    if (form.routeId || !defaultRouteId) return;
+    setField('routeId', defaultRouteId);
+  }, [defaultRouteId, form.routeId]);
+
+  useGroupMemberSync(form.riderCount, setForm, emptyMember);
 
   const validate = () => {
     if (!form.rideDate) return t('horseGuestBooking.validation.rideDate');
@@ -162,7 +166,8 @@ export default function HorseGuestBookingForm({ item }) {
         .join('\n');
 
       const res = await createHorseBooking({
-        horseId: item._id,
+        open: openMode,
+        horseId: openMode ? undefined : item._id,
         routeId: form.routeId,
         checkIn: form.rideDate,
         guestRegistration: {
@@ -201,12 +206,14 @@ export default function HorseGuestBookingForm({ item }) {
         },
       });
       const booking = res.data.data;
-      toast.success(t('horseGuestBooking.bookingCreated'));
-      try {
-        await payForBooking(booking, user);
-        toast.success(t('horseGuestBooking.paymentSuccess'));
-      } catch {
-        toast(t('horseGuestBooking.bookingSavedPayLater'));
+      toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('horseGuestBooking.bookingCreated'));
+      if (!openMode) {
+        try {
+          await payForBooking(booking, user);
+          toast.success(t('horseGuestBooking.paymentSuccess'));
+        } catch {
+          toast(t('horseGuestBooking.bookingSavedPayLater'));
+        }
       }
       navigate('/dashboard/customer/bookings');
     } catch (error) {
@@ -216,7 +223,7 @@ export default function HorseGuestBookingForm({ item }) {
     }
   };
 
-  if (!routes.length) {
+  if (!openMode && !routes.length) {
     return (
       <Card className="text-sm text-slate-600">
         {t('horseGuestBooking.noRoutes')}
@@ -227,16 +234,18 @@ export default function HorseGuestBookingForm({ item }) {
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">{t('horseGuestBooking.formTitle')}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {t('horseGuestBooking.formSubtitle', { name: item?.name })}
-            </p>
-          </div>
+        <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
+          {!openMode && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{t('horseGuestBooking.formTitle')}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {t('horseGuestBooking.formSubtitle', { name: item?.name })}
+              </p>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <FormLanguageToggle />
-            <p className="text-sm text-slate-500">
+            <p className="form-date text-sm text-slate-500">
               {t('horseGuestBooking.formDate')}: {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
@@ -244,6 +253,35 @@ export default function HorseGuestBookingForm({ item }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('horseGuestBooking.section1')}</SectionTitle>
+          {openMode && (
+            <ServiceRateChartToggle
+              seeLabel={t('serviceBooking.seeRateChart')}
+              hideLabel={t('serviceBooking.hideRateChart')}
+            >
+              <p className="font-semibold text-slate-900">{t('horseGuestBooking.rateChartTitle')}</p>
+              <div className="mt-3 overflow-x-auto">
+                <table className="min-w-full text-left text-xs sm:text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-600">
+                      <th className="py-2 pr-3 font-medium">{t('horseGuestBooking.chartPackage')}</th>
+                      <th className="py-2 pr-3 font-medium">{t('horseGuestBooking.chartDetails')}</th>
+                      <th className="py-2 font-medium">{t('horseGuestBooking.chartRate')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {HORSE_CLIENT_PACKAGES.map((pkg) => (
+                      <tr key={pkg.id} className="border-b border-slate-100">
+                        <td className="py-2 pr-3">{t(pkg.nameKey)}</td>
+                        <td className="py-2 pr-3">{t(pkg.detailsKey)}</td>
+                        <td className="py-2 font-semibold">{formatCurrency(pkg.price)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-slate-600">{t('horseGuestBooking.openRateHint')}</p>
+            </ServiceRateChartToggle>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Input
               label={t('horseGuestBooking.rideDate')}
@@ -269,7 +307,10 @@ export default function HorseGuestBookingForm({ item }) {
               >
                 {routes.map((r, idx) => (
                   <option key={routeKey(r, idx)} value={routeKey(r, idx)}>
-                    {r.name} — {r.durationMinutes} {t('horseGuestBooking.minutes')} — {formatCurrency(r.price)}
+                    {r.name}
+                    {r.durationMinutes ? ` — ${r.durationMinutes} ${t('horseGuestBooking.minutes')}` : ''}
+                    {' — '}
+                    {formatCurrency(r.price)}
                   </option>
                 ))}
               </select>
@@ -465,7 +506,7 @@ export default function HorseGuestBookingForm({ item }) {
         </Card>
 
         <Button type="submit" className="w-full sm:w-auto" disabled={dateBlocked || submitting}>
-          {submitting ? t('common.loading') : t('horseGuestBooking.confirmBooking')}
+          {submitting ? t('common.loading') : openMode ? t('serviceBooking.submitRequest') : t('horseGuestBooking.confirmBooking')}
         </Button>
       </form>
 

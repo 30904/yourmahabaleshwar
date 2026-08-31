@@ -23,6 +23,7 @@ import OfficeStaffPage from '../pages/system/OfficeStaffPage';
 import CmsHubPage from '../pages/cms/CmsHubPage';
 import BlogsPage from '../pages/cms/BlogsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
+import ServiceMonetizationPage from '../pages/settings/ServiceMonetizationPage';
 import UploadCenterPage from '../pages/upload/UploadCenterPage';
 import KycPage from '../pages/kyc/KycPage';
 import ReviewsModerationPage from '../pages/ReviewsModerationPage';
@@ -58,10 +59,15 @@ const adminRouteConfig = [
   { path: 'drivers/kyc-pending', element: <DriverListPage vendorType="DRIVER" kycFilter="pending" /> },
   { path: 'drivers/approved', element: <DriverListPage vendorType="DRIVER" kycFilter="approved" /> },
   { path: 'bookings', element: <BookingListPage /> },
+  { path: 'bookings/unassigned', element: <BookingListPage assignmentFilter="UNASSIGNED" /> },
+  { path: 'bookings/guides', element: <BookingListPage serviceTenant="GUIDE" /> },
+  { path: 'bookings/taxi', element: <BookingListPage serviceTenant="TAXI" /> },
+  { path: 'bookings/drivers', element: <BookingListPage serviceTenant="DRIVER" /> },
+  { path: 'bookings/tents', element: <BookingListPage serviceTenant="TENT" /> },
+  { path: 'bookings/horses', element: <BookingListPage serviceTenant="HORSE" /> },
   { path: 'bookings/hotels', element: <BookingListPage type="HOTEL" /> },
-  { path: 'bookings/tents', element: <BookingListPage type="TENT" /> },
-  { path: 'bookings/guides', element: <BookingListPage type="GUIDE" /> },
-  { path: 'bookings/taxi', element: <BookingListPage type="TAXI" /> },
+  { path: 'bookings/homestays', element: <BookingListPage type="HOMESTAY" /> },
+  { path: 'bookings/resorts', element: <BookingListPage type="RESORT" /> },
   { path: 'bookings/enquiries', element: <EnquiriesPage /> },
   { path: 'bookings/cancelled', element: <BookingListPage statusFilter="CANCELLED" /> },
   { path: 'pricing/coupons', element: <CouponsPage /> },
@@ -89,6 +95,7 @@ const adminRouteConfig = [
   { path: 'reports/destinations', element: <DomainToolsPage /> },
   { path: 'kyc', element: <KycPage /> },
   { path: 'settings', element: <SettingsPage /> },
+  { path: 'settings/service-monetization', element: <ServiceMonetizationPage /> },
   { path: 'upload-center', element: <UploadCenterPage /> },
   { path: 'backups', element: <BackupsPage /> },
   { path: 'domain-tools', element: <DomainToolsPage /> },

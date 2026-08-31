@@ -6,11 +6,20 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
+import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { createGuideBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import {
+  DEFAULT_GUIDE_PACKAGE_ID,
+  GUIDE_BIKE_ADDON,
+  GUIDE_PACKAGES,
+  GUIDE_TOUR_LOCATIONS,
+  guideOpenPrice,
+} from '../../constants/guideClientRateChart';
+import { useGroupMemberSync } from '../../hooks/useCoTravellerSync';
 
 const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: '' });
 
@@ -48,7 +57,7 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
   );
 }
 
-export default function GuideGuestBookingForm({ item }) {
+export default function GuideGuestBookingForm({ item, openMode = false }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -74,7 +83,8 @@ export default function GuideGuestBookingForm({ item }) {
   const [form, setForm] = useState(() => ({
     tourDate: '',
     startTime: '09:00',
-    guidePackage: '6HR',
+    guidePackage: openMode ? DEFAULT_GUIDE_PACKAGE_ID : '6HR',
+    selectedTourId: GUIDE_TOUR_LOCATIONS[0]?.id || '',
     bikeAddon: false,
     touristCount: 2,
     leadFullName: user?.name || '',
@@ -90,7 +100,7 @@ export default function GuideGuestBookingForm({ item }) {
     pickupLocation: '',
     preferredSpots: [],
     specialRequests: '',
-    groupMembers: [emptyMember(), emptyMember()],
+    groupMembers: [],
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
@@ -114,31 +124,29 @@ export default function GuideGuestBookingForm({ item }) {
     });
   };
 
-  const packagePrice = form.guidePackage === '12HR' ? item?.package12hr || 0 : item?.package6hr || 0;
-  const bikePrice = form.bikeAddon ? item?.bikeAddonPrice || 0 : 0;
-  const subtotal = packagePrice + bikePrice;
+  const packagePrice = openMode
+    ? guideOpenPrice(form.guidePackage, form.bikeAddon)
+    : form.guidePackage === '12HR' || form.guidePackage === '8HR'
+      ? item?.package12hr || 1500
+      : item?.package6hr || 900;
+  const bikePrice = form.bikeAddon
+    ? openMode
+      ? GUIDE_BIKE_ADDON
+      : item?.bikeAddonPrice || 200
+    : 0;
+  const subtotal = openMode ? packagePrice : packagePrice + bikePrice;
   const gst = calcGST(subtotal);
   const total = subtotal + gst;
   const dateBlocked = form.tourDate && unavailable.includes(form.tourDate);
 
   useEffect(() => {
-    if (!item?._id || !form.tourDate) return;
+    if (openMode || !item?._id || !form.tourDate) return;
     fetchAvailability('guide', item._id, form.tourDate, form.tourDate)
       .then((d) => setUnavailable(d.unavailable || []))
       .catch(() => setUnavailable([]));
   }, [item?._id, form.tourDate]);
 
-  useEffect(() => {
-    const extra = Math.max(0, Number(form.touristCount || 1) - 1);
-    setForm((prev) => {
-      const current = prev.groupMembers || [];
-      if (current.length === extra) return prev;
-      const next = [...current];
-      while (next.length < extra) next.push(emptyMember());
-      while (next.length > extra) next.pop();
-      return { ...prev, groupMembers: next };
-    });
-  }, [form.touristCount]);
+  useGroupMemberSync(form.touristCount, setForm, emptyMember);
 
   const validate = () => {
     if (!form.tourDate) return t('guideGuestBooking.validation.tourDate');
@@ -164,7 +172,8 @@ export default function GuideGuestBookingForm({ item }) {
         .join('\n');
 
       const res = await createGuideBooking({
-        guideId: item._id,
+        open: openMode,
+        guideId: openMode ? undefined : item._id,
         guidePackage: form.guidePackage,
         bikeAddon: !!form.bikeAddon,
         checkIn: form.tourDate,
@@ -192,6 +201,7 @@ export default function GuideGuestBookingForm({ item }) {
           acceptedTermsAt: new Date().toISOString(),
           tourDetails: {
             packageType: form.guidePackage,
+            tourLocationId: openMode ? form.selectedTourId : undefined,
             bikeAddon: !!form.bikeAddon,
             startTime: form.startTime,
             touristCount: Number(form.touristCount) || 1,
@@ -204,12 +214,14 @@ export default function GuideGuestBookingForm({ item }) {
         },
       });
       const booking = res.data.data;
-      toast.success('Booking created — proceed to pay');
-      try {
-        await payForBooking(booking, user);
-        toast.success('Payment successful');
-      } catch {
-        toast('Booking saved. You can pay from My Bookings.');
+      toast.success(openMode ? 'Request submitted — we will assign a guide and confirm shortly.' : 'Booking created — proceed to pay');
+      if (!openMode) {
+        try {
+          await payForBooking(booking, user);
+          toast.success('Payment successful');
+        } catch {
+          toast('Booking saved. You can pay from My Bookings.');
+        }
       }
       navigate('/dashboard/customer/bookings');
     } catch (error) {
@@ -222,16 +234,18 @@ export default function GuideGuestBookingForm({ item }) {
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">{t('guideGuestBooking.formTitle')}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {t('guideGuestBooking.formSubtitle', { name: item?.name })}
-            </p>
-          </div>
+        <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
+          {!openMode && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{t('guideGuestBooking.formTitle')}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {t('guideGuestBooking.formSubtitle', { name: item?.name })}
+              </p>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <FormLanguageToggle />
-            <p className="text-sm text-slate-500">
+            <p className="form-date text-sm text-slate-500">
               {t('guideGuestBooking.formDate')}: {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
@@ -239,6 +253,40 @@ export default function GuideGuestBookingForm({ item }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('guideGuestBooking.section1')}</SectionTitle>
+          {openMode && (
+            <ServiceRateChartToggle
+              seeLabel={t('serviceBooking.seeRateChart')}
+              hideLabel={t('serviceBooking.hideRateChart')}
+            >
+              <div>
+                <p className="font-semibold text-slate-900">{t('guideGuestBooking.rateChartTitle')}</p>
+                <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.rateChartNote')}</p>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="min-w-full text-left text-xs sm:text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-600">
+                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartPackage')}</th>
+                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartDuration')}</th>
+                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartGuideOnly')}</th>
+                        <th className="py-2 font-medium">{t('guideGuestBooking.chartGuideBike')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {GUIDE_PACKAGES.map((pkg) => (
+                        <tr key={pkg.id} className="border-b border-slate-100">
+                          <td className="py-2 pr-3">{t(pkg.nameKey)}</td>
+                          <td className="py-2 pr-3">{t(pkg.durationKey)}</td>
+                          <td className="py-2 pr-3 font-semibold">{formatCurrency(pkg.guideOnly)}</td>
+                          <td className="py-2 font-semibold">{formatCurrency(pkg.withBike)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600">{t('guideGuestBooking.openRateHint')}</p>
+            </ServiceRateChartToggle>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Input
               label={t('guideGuestBooking.tourDate')}
@@ -262,14 +310,42 @@ export default function GuideGuestBookingForm({ item }) {
                 value={form.guidePackage}
                 onChange={(e) => setField('guidePackage', e.target.value)}
               >
-                <option value="6HR">
-                  {t('guideGuestBooking.package6hr')} — {formatCurrency(item?.package6hr || 0)}
-                </option>
-                <option value="12HR">
-                  {t('guideGuestBooking.package12hr')} — {formatCurrency(item?.package12hr || 0)}
-                </option>
+                {openMode
+                  ? GUIDE_PACKAGES.map((pkg) => (
+                      <option key={pkg.id} value={pkg.id}>
+                        {t(pkg.nameKey)} — {formatCurrency(form.bikeAddon ? pkg.withBike : pkg.guideOnly)}
+                      </option>
+                    ))
+                  : (
+                    <>
+                      <option value="6HR">
+                        {t('guideGuestBooking.package6hr')} — {formatCurrency(item?.package6hr || 0)}
+                      </option>
+                      <option value="12HR">
+                        {t('guideGuestBooking.package12hr')} — {formatCurrency(item?.package12hr || 0)}
+                      </option>
+                    </>
+                  )}
               </select>
             </div>
+            {openMode && (
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  {t('guideGuestBooking.tourLocationLabel')}
+                </label>
+                <select
+                  className="input-field"
+                  value={form.selectedTourId}
+                  onChange={(e) => setField('selectedTourId', e.target.value)}
+                >
+                  {GUIDE_TOUR_LOCATIONS.map((tour) => (
+                    <option key={tour.id} value={tour.id}>
+                      {t(tour.nameKey)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <Input
               label={t('guideGuestBooking.touristCount')}
               type="number"
@@ -284,7 +360,9 @@ export default function GuideGuestBookingForm({ item }) {
                   checked={form.bikeAddon}
                   onChange={(e) => setField('bikeAddon', e.target.checked)}
                 />
-                {t('guideGuestBooking.bikeAddonHint', { price: formatCurrency(item?.bikeAddonPrice || 0) })}
+                {t('guideGuestBooking.bikeAddonHint', {
+                  price: formatCurrency(openMode ? GUIDE_BIKE_ADDON : item?.bikeAddonPrice || 0),
+                })}
               </label>
             </div>
           </div>

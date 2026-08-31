@@ -15,7 +15,7 @@ import GuidesPage from './pages/public/GuidesPage';
 import TaxiPage from './pages/public/TaxiPage';
 import DriversPage from './pages/public/DriversPage';
 import HorsesPage from './pages/public/HorsesPage';
-import HorseDetailPage from './pages/public/HorseDetailPage';
+// Service detail pages removed from public routes — customers book via open forms only
 // Shop pages — coming soon (keep files; routes disabled until launch)
 // import ProductsPage from './pages/public/ProductsPage';
 // import ProductDetailPage from './pages/public/ProductDetailPage';
@@ -27,14 +27,16 @@ import RegisterPage from './pages/auth/RegisterPage';
 import VendorRegisterPage from './pages/auth/VendorRegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import HotelDetailPage from './pages/public/HotelDetailPage';
-import TentDetailPage from './pages/public/TentDetailPage';
-import GuideDetailPage from './pages/public/GuideDetailPage';
-import TaxiDetailPage from './pages/public/TaxiDetailPage';
 import EnquiryPage from './pages/public/EnquiryPage';
 import SearchPage from './pages/public/SearchPage';
 import ContactPage from './pages/public/ContactPage';
 import FaqPage from './pages/public/FaqPage';
 import BlogsPage from './pages/public/BlogsPage';
+import GuideBookingPage from './pages/public/GuideBookingPage';
+import TaxiBookingPage from './pages/TaxiBookingPage';
+import DriverBookingPage from './pages/DriverBookingPage';
+import HorseBookingPage from './pages/HorseBookingPage';
+import TentBookingPage from './pages/TentBookingPage';
 
 import CustomerOverview from './dashboards/customer/CustomerOverview';
 import CustomerBookings from './dashboards/customer/CustomerBookings';
@@ -100,15 +102,20 @@ export default function App() {
         <Route path="homestays" element={<HomestaysPage />} />
         <Route path="homestays/:slug" element={<HomestayDetailPage />} />
         <Route path="tents" element={<TentsPage />} />
-        <Route path="tents/:slug" element={<TentDetailPage />} />
+        <Route path="tents/book" element={<TentBookingPage />} />
+        <Route path="tents/:slug" element={<Navigate to="/tents/book" replace />} />
         <Route path="guides" element={<GuidesPage />} />
-        <Route path="guides/:slug" element={<GuideDetailPage />} />
+        <Route path="guides/book" element={<GuideBookingPage />} />
+        <Route path="guides/:slug" element={<Navigate to="/guides/book" replace />} />
         <Route path="taxi" element={<TaxiPage />} />
-        <Route path="taxi/:slug" element={<TaxiDetailPage />} />
+        <Route path="taxi/book" element={<TaxiBookingPage />} />
+        <Route path="taxi/:slug" element={<Navigate to="/taxi/book" replace />} />
         <Route path="drivers" element={<DriversPage />} />
-        <Route path="drivers/:slug" element={<TaxiDetailPage />} />
+        <Route path="drivers/book" element={<DriverBookingPage />} />
+        <Route path="drivers/:slug" element={<Navigate to="/drivers/book" replace />} />
         <Route path="horses" element={<HorsesPage />} />
-        <Route path="horses/:slug" element={<HorseDetailPage />} />
+        <Route path="horses/book" element={<HorseBookingPage />} />
+        <Route path="horses/:slug" element={<Navigate to="/horses/book" replace />} />
         {/* Shop pages — coming soon
         <Route path="strawberries" element={<ProductsPage vertical="STRAWBERRY" />} />
         <Route path="strawberries/:slug" element={<ProductDetailPage vertical="STRAWBERRY" />} />

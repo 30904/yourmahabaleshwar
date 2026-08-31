@@ -400,15 +400,18 @@ export const getAdminProperty = async (req, res) => {
 };
 
 export const getAdminBookings = async (req, res) => {
-  const { type, status, page = 1, limit = 25 } = req.query;
+  const { type, status, serviceTenant, assignmentStatus, page = 1, limit = 25 } = req.query;
   const filter = {};
   if (type) filter.type = type.toUpperCase();
   if (status) filter.status = status.toUpperCase();
+  if (serviceTenant) filter.serviceTenant = String(serviceTenant).toUpperCase();
+  if (assignmentStatus) filter.assignmentStatus = String(assignmentStatus).toUpperCase();
   const skip = (page - 1) * limit;
   const [items, total] = await Promise.all([
     Booking.find(filter)
       .populate('customer', 'name email phone')
-      .populate('hotel tent guide driver room')
+      .populate('vendor', 'name email role')
+      .populate('hotel tent guide driver horse room homestay')
       .sort('-createdAt')
       .skip(skip)
       .limit(Number(limit)),

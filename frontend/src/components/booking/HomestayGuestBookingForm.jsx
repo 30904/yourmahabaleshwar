@@ -8,8 +8,7 @@ import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
-
-const emptyTraveller = () => ({ fullName: '', age: '', gender: '', relationship: '' });
+import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
 
 export default function HomestayGuestBookingForm({ item }) {
   const { t, i18n } = useTranslation();
@@ -40,7 +39,7 @@ export default function HomestayGuestBookingForm({ item }) {
     idType: 'AADHAAR',
     idNumber: '',
     nationality: 'INDIAN',
-    coTravellers: [emptyTraveller(), emptyTraveller(), emptyTraveller()],
+    coTravellers: [],
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
@@ -55,6 +54,8 @@ export default function HomestayGuestBookingForm({ item }) {
       return { ...prev, coTravellers: next };
     });
   };
+
+  useCoTravellerSync(form.adults, form.children, setForm);
 
   const roomList = item?.rooms || [];
   const room = useMemo(

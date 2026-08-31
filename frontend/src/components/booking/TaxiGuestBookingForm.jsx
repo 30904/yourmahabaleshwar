@@ -6,11 +6,20 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
+import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { createTaxiBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import {
+  DEFAULT_TAXI_ROUTE_ID,
+  TAXI_LOCAL_TOURS,
+  TAXI_OUTSTATION_ROUTES,
+  taxiRouteById,
+  taxiRoutePrice,
+} from '../../constants/taxiClientRateChart';
+import { useGroupMemberSync } from '../../hooks/useCoTravellerSync';
 
 const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: '' });
 
@@ -48,7 +57,7 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
   );
 }
 
-export default function TaxiGuestBookingForm({ item }) {
+export default function TaxiGuestBookingForm({ item, openMode = false, serviceTenant = 'TAXI' }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +84,7 @@ export default function TaxiGuestBookingForm({ item }) {
     tripDate: '',
     pickupTime: '09:00',
     taxiType: 'PER_TRIP',
+    selectedRouteId: DEFAULT_TAXI_ROUTE_ID,
     hours: 4,
     passengerCount: 2,
     vehiclePreference: item?.vehicleType || '',
@@ -92,7 +102,7 @@ export default function TaxiGuestBookingForm({ item }) {
     dropLocation: '',
     preferredDestinations: [],
     specialRequests: '',
-    groupMembers: [emptyMember(), emptyMember()],
+    groupMembers: [],
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
@@ -116,34 +126,40 @@ export default function TaxiGuestBookingForm({ item }) {
     });
   };
 
+  const perTripRate = item?.perTripPrice || 0;
+  const hourlyRate = item?.hourlyRate || 0;
+  const selectedRoute = taxiRouteById(form.selectedRouteId);
+
+  const routeCategory = useMemo(() => {
+    return TAXI_LOCAL_TOURS.some((route) => route.id === form.selectedRouteId) ? 'local' : 'outstation';
+  }, [form.selectedRouteId]);
+
+  const categoryRoutes = routeCategory === 'local' ? TAXI_LOCAL_TOURS : TAXI_OUTSTATION_ROUTES;
+
+  const onRouteCategoryChange = (category) => {
+    const routes = category === 'local' ? TAXI_LOCAL_TOURS : TAXI_OUTSTATION_ROUTES;
+    setField('selectedRouteId', routes[0].id);
+  };
+
   const tripHours = Number(form.hours || 1);
-  const tripPrice =
-    form.taxiType === 'HOURLY'
-      ? (item?.hourlyRate || 0) * tripHours
-      : item?.perTripPrice || 0;
+  const tripPrice = openMode
+    ? taxiRoutePrice(form.selectedRouteId)
+    : form.taxiType === 'HOURLY'
+      ? hourlyRate * tripHours
+      : perTripRate;
   const subtotal = tripPrice;
   const gst = calcGST(subtotal);
   const total = subtotal + gst;
   const dateBlocked = form.tripDate && unavailable.includes(form.tripDate);
 
   useEffect(() => {
-    if (!item?._id || !form.tripDate) return;
+    if (openMode || !item?._id || !form.tripDate) return;
     fetchAvailability('driver', item._id, form.tripDate, form.tripDate)
       .then((d) => setUnavailable(d.unavailable || []))
       .catch(() => setUnavailable([]));
-  }, [item?._id, form.tripDate]);
+  }, [openMode, item?._id, form.tripDate]);
 
-  useEffect(() => {
-    const extra = Math.max(0, Number(form.passengerCount || 1) - 1);
-    setForm((prev) => {
-      const current = prev.groupMembers || [];
-      if (current.length === extra) return prev;
-      const next = [...current];
-      while (next.length < extra) next.push(emptyMember());
-      while (next.length > extra) next.pop();
-      return { ...prev, groupMembers: next };
-    });
-  }, [form.passengerCount]);
+  useGroupMemberSync(form.passengerCount, setForm, emptyMember);
 
   const validate = () => {
     if (!form.tripDate) return t('taxiGuestBooking.validation.tripDate');
@@ -151,7 +167,7 @@ export default function TaxiGuestBookingForm({ item }) {
     if (!String(form.leadFullName || '').trim()) return t('taxiGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('taxiGuestBooking.validation.mobile');
     if (!String(form.pickupLocation || '').trim()) return t('taxiGuestBooking.validation.pickup');
-    if (form.taxiType === 'PER_TRIP' && !String(form.dropLocation || '').trim()) {
+    if (!openMode && form.taxiType === 'PER_TRIP' && !String(form.dropLocation || '').trim()) {
       return t('taxiGuestBooking.validation.drop');
     }
     if (!form.acceptTerms) return t('taxiGuestBooking.validation.acceptTerms');
@@ -176,9 +192,11 @@ export default function TaxiGuestBookingForm({ item }) {
         .join('\n');
 
       const res = await createTaxiBooking({
-        driverId: item._id,
-        taxiType: form.taxiType,
-        hours: form.taxiType === 'HOURLY' ? tripHours : undefined,
+        open: openMode,
+        serviceTenant,
+        driverId: openMode ? undefined : item._id,
+        taxiType: openMode ? 'PER_TRIP' : form.taxiType,
+        hours: !openMode && form.taxiType === 'HOURLY' ? tripHours : undefined,
         checkIn: form.tripDate,
         guestRegistration: {
           formDate: new Date().toISOString(),
@@ -203,8 +221,10 @@ export default function TaxiGuestBookingForm({ item }) {
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
           taxiDetails: {
-            tripType: form.taxiType,
-            hours: form.taxiType === 'HOURLY' ? tripHours : undefined,
+            tripType: openMode ? 'ROUTE' : form.taxiType,
+            routeId: openMode ? form.selectedRouteId : undefined,
+            routeName: openMode ? t(selectedRoute.nameKey) : undefined,
+            hours: !openMode && form.taxiType === 'HOURLY' ? tripHours : undefined,
             startTime: form.pickupTime,
             passengerCount: Number(form.passengerCount) || 1,
             pickupLocation: form.pickupLocation,
@@ -212,18 +232,20 @@ export default function TaxiGuestBookingForm({ item }) {
             preferredDestinations: form.preferredDestinations || [],
             specialRequests,
             tripPrice,
-            hourlyRate: item?.hourlyRate || 0,
-            perTripPrice: item?.perTripPrice || 0,
+            hourlyRate: openMode ? 0 : item?.hourlyRate || 0,
+            perTripPrice: openMode ? tripPrice : item?.perTripPrice || 0,
           },
         },
       });
       const booking = res.data.data;
-      toast.success(t('taxiGuestBooking.bookingCreated'));
-      try {
-        await payForBooking(booking, user);
-        toast.success(t('taxiGuestBooking.paymentSuccess'));
-      } catch {
-        toast(t('taxiGuestBooking.bookingSavedPayLater'));
+      toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('taxiGuestBooking.bookingCreated'));
+      if (!openMode) {
+        try {
+          await payForBooking(booking, user);
+          toast.success(t('taxiGuestBooking.paymentSuccess'));
+        } catch {
+          toast(t('taxiGuestBooking.bookingSavedPayLater'));
+        }
       }
       navigate('/dashboard/customer/bookings');
     } catch (error) {
@@ -236,16 +258,18 @@ export default function TaxiGuestBookingForm({ item }) {
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">{t('taxiGuestBooking.formTitle')}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {t('taxiGuestBooking.formSubtitle', { name: item?.name })}
-            </p>
-          </div>
+        <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
+          {!openMode && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{t('taxiGuestBooking.formTitle')}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {t('taxiGuestBooking.formSubtitle', { name: item?.name })}
+              </p>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <FormLanguageToggle />
-            <p className="text-sm text-slate-500">
+            <p className="form-date text-sm text-slate-500">
               {t('taxiGuestBooking.formDate')}: {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
@@ -253,6 +277,63 @@ export default function TaxiGuestBookingForm({ item }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('taxiGuestBooking.section1')}</SectionTitle>
+          {openMode && (
+            <ServiceRateChartToggle
+              seeLabel={t('serviceBooking.seeRateChart')}
+              hideLabel={t('serviceBooking.hideRateChart')}
+            >
+              <div>
+                <p className="font-semibold text-slate-900">{t('taxiGuestBooking.localToursTitle')}</p>
+                <p className="mt-1 text-xs text-slate-600">{t('taxiGuestBooking.localToursNote')}</p>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="min-w-full text-left text-xs sm:text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-600">
+                        <th className="py-2 pr-3 font-medium">{t('taxiGuestBooking.chartTour')}</th>
+                        <th className="py-2 pr-3 font-medium">{t('taxiGuestBooking.chartDuration')}</th>
+                        <th className="py-2 font-medium">{t('taxiGuestBooking.chartRate')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {TAXI_LOCAL_TOURS.map((route) => (
+                        <tr key={route.id} className="border-b border-slate-100">
+                          <td className="py-2 pr-3">{t(route.nameKey)}</td>
+                          <td className="py-2 pr-3">{t(route.durationKey)}</td>
+                          <td className="py-2 font-semibold">{formatCurrency(route.price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">{t('taxiGuestBooking.outstationTitle')}</p>
+                <p className="mt-1 text-xs text-slate-600">{t('taxiGuestBooking.outstationNote')}</p>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="min-w-full text-left text-xs sm:text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-600">
+                        <th className="py-2 pr-3 font-medium">{t('taxiGuestBooking.chartRoute')}</th>
+                        <th className="py-2 font-medium">{t('taxiGuestBooking.chartRate')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {TAXI_OUTSTATION_ROUTES.map((route) => (
+                        <tr key={route.id} className="border-b border-slate-100">
+                          <td className="py-2 pr-3">
+                            {t(route.nameKey)}
+                            {route.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
+                          </td>
+                          <td className="py-2 font-semibold">{formatCurrency(route.price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600">{t('taxiGuestBooking.openRateHint')}</p>
+            </ServiceRateChartToggle>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Input
               label={t('taxiGuestBooking.tripDate')}
@@ -267,31 +348,72 @@ export default function TaxiGuestBookingForm({ item }) {
               value={form.pickupTime}
               onChange={(e) => setField('pickupTime', e.target.value)}
             />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                {t('taxiGuestBooking.tripTypeLabel')}
-              </label>
-              <select
-                className="input-field"
-                value={form.taxiType}
-                onChange={(e) => setField('taxiType', e.target.value)}
-              >
-                <option value="PER_TRIP">
-                  {t('taxiGuestBooking.perTrip')} — {formatCurrency(item?.perTripPrice || 0)}
-                </option>
-                <option value="HOURLY">
-                  {t('taxiGuestBooking.hourly')} — {formatCurrency(item?.hourlyRate || 0)}/hr
-                </option>
-              </select>
-            </div>
-            {form.taxiType === 'HOURLY' && (
-              <Input
-                label={t('taxiGuestBooking.hours')}
-                type="number"
-                min="1"
-                value={form.hours}
-                onChange={(e) => setField('hours', e.target.value)}
-              />
+            {openMode ? (
+              <div className="sm:col-span-2 space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    {t('taxiGuestBooking.routeCategoryLabel')}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={routeCategory}
+                    onChange={(e) => onRouteCategoryChange(e.target.value)}
+                  >
+                    <option value="local">{t('taxiGuestBooking.localToursTitle')}</option>
+                    <option value="outstation">{t('taxiGuestBooking.outstationTitle')}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    {t('taxiGuestBooking.selectedRouteLabel')}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={form.selectedRouteId}
+                    onChange={(e) => setField('selectedRouteId', e.target.value)}
+                  >
+                    {categoryRoutes.map((route) => (
+                      <option key={route.id} value={route.id}>
+                        {t(route.nameKey)}
+                        {route.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {t('taxiGuestBooking.selectedFareLabel')}:{' '}
+                    <span className="font-semibold text-slate-900">{formatCurrency(tripPrice)}</span>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    {t('taxiGuestBooking.tripTypeLabel')}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={form.taxiType}
+                    onChange={(e) => setField('taxiType', e.target.value)}
+                  >
+                    <option value="PER_TRIP">
+                      {t('taxiGuestBooking.perTrip')} — {formatCurrency(perTripRate)}
+                    </option>
+                    <option value="HOURLY">
+                      {t('taxiGuestBooking.hourly')} — {formatCurrency(hourlyRate)}/hr
+                    </option>
+                  </select>
+                </div>
+                {form.taxiType === 'HOURLY' && (
+                  <Input
+                    label={t('taxiGuestBooking.hours')}
+                    type="number"
+                    min="1"
+                    value={form.hours}
+                    onChange={(e) => setField('hours', e.target.value)}
+                  />
+                )}
+              </>
             )}
             <Input
               label={t('taxiGuestBooking.passengerCount')}
@@ -424,8 +546,11 @@ export default function TaxiGuestBookingForm({ item }) {
             <div className="rounded-xl bg-slate-50 p-3 text-sm">
               <p className="text-slate-500">{t('taxiGuestBooking.fareSummary')}</p>
               <p className="font-semibold text-slate-900">{formatCurrency(tripPrice)}</p>
+              {openMode && (
+                <p className="mt-1 text-xs text-slate-600">{t(selectedRoute.nameKey)}</p>
+              )}
             </div>
-            {form.taxiType === 'HOURLY' && (
+            {!openMode && form.taxiType === 'HOURLY' && (
               <div className="rounded-xl bg-slate-50 p-3 text-sm">
                 <p className="text-slate-500">{t('taxiGuestBooking.hoursSummary')}</p>
                 <p className="font-semibold text-slate-900">{tripHours}</p>

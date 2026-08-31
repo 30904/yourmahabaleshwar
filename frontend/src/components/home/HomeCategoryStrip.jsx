@@ -6,11 +6,11 @@ const categories = [
   { to: '/hotels', icon: Hotel, labelKey: 'home.categories.hotels', countKey: 'home.categories.hotelsCount', color: 'bg-blue-50 text-primary' },
   { to: '/resorts', icon: Star, labelKey: 'home.categories.resorts', countKey: 'home.categories.resortsCount', color: 'bg-amber-50 text-amber-700' },
   { to: '/homestays', icon: Home, labelKey: 'home.categories.homestays', countKey: 'home.categories.homestaysCount', color: 'bg-rose-50 text-rose-700' },
-  { to: '/tents', icon: Tent, labelKey: 'home.categories.tents', countKey: 'home.categories.tentsCount', color: 'bg-emerald-50 text-emerald-700' },
-  { to: '/guides', icon: Users, labelKey: 'home.categories.guides', countKey: 'home.categories.guidesCount', color: 'bg-violet-50 text-violet-700' },
-  { to: '/drivers', icon: Car, labelKey: 'home.categories.driver', countKey: 'home.categories.driverCount', color: 'bg-slate-100 text-slate-700' },
-  { to: '/taxi', icon: CarTaxiFront, labelKey: 'home.categories.taxi', countKey: 'home.categories.taxiCount', color: 'bg-teal-50 text-teal-700' },
-  { to: '/horses', icon: Trees, labelKey: 'home.categories.horses', countKey: 'home.categories.horsesCount', color: 'bg-orange-50 text-orange-700' },
+  { to: '/tents/book', icon: Tent, labelKey: 'home.categories.tents', countKey: 'home.categories.tentsCount', color: 'bg-emerald-50 text-emerald-700' },
+  { to: '/guides/book', icon: Users, labelKey: 'home.categories.guides', countKey: 'home.categories.guidesCount', color: 'bg-violet-50 text-violet-700' },
+  { to: '/drivers/book', icon: Car, labelKey: 'home.categories.driver', countKey: 'home.categories.driverCount', color: 'bg-slate-100 text-slate-700' },
+  { to: '/taxi/book', icon: CarTaxiFront, labelKey: 'home.categories.taxi', countKey: 'home.categories.taxiCount', color: 'bg-teal-50 text-teal-700' },
+  { to: '/horses/book', icon: Trees, labelKey: 'home.categories.horses', countKey: 'home.categories.horsesCount', color: 'bg-orange-50 text-orange-700' },
 ];
 
 export default function HomeCategoryStrip() {

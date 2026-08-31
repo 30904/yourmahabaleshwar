@@ -1,6 +1,7 @@
 import { runBackup } from '../services/backupService.js';
 import VendorSubscription from '../models/VendorSubscription.js';
 import { expireStayListingSubscriptions, backfillMissingStaySubscriptions } from '../services/stayListingSubscriptionService.js';
+import { expireServiceUnlimitedSubscriptions } from '../services/serviceMonetizationService.js';
 import Advertisement from '../models/Advertisement.js';
 import { createNotification } from '../services/notificationService.js';
 
@@ -58,6 +59,7 @@ export const startScheduledJobs = () => {
   setInterval(() => {
     expireSubscriptions().catch(() => {});
     expireStayListingSubscriptions().catch(() => {});
+    expireServiceUnlimitedSubscriptions().catch(() => {});
     expireAds().catch(() => {});
   }, 60 * 60 * 1000);
 

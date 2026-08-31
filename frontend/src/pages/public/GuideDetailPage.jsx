@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, Images } from 'lucide-react';
 import { fetchGuideBySlug } from '../../services/listingsApi';
 import ReviewScore from '../../components/property/ReviewScore';
-import GuideGuestBookingForm from '../../components/booking/GuideGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
@@ -19,7 +18,6 @@ export default function GuideDetailPage() {
   const { isAuthenticated } = useAuth();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showBookingForm, setShowBookingForm] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
@@ -30,7 +28,6 @@ export default function GuideDetailPage() {
   }, [slug]);
 
   useEffect(() => {
-    setShowBookingForm(false);
     setPhotoIndex(0);
   }, [slug]);
 
@@ -40,13 +37,7 @@ export default function GuideDetailPage() {
   const images = item.images?.length ? item.images : [FALLBACK_IMG];
   const priceFrom = item.package6hr ?? item.priceFrom;
 
-  const openBookingForm = () => {
-    if (!isAuthenticated) return;
-    setShowBookingForm(true);
-    requestAnimationFrame(() => {
-      document.getElementById('guide-guest-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  };
+  const bookPath = '/guides/book';
 
   return (
     <div className="page-container py-8">
@@ -135,19 +126,11 @@ export default function GuideDetailPage() {
             {isAuthenticated ? (
               <div>
                 <p className="mb-3 text-xs text-slate-500">
-                  {showBookingForm
-                    ? 'Complete the tour booking form below.'
-                    : 'Open the guest booking form to continue.'}
+                  Submit a request — our team will assign the best available guide.
                 </p>
-                {!showBookingForm ? (
-                  <button type="button" className="btn-primary w-full" onClick={openBookingForm}>
-                    Book Now
-                  </button>
-                ) : (
-                  <button type="button" className="btn-outline w-full" onClick={() => setShowBookingForm(false)}>
-                    Hide booking form
-                  </button>
-                )}
+                <Link to={bookPath} className="btn-primary block w-full text-center">
+                  Book Now
+                </Link>
               </div>
             ) : (
               <div>
@@ -168,11 +151,6 @@ export default function GuideDetailPage() {
         </section>
       )}
 
-      {isAuthenticated && showBookingForm && (
-        <div id="guide-guest-form" className="mt-10 scroll-mt-24 border-t border-slate-100 pt-10">
-          <GuideGuestBookingForm item={item} />
-        </div>
-      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PropertyCard from '../../components/property/PropertyCard';
 import BookingSearchBar from '../../components/search/BookingSearchBar';
 import Skeleton from '../../components/ui/Skeleton';
@@ -8,6 +9,7 @@ import { dummyHotels } from '../../data/dummyListings';
 import { normalizeHotel } from '../../utils/listingHelpers';
 
 export default function SearchPage() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const q = params.get('q') || 'Mahabaleshwar';
   const [results, setResults] = useState({ hotels: [], tents: [], guides: [], drivers: [], homestays: [], horses: [] });
@@ -77,21 +79,23 @@ export default function SearchPage() {
             {results.homestays.map((h) => (
               <PropertyCard key={h._id} item={h} linkPrefix="/homestays" itemType="HOMESTAY" />
             ))}
-            {results.tents.map((t) => (
-              <PropertyCard key={t._id} item={t} linkPrefix="/tents" priceKey="pricePerNight" itemType="TENT" />
-            ))}
-            {results.horses.map((h) => (
-              <PropertyCard key={h._id} item={h} linkPrefix="/horses" priceSuffix="/ ride" itemType="HORSE" />
-            ))}
             {total === 0 && <p className="text-slate-500">No results found. Try a different search.</p>}
           </div>
         )}
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-10">
+          <h2 className="text-lg font-bold text-slate-900">{t('serviceBooking.bookExperiences')}</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <Link to="/guides/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.guideTitle')}</Link>
+            <Link to="/tents/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.tentTitle')}</Link>
+            <Link to="/taxi/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.taxiTitle')}</Link>
+            <Link to="/drivers/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.driverTitle')}</Link>
+            <Link to="/horses/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.horseTitle')}</Link>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Link to="/homestays" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Homestays</Link>
-          <Link to="/tents" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Browse tents</Link>
-          <Link to="/taxi" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Book taxi</Link>
-          <Link to="/drivers" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Book driver</Link>
-          <Link to="/horses" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Horse rides</Link>
+          <Link to="/hotels" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Hotels</Link>
+          <Link to="/resorts" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Resorts</Link>
         </div>
       </div>
     </div>

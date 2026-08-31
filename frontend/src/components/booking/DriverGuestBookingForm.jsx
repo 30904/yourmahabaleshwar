@@ -6,11 +6,20 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
+import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { createTaxiBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import {
+  DEFAULT_DRIVER_PACKAGE_ID,
+  DRIVER_EXTRA_CHARGES,
+  DRIVER_PACKAGES,
+  driverPackageById,
+  driverPackagePrice,
+} from '../../constants/driverClientRateChart';
+import { useGroupMemberSync } from '../../hooks/useCoTravellerSync';
 
 const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: '' });
 
@@ -48,7 +57,7 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
   );
 }
 
-export default function DriverGuestBookingForm({ item }) {
+export default function DriverGuestBookingForm({ item, openMode = false }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +84,7 @@ export default function DriverGuestBookingForm({ item }) {
     tripDate: '',
     pickupTime: '09:00',
     taxiType: 'PER_TRIP',
+    selectedPackageId: DEFAULT_DRIVER_PACKAGE_ID,
     hours: 4,
     passengerCount: 2,
     leadFullName: user?.name || '',
@@ -91,7 +101,7 @@ export default function DriverGuestBookingForm({ item }) {
     dropLocation: '',
     preferredDestinations: [],
     specialRequests: '',
-    groupMembers: [emptyMember(), emptyMember()],
+    groupMembers: [],
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
@@ -115,34 +125,29 @@ export default function DriverGuestBookingForm({ item }) {
     });
   };
 
+  const perTripRate = item?.perTripPrice || 0;
+  const hourlyRate = item?.hourlyRate || 0;
+  const selectedDriverPackage = driverPackageById(form.selectedPackageId);
+
   const tripHours = Number(form.hours || 1);
-  const tripPrice =
-    form.taxiType === 'HOURLY'
-      ? (item?.hourlyRate || 0) * tripHours
-      : item?.perTripPrice || 0;
+  const tripPrice = openMode
+    ? driverPackagePrice(form.selectedPackageId)
+    : form.taxiType === 'HOURLY'
+      ? hourlyRate * tripHours
+      : perTripRate;
   const subtotal = tripPrice;
   const gst = calcGST(subtotal);
   const total = subtotal + gst;
   const dateBlocked = form.tripDate && unavailable.includes(form.tripDate);
 
   useEffect(() => {
-    if (!item?._id || !form.tripDate) return;
+    if (openMode || !item?._id || !form.tripDate) return;
     fetchAvailability('driver', item._id, form.tripDate, form.tripDate)
       .then((d) => setUnavailable(d.unavailable || []))
       .catch(() => setUnavailable([]));
-  }, [item?._id, form.tripDate]);
+  }, [openMode, item?._id, form.tripDate]);
 
-  useEffect(() => {
-    const extra = Math.max(0, Number(form.passengerCount || 1) - 1);
-    setForm((prev) => {
-      const current = prev.groupMembers || [];
-      if (current.length === extra) return prev;
-      const next = [...current];
-      while (next.length < extra) next.push(emptyMember());
-      while (next.length > extra) next.pop();
-      return { ...prev, groupMembers: next };
-    });
-  }, [form.passengerCount]);
+  useGroupMemberSync(form.passengerCount, setForm, emptyMember);
 
   const validate = () => {
     if (!form.tripDate) return t('driverGuestBooking.validation.tripDate');
@@ -169,9 +174,11 @@ export default function DriverGuestBookingForm({ item }) {
         .join('\n');
 
       const res = await createTaxiBooking({
-        driverId: item._id,
-        taxiType: form.taxiType,
-        hours: form.taxiType === 'HOURLY' ? tripHours : undefined,
+        open: openMode,
+        serviceTenant: 'DRIVER',
+        driverId: openMode ? undefined : item._id,
+        taxiType: openMode ? 'PACKAGE' : form.taxiType,
+        hours: !openMode && form.taxiType === 'HOURLY' ? tripHours : undefined,
         checkIn: form.tripDate,
         guestRegistration: {
           formDate: new Date().toISOString(),
@@ -196,8 +203,10 @@ export default function DriverGuestBookingForm({ item }) {
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
           taxiDetails: {
-            tripType: form.taxiType,
-            hours: form.taxiType === 'HOURLY' ? tripHours : undefined,
+            tripType: openMode ? 'PACKAGE' : form.taxiType,
+            packageId: openMode ? form.selectedPackageId : undefined,
+            packageName: openMode ? t(selectedDriverPackage.nameKey) : undefined,
+            hours: !openMode && form.taxiType === 'HOURLY' ? tripHours : undefined,
             startTime: form.pickupTime,
             passengerCount: Number(form.passengerCount) || 1,
             pickupLocation: form.pickupLocation,
@@ -205,12 +214,17 @@ export default function DriverGuestBookingForm({ item }) {
             preferredDestinations: form.preferredDestinations || [],
             specialRequests,
             tripPrice,
-            hourlyRate: item?.hourlyRate || 0,
-            perTripPrice: item?.perTripPrice || 0,
+            hourlyRate: openMode ? 0 : item?.hourlyRate || 0,
+            perTripPrice: openMode ? tripPrice : item?.perTripPrice || 0,
           },
         },
       });
       const booking = res.data.data;
+      if (openMode) {
+        toast.success(t('serviceBooking.requestSubmitted'));
+        navigate('/dashboard/customer/bookings');
+        return;
+      }
       toast.success(t('driverGuestBooking.bookingCreated'));
       try {
         await payForBooking(booking, user);
@@ -229,16 +243,18 @@ export default function DriverGuestBookingForm({ item }) {
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">{t('driverGuestBooking.formTitle')}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {t('driverGuestBooking.formSubtitle', { name: item?.name })}
-            </p>
-          </div>
+        <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
+          {!openMode && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{t('driverGuestBooking.formTitle')}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {t('driverGuestBooking.formSubtitle', { name: item?.name })}
+              </p>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <FormLanguageToggle />
-            <p className="text-sm text-slate-500">
+            <p className="form-date text-sm text-slate-500">
               {t('driverGuestBooking.formDate')}: {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
@@ -246,6 +262,53 @@ export default function DriverGuestBookingForm({ item }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('driverGuestBooking.section1')}</SectionTitle>
+          {openMode && (
+            <ServiceRateChartToggle
+              seeLabel={t('serviceBooking.seeRateChart')}
+              hideLabel={t('serviceBooking.hideRateChart')}
+            >
+              <div>
+                <p className="font-semibold text-slate-900">{t('driverGuestBooking.rateChartTitle')}</p>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="min-w-full text-left text-xs sm:text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-600">
+                        <th className="py-2 pr-3 font-medium">{t('driverGuestBooking.chartPackage')}</th>
+                        <th className="py-2 pr-3 font-medium">{t('driverGuestBooking.chartDetails')}</th>
+                        <th className="py-2 font-medium">{t('driverGuestBooking.chartRate')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DRIVER_PACKAGES.map((pkg) => (
+                        <tr key={pkg.id} className="border-b border-slate-100">
+                          <td className="py-2 pr-3">{t(pkg.nameKey)}</td>
+                          <td className="py-2 pr-3">{t(pkg.detailsKey)}</td>
+                          <td className="py-2 font-semibold">{formatCurrency(pkg.price)}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-b border-slate-100 text-slate-600">
+                        <td className="py-2 pr-3" colSpan={2}>
+                          {t('driverGuestBooking.packages.outstationOneway.name')}
+                        </td>
+                        <td className="py-2">{t('driverGuestBooking.separateCharges')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">{t('driverGuestBooking.extraChargesTitle')}</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-600">
+                  {DRIVER_EXTRA_CHARGES.map((row) => (
+                    <li key={row.labelKey}>
+                      {t(row.labelKey)}: {formatCurrency(row.amount)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p className="text-xs text-slate-600">{t('driverGuestBooking.openRateHint')}</p>
+            </ServiceRateChartToggle>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Input
               label={t('driverGuestBooking.tripDate')}
@@ -260,31 +323,52 @@ export default function DriverGuestBookingForm({ item }) {
               value={form.pickupTime}
               onChange={(e) => setField('pickupTime', e.target.value)}
             />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                {t('driverGuestBooking.tripTypeLabel')}
-              </label>
-              <select
-                className="input-field"
-                value={form.taxiType}
-                onChange={(e) => setField('taxiType', e.target.value)}
-              >
-                <option value="PER_TRIP">
-                  {t('driverGuestBooking.perTrip')} — {formatCurrency(item?.perTripPrice || 0)}
-                </option>
-                <option value="HOURLY">
-                  {t('driverGuestBooking.hourly')} — {formatCurrency(item?.hourlyRate || 0)}/hr
-                </option>
-              </select>
-            </div>
-            {form.taxiType === 'HOURLY' && (
-              <Input
-                label={t('driverGuestBooking.hours')}
-                type="number"
-                min="1"
-                value={form.hours}
-                onChange={(e) => setField('hours', e.target.value)}
-              />
+            {openMode ? (
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  {t('driverGuestBooking.selectedPackageLabel')}
+                </label>
+                <select
+                  className="input-field"
+                  value={form.selectedPackageId}
+                  onChange={(e) => setField('selectedPackageId', e.target.value)}
+                >
+                  {DRIVER_PACKAGES.map((pkg) => (
+                    <option key={pkg.id} value={pkg.id}>
+                      {t(pkg.nameKey)} — {formatCurrency(pkg.price)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    {t('driverGuestBooking.tripTypeLabel')}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={form.taxiType}
+                    onChange={(e) => setField('taxiType', e.target.value)}
+                  >
+                    <option value="PER_TRIP">
+                      {t('driverGuestBooking.perTrip')} — {formatCurrency(perTripRate)}
+                    </option>
+                    <option value="HOURLY">
+                      {t('driverGuestBooking.hourly')} — {formatCurrency(hourlyRate)}/hr
+                    </option>
+                  </select>
+                </div>
+                {form.taxiType === 'HOURLY' && (
+                  <Input
+                    label={t('driverGuestBooking.hours')}
+                    type="number"
+                    min="1"
+                    value={form.hours}
+                    onChange={(e) => setField('hours', e.target.value)}
+                  />
+                )}
+              </>
             )}
             <Input
               label={t('driverGuestBooking.passengerCount')}
@@ -410,6 +494,9 @@ export default function DriverGuestBookingForm({ item }) {
             <div className="rounded-xl bg-slate-50 p-3 text-sm">
               <p className="text-slate-500">{t('driverGuestBooking.fareSummary')}</p>
               <p className="font-semibold text-slate-900">{formatCurrency(tripPrice)}</p>
+              {openMode && (
+                <p className="mt-1 text-xs text-slate-600">{t(selectedDriverPackage.nameKey)}</p>
+              )}
             </div>
             {form.taxiType === 'HOURLY' && (
               <div className="rounded-xl bg-slate-50 p-3 text-sm">

@@ -4,8 +4,6 @@ import { MapPin, Car } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchDriverBySlug } from '../../services/listingsApi';
 import ReviewScore from '../../components/property/ReviewScore';
-import DriverGuestBookingForm from '../../components/booking/DriverGuestBookingForm';
-import TaxiGuestBookingForm from '../../components/booking/TaxiGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
@@ -21,10 +19,9 @@ export default function TaxiDetailPage() {
   const { isAuthenticated } = useAuth();
   const isTaxiRoute = pathname.startsWith('/taxi');
   const detailNs = isTaxiRoute ? 'taxiDetail' : 'driverDetail';
-  const formAnchorId = isTaxiRoute ? 'taxi-guest-form' : 'driver-guest-form';
+  const bookPath = isTaxiRoute ? '/taxi/book' : '/drivers/book';
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showBookingForm, setShowBookingForm] = useState(false);
 
   useEffect(() => {
     fetchDriverBySlug(slug)
@@ -33,22 +30,10 @@ export default function TaxiDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  useEffect(() => {
-    setShowBookingForm(false);
-  }, [slug, pathname]);
-
   if (loading) return <div className="page-container py-10"><Skeleton className="h-96" /></div>;
   if (!item) return <div className="page-container py-10">Not found</div>;
 
   const priceFrom = item.perTripPrice ?? item.priceFrom;
-
-  const openBookingForm = () => {
-    if (!isAuthenticated) return;
-    setShowBookingForm(true);
-    requestAnimationFrame(() => {
-      document.getElementById(formAnchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  };
 
   return (
     <div className="page-container py-8">
@@ -106,18 +91,10 @@ export default function TaxiDetailPage() {
             </div>
             {isAuthenticated ? (
               <div>
-                <p className="mb-3 text-xs text-slate-500">
-                  {showBookingForm ? t(`${detailNs}.completeFormHint`) : t(`${detailNs}.openFormHint`)}
-                </p>
-                {!showBookingForm ? (
-                  <button type="button" className="btn-primary w-full" onClick={openBookingForm}>
-                    {t(`${detailNs}.bookNow`)}
-                  </button>
-                ) : (
-                  <button type="button" className="btn-outline w-full" onClick={() => setShowBookingForm(false)}>
-                    {t(`${detailNs}.hideForm`)}
-                  </button>
-                )}
+                <p className="mb-3 text-xs text-slate-500">{t('serviceBooking.openFormSubtitle')}</p>
+                <Link to={bookPath} className="btn-primary block w-full text-center">
+                  {t(`${detailNs}.bookNow`)}
+                </Link>
               </div>
             ) : (
               <div>
@@ -130,16 +107,6 @@ export default function TaxiDetailPage() {
           </div>
         </div>
       </article>
-
-      {isAuthenticated && showBookingForm && (
-        <div id={formAnchorId} className="mt-10 scroll-mt-24 border-t border-slate-100 pt-10">
-          {isTaxiRoute ? (
-            <TaxiGuestBookingForm item={item} />
-          ) : (
-            <DriverGuestBookingForm item={item} />
-          )}
-        </div>
-      )}
     </div>
   );
 }

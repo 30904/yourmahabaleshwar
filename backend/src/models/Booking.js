@@ -6,6 +6,17 @@ const bookingSchema = new mongoose.Schema(
     bookingNumber: { type: String, unique: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    serviceTenant: {
+      type: String,
+      enum: ['GUIDE', 'TAXI', 'DRIVER', 'TENT', 'HORSE'],
+    },
+    assignmentStatus: {
+      type: String,
+      enum: ['UNASSIGNED', 'ASSIGNED'],
+      default: 'ASSIGNED',
+    },
+    assignedAt: { type: Date },
+    assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     type: { type: String, enum: Object.values(BOOKING_TYPES), required: true },
     status: {
       type: String,
@@ -102,7 +113,7 @@ const bookingSchema = new mongoose.Schema(
       },
     },
     tentQuantity: { type: Number },
-    guidePackage: { type: String, enum: ['6HR', '12HR'] },
+    guidePackage: { type: String, enum: ['4HR', '6HR', '8HR', '12HR'] },
     bikeAddon: { type: Boolean, default: false },
     taxiType: { type: String, enum: ['PER_TRIP', 'HOURLY'] },
     hours: { type: Number },

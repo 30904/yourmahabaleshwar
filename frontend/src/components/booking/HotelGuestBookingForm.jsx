@@ -8,8 +8,7 @@ import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
-
-const emptyTraveller = () => ({ fullName: '', age: '', gender: '', relationship: '' });
+import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
 
 export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId }) {
   const { t, i18n } = useTranslation();
@@ -42,7 +41,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     idType: 'AADHAAR',
     idNumber: '',
     nationality: 'INDIAN',
-    coTravellers: [emptyTraveller(), emptyTraveller(), emptyTraveller()],
+    coTravellers: [],
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
@@ -57,6 +56,8 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       return { ...prev, coTravellers: next };
     });
   };
+
+  useCoTravellerSync(form.adults, form.children, setForm);
 
   useEffect(() => {
     if (initialRoomId) setField('roomId', initialRoomId);

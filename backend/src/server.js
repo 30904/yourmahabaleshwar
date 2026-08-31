@@ -6,11 +6,13 @@ import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
 import connectDB from './config/db.js';
 import { env, knownSiteOrigins } from './config/env.js';
 import routes from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { startScheduledJobs } from './jobs/scheduler.js';
+import { initSocket } from './socket/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -102,7 +104,10 @@ app.get('/healthz', (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(env.port, () => {
+const httpServer = http.createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(env.port, () => {
   console.log(`Server running on port ${env.port} [${env.nodeEnv}]`);
   if (env.nodeEnv === 'production') {
     console.log(`CORS origins: ${env.clientUrls.join(', ')}`);

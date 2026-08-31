@@ -37,6 +37,10 @@ const platformSettingsSchema = new mongoose.Schema(
     },
     stayListingDefaultRenewalPrice: { type: Number, default: 5000 },
     staySubscriptionWarningDays: { type: Number, default: 30 },
+    serviceMonetization: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
+    },
   },
   { timestamps: true }
 );

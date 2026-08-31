@@ -9,6 +9,17 @@ import Badge from '../../components/ui/Badge';
 import Skeleton from '../../components/ui/Skeleton';
 import { fetchMyStaySubscriptions, payForStaySubscriptionRenewal } from '../../services/staySubscriptionApi';
 import { formatCurrency } from '../../utils/format';
+import { ROLES } from '../../constants/roles';
+import VendorServiceSubscription from './VendorServiceSubscription';
+
+const STAY_ROLES = new Set([ROLES.HOTEL_VENDOR, ROLES.HOMESTAY_VENDOR]);
+const SERVICE_ROLES = new Set([
+  ROLES.GUIDE,
+  ROLES.TAXI_OPERATOR,
+  ROLES.DRIVER,
+  ROLES.TENT_OPERATOR,
+  ROLES.HORSE_OPERATOR,
+]);
 
 function statusColor(status) {
   if (status === 'ACTIVE') return 'success';
@@ -26,7 +37,7 @@ function formatDate(value) {
   });
 }
 
-export default function VendorMySubscription() {
+function VendorStaySubscription() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [items, setItems] = useState([]);
@@ -76,7 +87,6 @@ export default function VendorMySubscription() {
               item.subscriptionStatus === 'EXPIRED' ||
               item.subscriptionStatus === 'PENDING_PAYMENT' ||
               (item.subscriptionStatus === 'ACTIVE' && item.endingSoon);
-            const isFirstYearFree = item.subscriptionStatus === 'ACTIVE' && item.daysRemaining > 300;
 
             return (
               <Card key={`${item.listingType}-${item.listingId}`} className="p-5">
@@ -94,15 +104,9 @@ export default function VendorMySubscription() {
                     </p>
                   </div>
                   {canRenew && (
-                    <Button
-                      type="button"
-                      disabled={renewingId === String(item.listingId)}
-                      onClick={() => renew(item)}
-                    >
+                    <Button type="button" disabled={renewingId === String(item.listingId)} onClick={() => renew(item)}>
                       <CreditCard size={16} />
-                      {renewingId === String(item.listingId)
-                        ? t('common.loading')
-                        : t('staySubscription.renewNow')}
+                      {renewingId === String(item.listingId) ? t('common.loading') : t('staySubscription.renewNow')}
                     </Button>
                   )}
                 </div>
@@ -147,7 +151,7 @@ export default function VendorMySubscription() {
                       {t('staySubscription.nextRenewalPrice')}
                     </p>
                     <p className="mt-1 font-semibold text-slate-900">
-                      {isFirstYearFree && item.subscriptionStatus === 'ACTIVE'
+                      {item.daysRemaining > 300 && item.subscriptionStatus === 'ACTIVE'
                         ? t('staySubscription.firstYearFree')
                         : formatCurrency(item.renewalPrice || 0)}
                     </p>
@@ -160,4 +164,11 @@ export default function VendorMySubscription() {
       )}
     </div>
   );
+}
+
+export default function VendorMySubscription() {
+  const { user } = useAuth();
+  if (SERVICE_ROLES.has(user?.role)) return <VendorServiceSubscription />;
+  if (STAY_ROLES.has(user?.role)) return <VendorStaySubscription />;
+  return <Card className="p-8 text-center text-slate-500">Subscription not available for your account type.</Card>;
 }

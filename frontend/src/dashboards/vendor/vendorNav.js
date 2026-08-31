@@ -67,9 +67,17 @@ export function roleHasAvailability(role) {
 
 export const STAY_SUBSCRIPTION_ROLES = [ROLES.HOTEL_VENDOR, ROLES.HOMESTAY_VENDOR];
 
+export const SERVICE_SUBSCRIPTION_ROLES = [
+  ROLES.GUIDE,
+  ROLES.TAXI_OPERATOR,
+  ROLES.DRIVER,
+  ROLES.TENT_OPERATOR,
+  ROLES.HORSE_OPERATOR,
+];
+
 export function vendorCanAccessPath(role, pathname) {
   if (String(pathname || '').startsWith('/dashboard/vendor/subscription')) {
-    return STAY_SUBSCRIPTION_ROLES.includes(role);
+    return STAY_SUBSCRIPTION_ROLES.includes(role) || SERVICE_SUBSCRIPTION_ROLES.includes(role);
   }
   if (String(pathname || '').startsWith('/dashboard/vendor/availability')) {
     return roleHasAvailability(role);
@@ -96,10 +104,12 @@ export function getVendorNav(role, t) {
       icon: CalendarDays,
     });
   }
-  if (STAY_SUBSCRIPTION_ROLES.includes(role)) {
+  if (STAY_SUBSCRIPTION_ROLES.includes(role) || SERVICE_SUBSCRIPTION_ROLES.includes(role)) {
     items.push({
       to: '/dashboard/vendor/subscription',
-      label: t('staySubscription.nav'),
+      label: SERVICE_SUBSCRIPTION_ROLES.includes(role)
+        ? t('serviceSubscription.title')
+        : t('staySubscription.nav'),
       icon: CreditCard,
     });
   }

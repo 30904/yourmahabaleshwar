@@ -17,6 +17,7 @@ import userRoutes from './userRoutes.js';
 import searchRoutes from './searchRoutes.js';
 import miscRoutes from './miscRoutes.js';
 import staySubscriptionRoutes from './staySubscriptionRoutes.js';
+import serviceMonetizationRoutes from './serviceMonetizationRoutes.js';
 
 const router = Router();
 
@@ -41,6 +42,7 @@ router.use('/payments', paymentRoutes);
 router.use('/admin', adminRoutes);
 router.use('/search', searchRoutes);
 router.use('/stay-subscriptions', staySubscriptionRoutes);
+router.use('/service-monetization', serviceMonetizationRoutes);
 router.use('/', miscRoutes);
 
 export default router;

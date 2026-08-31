@@ -4,7 +4,6 @@ import { MapPin, Images } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchHorseBySlug, fetchReviews } from '../../services/listingsApi';
 import ReviewScore from '../../components/property/ReviewScore';
-import HorseGuestBookingForm from '../../components/booking/HorseGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
@@ -20,7 +19,6 @@ export default function HorseDetailPage() {
   const [item, setItem] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showBookingForm, setShowBookingForm] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
@@ -34,7 +32,6 @@ export default function HorseDetailPage() {
   }, [slug]);
 
   useEffect(() => {
-    setShowBookingForm(false);
     setPhotoIndex(0);
   }, [slug]);
 
@@ -44,14 +41,6 @@ export default function HorseDetailPage() {
   const images = item.images?.length ? item.images : [FALLBACK_IMG];
   const priceFrom = item.priceFrom ?? item.routes?.[0]?.price;
   const description = item.description || item.horseDetails;
-
-  const openBookingForm = () => {
-    if (!isAuthenticated) return;
-    setShowBookingForm(true);
-    requestAnimationFrame(() => {
-      document.getElementById('horse-guest-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  };
 
   return (
     <div className="page-container py-8">
@@ -139,18 +128,10 @@ export default function HorseDetailPage() {
             </div>
             {isAuthenticated ? (
               <div>
-                <p className="mb-3 text-xs text-slate-500">
-                  {showBookingForm ? t('horseGuestBooking.formClosedHint') : t('horseGuestBooking.formOpenHint')}
-                </p>
-                {!showBookingForm ? (
-                  <button type="button" className="btn-primary w-full" onClick={openBookingForm}>
-                    {t('horseGuestBooking.bookNow')}
-                  </button>
-                ) : (
-                  <button type="button" className="btn-outline w-full" onClick={() => setShowBookingForm(false)}>
-                    {t('horseGuestBooking.hideForm')}
-                  </button>
-                )}
+                <p className="mb-3 text-xs text-slate-500">{t('serviceBooking.openFormSubtitle')}</p>
+                <Link to="/horses/book" className="btn-primary block w-full text-center">
+                  {t('horseGuestBooking.bookNow')}
+                </Link>
               </div>
             ) : (
               <div>
@@ -203,11 +184,6 @@ export default function HorseDetailPage() {
         </section>
       )}
 
-      {isAuthenticated && showBookingForm && (
-        <div id="horse-guest-form" className="mt-10 scroll-mt-24 border-t border-slate-100 pt-10">
-          <HorseGuestBookingForm item={item} />
-        </div>
-      )}
     </div>
   );
 }

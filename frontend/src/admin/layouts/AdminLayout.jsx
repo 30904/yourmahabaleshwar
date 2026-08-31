@@ -8,12 +8,14 @@ const breadcrumbMap = {
   '/admin/properties': ['Admin', 'Properties'],
   '/admin/listings/new': ['Admin', 'Listings', 'Add Listing'],
   '/admin/bookings': ['Admin', 'Bookings'],
+  '/admin/bookings/unassigned': ['Admin', 'Bookings', 'Needs assignment'],
   '/admin/guides': ['Admin', 'Guides'],
   '/admin/taxi': ['Admin', 'Taxi'],
   '/admin/drivers': ['Admin', 'Drivers'],
   '/admin/finance': ['Admin', 'Finance'],
   '/admin/cms': ['Admin', 'CMS'],
   '/admin/settings': ['Admin', 'Settings'],
+  '/admin/settings/service-monetization': ['Admin', 'Settings', 'Service subscriptions'],
 };
 
 export default function AdminLayout() {

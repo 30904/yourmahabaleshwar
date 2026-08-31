@@ -7,6 +7,7 @@ import * as phase1b from '../controllers/phase1bController.js';
 import * as domain from '../controllers/domainController.js';
 import * as phase4 from '../controllers/phase4Controller.js';
 import * as staySub from '../controllers/stayListingSubscriptionController.js';
+import * as serviceMon from '../controllers/serviceMonetizationController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAdminActions } from '../middleware/audit.js';
 import { uploadBannerImage, uploadBlogCover, uploadExcel } from '../middleware/upload.js';
@@ -84,6 +85,10 @@ router.post('/subscriptions/points/purchase', authorize(...vendorAndAdmin), phas
 
 router.patch('/stay-subscriptions/:listingType/:listingId/renewal-price', authorize(...staffAndAdmin), staySub.adminSetStayRenewalPrice);
 router.post('/stay-subscriptions/:listingType/:listingId/renew', authorize(...staffAndAdmin), staySub.adminRenewStaySubscription);
+
+router.get('/service-monetization', authorize(...adminOnly), serviceMon.adminGetServiceMonetization);
+router.patch('/service-monetization/:tenantType', authorize(...adminOnly), serviceMon.adminUpdateServiceMonetization);
+router.post('/service-monetization/unlimited/grant', authorize(...adminOnly), serviceMon.adminGrantUnlimitedMonthly);
 
 router.get('/wallet', authorize(...vendorAndAdmin), phase1b.getWallet);
 router.post('/payouts/generate', authorize(...adminOnly), phase1b.generateVendorPayouts);
