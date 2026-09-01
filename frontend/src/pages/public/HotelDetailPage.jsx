@@ -6,7 +6,7 @@ import RoomCard from '../../components/property/RoomCard';
 import HotelGuestBookingForm from '../../components/booking/HotelGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
-import { fetchHotelBySlug } from '../../services/listingsApi';
+import { fetchHotelBySlug, fetchReviews } from '../../services/listingsApi';
 import { dummyHotels } from '../../data/dummyListings';
 import { normalizeHotel } from '../../utils/listingHelpers';
 import Seo from '../../components/seo/Seo';
@@ -21,6 +21,7 @@ export default function HotelDetailPage() {
   const { isAuthenticated } = useAuth();
   const [property, setProperty] = useState(null);
   const [rooms, setRooms] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -28,11 +29,16 @@ export default function HotelDetailPage() {
   const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
+    setReviews([]);
     fetchHotelBySlug(slug)
-      .then(({ hotel, rooms: r }) => {
+      .then(async ({ hotel, rooms: r }) => {
         setProperty(hotel);
         setRooms(r);
         if (r?.[0]) setSelectedRoom(r[0]);
+        if (hotel?._id) {
+          const listingType = hotel.type === 'RESORT' ? 'RESORT' : 'HOTEL';
+          setReviews(await fetchReviews(listingType, hotel._id));
+        }
       })
       .catch(() => {
         const h = dummyHotels.find((x) => x.slug === slug) || dummyHotels[0];
@@ -252,10 +258,23 @@ export default function HotelDetailPage() {
             <ReviewScore
               score={property.score || property.rating}
               label={property.scoreLabel}
-              reviewCount={property.reviewCount}
+              reviewCount={reviews.length || property.reviewCount}
               size="lg"
             />
-            <p className="mt-4 text-slate-600">Guests loved the location, cleanliness and friendly staff.</p>
+            {reviews.length > 0 ? (
+              <div className="mt-6 space-y-3">
+                {reviews.map((r) => (
+                  <div key={r._id} className="rounded-xl border border-slate-100 p-4">
+                    <p className="font-medium text-slate-900">
+                      {r.user?.name || 'Guest'} · {r.rating}/5
+                    </p>
+                    {r.comment ? <p className="mt-1 text-sm text-slate-600">{r.comment}</p> : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-slate-600">No guest reviews yet. Complete a booking to be the first to review.</p>
+            )}
           </div>
         )}
 
