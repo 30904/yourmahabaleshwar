@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
 
-export default function HomestayGuestBookingForm({ item }) {
+export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ export default function HomestayGuestBookingForm({ item }) {
     checkOut: '',
     checkInTime: item?.checkInTime || '14:00',
     checkOutTime: item?.checkOutTime || '11:00',
-    roomId: item?.rooms?.[0]?._id || '',
+    roomId: initialRoomId || item?.rooms?.[0]?._id || '',
     adults: 2,
     children: 0,
     leadFullName: user?.name || '',
@@ -62,6 +62,10 @@ export default function HomestayGuestBookingForm({ item }) {
     () => roomList.find((r) => String(r._id) === String(form.roomId)) || roomList[0],
     [roomList, form.roomId]
   );
+
+  useEffect(() => {
+    if (initialRoomId) setField('roomId', initialRoomId);
+  }, [initialRoomId]);
 
   const nights = useMemo(() => {
     if (!form.checkIn || !form.checkOut) return 1;
