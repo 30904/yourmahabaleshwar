@@ -29,6 +29,8 @@ router.get(
   review.listVendorReviews
 );
 router.get('/reviews/pending', protect, authorize(ROLES.SUPER_ADMIN), review.listPendingReviews);
+router.get('/reviews/admin', protect, authorize(ROLES.SUPER_ADMIN), review.listAdminReviews);
 router.patch('/reviews/:id/moderate', protect, authorize(ROLES.SUPER_ADMIN), review.moderateReview);
+router.delete('/reviews/:id', protect, authorize(ROLES.SUPER_ADMIN), review.deleteReview);
 
 export default router;

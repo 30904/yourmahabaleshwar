@@ -27,6 +27,7 @@ import ServiceMonetizationPage from '../pages/settings/ServiceMonetizationPage';
 import UploadCenterPage from '../pages/upload/UploadCenterPage';
 import KycPage from '../pages/kyc/KycPage';
 import ReviewsModerationPage from '../pages/ReviewsModerationPage';
+import DeleteReviewsPage from '../pages/customers/DeleteReviewsPage';
 import GuidePackagesPage from '../pages/guides/GuidePackagesPage';
 import TaxiHourlyPage from '../pages/taxi/TaxiHourlyPage';
 import EnquiriesPage from '../pages/bookings/EnquiriesPage';
@@ -76,6 +77,7 @@ const adminRouteConfig = [
   { path: 'ads', element: <AdsPage /> },
   { path: 'customers', element: <CustomerListPage /> },
   { path: 'customers/reviews', element: <ReviewsModerationPage /> },
+  { path: 'customers/delete-reviews', element: <DeleteReviewsPage /> },
   { path: 'vendors', element: <VendorListPage /> },
   { path: 'vendors/payouts', element: <PayoutsPage /> },
   { path: 'finance', element: <FinancePage /> },

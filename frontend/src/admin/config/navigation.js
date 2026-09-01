@@ -38,6 +38,7 @@ import {
   UserCog,
   Upload,
   LogOut,
+  Trash2,
   HardDrive,
   Megaphone,
   Trees,
@@ -134,7 +135,8 @@ export const adminNavGroups = [
     label: 'Customers',
     items: [
       { to: '/admin/customers', label: 'All Customers', icon: UserCircle },
-      { to: '/admin/customers/reviews', label: 'Reviews', icon: MessageSquare },
+      { to: '/admin/customers/reviews', label: 'Reviews', icon: MessageSquare, end: true },
+      { to: '/admin/customers/delete-reviews', label: 'Delete reviews', icon: Trash2 },
     ],
   },
   {
