@@ -30,19 +30,24 @@ const fieldByType = {
   HORSE: 'horse',
 };
 
+const listingIdOf = (review) =>
+  review.hotel || review.tent || review.guide || review.driver || review.homestay || review.horse;
+
 const updateListingRating = async (listingType, listingId) => {
   const field = fieldByType[listingType];
-  if (!field) return;
+  if (!field || !listingId) return;
   const approved = await Review.find({ [field]: listingId, isApproved: true });
-  if (!approved.length) return;
-  const avg = approved.reduce((s, r) => s + r.rating, 0) / approved.length;
   const Model = listingModels[listingType];
-  if (Model) {
-    await Model.findByIdAndUpdate(listingId, {
-      rating: Math.round(avg * 10) / 10,
-      reviewCount: approved.length,
-    });
+  if (!Model) return;
+  if (!approved.length) {
+    await Model.findByIdAndUpdate(listingId, { rating: 0, reviewCount: 0 });
+    return;
   }
+  const avg = approved.reduce((s, r) => s + r.rating, 0) / approved.length;
+  await Model.findByIdAndUpdate(listingId, {
+    rating: Math.round(avg * 10) / 10,
+    reviewCount: approved.length,
+  });
 };
 
 export const createReview = async (req, res) => {
@@ -186,9 +191,52 @@ export const moderateReview = async (req, res) => {
   );
   if (!review) return error(res, 'Review not found', 404);
   if (review.isApproved && review.listingType) {
-    const id =
-      review.hotel || review.tent || review.guide || review.driver || review.homestay || review.horse;
-    await updateListingRating(review.listingType, id);
+    await updateListingRating(review.listingType, listingIdOf(review));
   }
   return success(res, review, approve ? 'Review approved' : 'Review rejected');
+};
+
+const ADMIN_REVIEW_TENANTS = ['GUIDE', 'TAXI', 'DRIVER', 'TENT', 'HORSE', 'HOTEL', 'RESORT', 'HOMESTAY'];
+
+export const listAdminReviews = async (req, res) => {
+  const tenant = String(req.query.tenant || '').toUpperCase();
+  if (!ADMIN_REVIEW_TENANTS.includes(tenant)) {
+    return error(res, 'Select a tenant to list reviews', 400);
+  }
+
+  const filter = {};
+  if (tenant === 'DRIVER') {
+    const ids = await Booking.find({ serviceTenant: 'DRIVER' }).distinct('_id');
+    filter.booking = { $in: ids };
+  } else if (tenant === 'TAXI') {
+    const driverBookingIds = await Booking.find({ serviceTenant: 'DRIVER' }).distinct('_id');
+    filter.listingType = 'TAXI';
+    if (driverBookingIds.length) filter.booking = { $nin: driverBookingIds };
+  } else {
+    filter.listingType = tenant;
+  }
+
+  const reviews = await Review.find(filter)
+    .populate('user', 'name email')
+    .populate('booking', 'bookingNumber type serviceTenant')
+    .populate('hotel', 'name')
+    .populate('tent', 'name')
+    .populate('guide', 'name')
+    .populate('driver', 'name')
+    .populate('homestay', 'name')
+    .populate('horse', 'name')
+    .sort('-createdAt')
+    .limit(300);
+
+  return success(res, reviews);
+};
+
+export const deleteReview = async (req, res) => {
+  const review = await Review.findById(req.params.id);
+  if (!review) return error(res, 'Review not found', 404);
+  const listingType = review.listingType;
+  const listingId = listingIdOf(review);
+  await review.deleteOne();
+  if (listingType && listingId) await updateListingRating(listingType, listingId);
+  return success(res, { id: req.params.id }, 'Review deleted');
 };

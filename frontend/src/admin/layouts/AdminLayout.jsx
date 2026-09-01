@@ -16,6 +16,8 @@ const breadcrumbMap = {
   '/admin/cms': ['Admin', 'CMS'],
   '/admin/settings': ['Admin', 'Settings'],
   '/admin/settings/service-monetization': ['Admin', 'Settings', 'Service subscriptions'],
+  '/admin/customers/reviews': ['Admin', 'Reviews'],
+  '/admin/customers/delete-reviews': ['Admin', 'Reviews', 'Delete reviews'],
 };
 
 export default function AdminLayout() {
