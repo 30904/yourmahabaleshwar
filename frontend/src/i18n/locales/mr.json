@@ -1110,7 +1110,7 @@
     "payCash": "रोख",
     "payOnline": "ऑनलाइन / UPI",
     "payCard": "कार्ड",
-    "paymentHint": "ऑनलाइन बुकिंग पुष्टी केल्यानंतर प्लॅटफॉर्म पेमेंट गेटवेद्वारे पूर्ण होते.",
+    "paymentHint": "पुष्टी केल्यानंतर विनंती पाठवली जाते. नंतर My Bookings मधून पेमेंट करा.",
     "subtotalNights_one": "एकूण ({{count}} रात्र)",
     "subtotalNights_other": "एकूण ({{count}} रात्री)",
     "gstLabel": "GST (१२%)",
@@ -1127,7 +1127,7 @@
       "adults": "किमान १ प्रौढ आवश्यक आहे",
       "acceptTerms": "कृपया नियम व अटी स्वीकारा"
     },
-    "bookingCreated": "बुकिंग तयार — पेमेंट करा",
+    "bookingCreated": "विनंती पाठवली — My Bookings मधून पेमेंट करा.",
     "paymentSuccess": "पेमेंट यशस्वी",
     "bookingSavedPayLater": "बुकिंग जतन झाली. तुम्ही माझ्या बुकिंग्जमधून पेमेंट करू शकता.",
     "bookingFailed": "बुकिंग अयशस्वी"

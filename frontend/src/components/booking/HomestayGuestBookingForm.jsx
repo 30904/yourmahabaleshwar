@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { calcGST } from '../../utils/format';
 import { createHomestayBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
-import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
@@ -115,7 +114,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
     }
     setSubmitting(true);
     try {
-      const res = await createHomestayBooking({
+      await createHomestayBooking({
         homestayId: item._id,
         roomId: form.roomId || item.rooms?.[0]?._id,
         checkIn: form.checkIn,
@@ -155,14 +154,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
           acceptedTermsAt: new Date().toISOString(),
         },
       });
-      const booking = res.data.data;
       toast.success(t('stayGuestBooking.bookingCreated'));
-      try {
-        await payForBooking(booking, user);
-        toast.success(t('stayGuestBooking.paymentSuccess'));
-      } catch {
-        toast(t('stayGuestBooking.bookingSavedPayLater'));
-      }
       navigate('/dashboard/customer/bookings');
     } catch (error) {
       toast.error(error.response?.data?.message || t('stayGuestBooking.bookingFailed'));

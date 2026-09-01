@@ -1110,7 +1110,7 @@
     "payCash": "Cash",
     "payOnline": "Online / UPI",
     "payCard": "Card",
-    "paymentHint": "Online bookings are completed via the platform payment gateway after you confirm.",
+    "paymentHint": "Confirming sends your booking request. Pay later from My Bookings.",
     "subtotalNights_one": "Subtotal ({{count}} night)",
     "subtotalNights_other": "Subtotal ({{count}} nights)",
     "gstLabel": "GST (12%)",
@@ -1127,7 +1127,7 @@
       "adults": "At least 1 adult is required",
       "acceptTerms": "Please accept the Terms and Conditions"
     },
-    "bookingCreated": "Booking created — proceed to pay",
+    "bookingCreated": "Request submitted — pay from My Bookings.",
     "paymentSuccess": "Payment successful",
     "bookingSavedPayLater": "Booking saved. You can pay from My Bookings.",
     "bookingFailed": "Booking failed"
