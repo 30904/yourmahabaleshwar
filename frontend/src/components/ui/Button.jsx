@@ -8,6 +8,8 @@ export default function Button({
   const variants = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
+    success: 'btn-success',
+    danger: 'btn-danger',
     outline: 'btn-outline',
     ghost: 'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100',
   };

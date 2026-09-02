@@ -15,6 +15,7 @@ export const VENDOR_ROLES = [
     'HOMESTAY_VENDOR',
     'TENT_OPERATOR',
     'GUIDE',
+    'TAXI_OPERATOR',
     'DRIVER',
     'HORSE_OPERATOR',
 ];
@@ -24,7 +25,7 @@ export const CATEGORIES = [
     { key: 'homestays', path: '/homestays', labelKey: 'nav.homestays', type: 'HOMESTAY' },
     { key: 'tents', path: '/tents', labelKey: 'nav.tents', type: 'TENT' },
     { key: 'guides', path: '/guides', labelKey: 'nav.guides', type: 'GUIDE' },
-    { key: 'taxi', path: '/drivers', labelKey: 'nav.taxi', type: 'TAXI' },
+    { key: 'taxi', path: '/taxi', labelKey: 'nav.taxi', type: 'TAXI' },
     { key: 'horses', path: '/horses', labelKey: 'nav.horses', type: 'HORSE' },
     { key: 'strawberries', path: '/products', labelKey: 'nav.strawberries', type: 'PRODUCT', query: { vertical: 'STRAWBERRY' } },
     { key: 'mapro', path: '/products', labelKey: 'nav.mapro', type: 'PRODUCT', query: { vertical: 'MAPRO' } },

@@ -1,0 +1,62 @@
+pages: 1
+
+=== PAGE 1 ===
+एस. एम. इंटरप्राईजेस | S. M. ENTERPRISES
+ग्राहक ड्रायव्हर बुकंग फॉर्म / Customer Driver Booking Form
+www.yourmahabaleshwar.com | ड्रायव्हर पुरवठा सेवा / Driver Supply Services
+१. ग्राहकाची वैयक्तिक माहक्तिी / CUSTOMER PERSONAL DETAILS
+पूर्ण नाव / Full Name:
+पार्णी मोबाईल नंबर / Alternate Mobile Number:मोबाईल नंबर / Mobile Number:
+पत्ता / पकअप लोक े शन / Pickup Address:
+२. प्रवासाचा क्तिपशील व पॅक े ज / TRIP DETAILS & PACKAGE SELECTION
+प्रवासाचा प्रकार / Trip Type:
+ लोकल / Local  आऊटस्टेशन / Outstation
+ वन वे ड्रॉप / One Way Drop
+गाडीचा प्रकार / Vehicle Type:
+ रेग्युलर / Regular  लक्झरी कार / Luxury Car (₹100 extra)रूट प्रकार / Route Type:
+ राऊ ं ड ट्रिप / Round Trip  वन वे / One Way (₹100 extra)
+गअर प्रकार / Gear Type:
+ मॅन्युअल / Manual  ऑटोमॅटक / Automatic
+बुकंग दिनांक व वेळ / Booking Date & Time:        दिनांक / Date: ____/____/2026        वेळ / Time: _________
+३. दर व पॅक े ज क्तिक्तिा / PRICING & PACKAGES
+पॅक े ज / सेवा
+Package / Serviceक्तिपशील
+Detailsदर
+Rate in ₹निवड
+Select
+लोकल ४ क्तिास
+Local 4 Hrsस्थानक प्रवास / Local City Travel ₹700/-
+लोकल ८ क्तिास
+Local 8 Hrsस्थानक प्रवास / Local City Travel ₹1200/-
+आऊटस्टेशनि १२ क्तिास
+Outstation 12 Hrsराऊ ं ड ट्रिप / Round Trip ₹1600/-
+आऊटस्टेशनि ड्रॉप / वनि वे
+Outstation Drop / One Wayपर लोक े शन / ड्रॉप नुसार स्वतंत्र चार्जेस / Separate charges per location स्वतंत्र / Separate
+अक्तिरक्ति चाजर्जेस
+Extra Chargesओव्हरटाईम: ₹150/तास | रात्री ११ ते सकाळी ६: ₹200 एक्स्ट्रिा
+Overtime: ₹150/hr | Night 11 PM to 6 AM: ₹200 extraनयम लागू / As applicable
+४. नियम आणि अटी / TERMS & CONDITIONS
+वेळेचे पालनि / Time Adherence:  ड्रायव्हर ठरवलेल्या वेळी पकअप लोक े शनवर पोहोचेल. / Driver will arrive on time at the pickup location.
+ड्युटी क्तिास व ओव्हरटाईम / Overtime:  लोकल पॅक े मध्ये वेळ संपल्यानंतर ओव्हरटाईमसाठी ₹150/- प्रत तास अतरक्त चार्जेस लागू होतील. आऊटस्टेशन १२ तास पॅक े साठी ₹1600/- लागू
+राहील. / Overtime is ₹150/hr for local packages. Outstation 12 hrs package rate is ₹1600/-.
+आऊटस्टेशनि खानिपानि / Food & Meals:  आऊटस्टेशन प्रवासादरम्यान ड्रायव्हरला चहा-नाष्टा व ेवण देणे ग्राहकाची बाबदारी राहील. / Customer must provide tea, breakfast, and
+meals to the driver during outstation trips.
+रात्रीची वेळ व सकाळी लवकरचे बुकंग / Night & Early Morning:  रात्री ११:०० नंतर प्रवास संपल्यास कंवा सकाळी ६:०० च्या अगोदर बुकंग / प्रवास सुरू असल्यास ₹200/- अतरक्त चार्ज
+लागू होईल. / ₹200/- extra charge will apply if travel ends after 11:00 PM or starts before 6:00 AM.
+आऊटस्टेशनि ड्रॉप व वनि वे / Outstation Drop & One Way:  आऊटस्टेशन ड्रॉप कंवा वन वे प्रवासासाठी लोक े शननुसार स्वतंत्र चार्जेस ठरवले ातील. तसेच वन वे कंवा लक्झरी कारसाठी
+₹100/- अतरक्त चार्ज लागू होईल. / Separate charges for drop; ₹100/- extra charge for one-way or luxury car.
+टोल व पाकंग / Toll & Parking:  प्रवासादरम्यान लागणारे टोल टॅक्स व पाकंग चार्जेस ग्राहकाने द्यावे लागतील. / Toll taxes and parking charges during the trip must be borne by
+the customer.
+वाहनि कागदपत्रे व सुरक्षिक्तिक्तिा / Vehicle Documents:  गाडीची आरसी (RC), पीयूसी (PUC) आण वमा (Insurance) वैध असणे ग्राहकाची बाबदारी आहे. / Valid vehicle documents
+(RC, PUC, Insurance) are the customer's responsibility.
+"मी याद्वारे प्रमाणित करतो/करते की, वरील सवर्व बुकंगची माहिती बरोबर आहिे. एस. एम. इंटरप्राईजेसच्या सवर्व नियमांची आणि शुल्काची मला पूणिर्व मान्यता आहिे."
+"I hereby certify that the booking details are correct and I accept all terms, conditions, and charges of S.M. Enterprises." 
+दनांक / Date: ____/____/2026 ग्राहकाची सही / Customer Signature1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+S.M. Enterprises | Driver Supply Services Page 1
+

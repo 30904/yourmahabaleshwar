@@ -13,26 +13,30 @@ import HomestayDetailPage from './pages/public/HomestayDetailPage';
 import TentsPage from './pages/public/TentsPage';
 import GuidesPage from './pages/public/GuidesPage';
 import TaxiPage from './pages/public/TaxiPage';
+import DriversPage from './pages/public/DriversPage';
 import HorsesPage from './pages/public/HorsesPage';
-import HorseDetailPage from './pages/public/HorseDetailPage';
-import ProductsPage from './pages/public/ProductsPage';
-import ProductDetailPage from './pages/public/ProductDetailPage';
-import CombosPage from './pages/public/CombosPage';
-import ComboDetailPage from './pages/public/ComboDetailPage';
+// Service detail pages removed from public routes — customers book via open forms only
+// Shop pages — coming soon (keep files; routes disabled until launch)
+// import ProductsPage from './pages/public/ProductsPage';
+// import ProductDetailPage from './pages/public/ProductDetailPage';
+// import CombosPage from './pages/public/CombosPage';
+// import ComboDetailPage from './pages/public/ComboDetailPage';
 import StaticPage from './pages/public/StaticPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import VendorRegisterPage from './pages/auth/VendorRegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import HotelDetailPage from './pages/public/HotelDetailPage';
-import TentDetailPage from './pages/public/TentDetailPage';
-import GuideDetailPage from './pages/public/GuideDetailPage';
-import TaxiDetailPage from './pages/public/TaxiDetailPage';
 import EnquiryPage from './pages/public/EnquiryPage';
 import SearchPage from './pages/public/SearchPage';
 import ContactPage from './pages/public/ContactPage';
 import FaqPage from './pages/public/FaqPage';
 import BlogsPage from './pages/public/BlogsPage';
+import GuideBookingPage from './pages/public/GuideBookingPage';
+import TaxiBookingPage from './pages/TaxiBookingPage';
+import DriverBookingPage from './pages/DriverBookingPage';
+import HorseBookingPage from './pages/HorseBookingPage';
+import TentBookingPage from './pages/TentBookingPage';
 
 import CustomerOverview from './dashboards/customer/CustomerOverview';
 import CustomerBookings from './dashboards/customer/CustomerBookings';
@@ -40,10 +44,16 @@ import CustomerProfile from './dashboards/customer/CustomerProfile';
 import CustomerFavorites from './dashboards/customer/CustomerFavorites';
 
 import VendorOverview from './dashboards/vendor/VendorOverview';
+import VendorShell from './dashboards/vendor/VendorShell';
+import VendorListings from './dashboards/vendor/VendorListings';
+import VendorListingForm from './dashboards/vendor/VendorListingForm';
+import VendorPricing from './dashboards/vendor/VendorPricing';
 import VendorBookings from './dashboards/vendor/VendorBookings';
 import VendorKYC from './dashboards/vendor/VendorKYC';
 import VendorAvailability from './dashboards/vendor/VendorAvailability';
+import VendorReviews from './dashboards/vendor/VendorReviews';
 import VendorWallet from './dashboards/vendor/VendorWallet';
+import VendorMySubscription from './dashboards/vendor/VendorMySubscription';
 
 import AdminOverview from './dashboards/admin/AdminOverview';
 import AdminBookings from './dashboards/admin/AdminBookings';
@@ -52,7 +62,7 @@ import AdminCMS from './dashboards/admin/AdminCMS';
 import AdminLayout from './admin/layouts/AdminLayout';
 import AdminRoutes from './admin/routes/AdminRoutes';
 
-import { LayoutDashboard, Calendar, User, FileText, Image, Heart, CalendarDays, Wallet } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, FileText, Image, Heart } from 'lucide-react';
 
 const customerNav = [
   { to: '/dashboard/customer', label: 'Overview', icon: LayoutDashboard },
@@ -61,12 +71,15 @@ const customerNav = [
   { to: '/dashboard/customer/profile', label: 'Profile', icon: User },
 ];
 
-const vendorNav = [
-  { to: '/dashboard/vendor', label: 'Overview', icon: LayoutDashboard },
-  { to: '/dashboard/vendor/bookings', label: 'Bookings', icon: Calendar },
-  { to: '/dashboard/vendor/availability', label: 'Availability', icon: CalendarDays },
-  { to: '/dashboard/vendor/wallet', label: 'Wallet', icon: Wallet },
-  { to: '/dashboard/vendor/kyc', label: 'KYC', icon: FileText },
+const vendorRoles = [
+  ROLES.HOTEL_VENDOR,
+  ROLES.HOMESTAY_VENDOR,
+  ROLES.TENT_OPERATOR,
+  ROLES.GUIDE,
+  ROLES.TAXI_OPERATOR,
+  ROLES.DRIVER,
+  ROLES.HORSE_OPERATOR,
+  ROLES.PRODUCT_VENDOR,
 ];
 
 const adminNav = [
@@ -74,16 +87,6 @@ const adminNav = [
   { to: '/dashboard/admin/bookings', label: 'Bookings', icon: Calendar },
   { to: '/dashboard/admin/kyc', label: 'KYC Approval', icon: FileText },
   { to: '/dashboard/admin/cms', label: 'CMS', icon: Image },
-];
-
-const vendorRoles = [
-  ROLES.HOTEL_VENDOR,
-  ROLES.HOMESTAY_VENDOR,
-  ROLES.TENT_OPERATOR,
-  ROLES.GUIDE,
-  ROLES.DRIVER,
-  ROLES.HORSE_OPERATOR,
-  ROLES.PRODUCT_VENDOR,
 ];
 
 export default function App() {
@@ -99,19 +102,28 @@ export default function App() {
         <Route path="homestays" element={<HomestaysPage />} />
         <Route path="homestays/:slug" element={<HomestayDetailPage />} />
         <Route path="tents" element={<TentsPage />} />
-        <Route path="tents/:slug" element={<TentDetailPage />} />
+        <Route path="tents/book" element={<TentBookingPage />} />
+        <Route path="tents/:slug" element={<Navigate to="/tents/book" replace />} />
         <Route path="guides" element={<GuidesPage />} />
-        <Route path="guides/:slug" element={<GuideDetailPage />} />
+        <Route path="guides/book" element={<GuideBookingPage />} />
+        <Route path="guides/:slug" element={<Navigate to="/guides/book" replace />} />
         <Route path="taxi" element={<TaxiPage />} />
-        <Route path="taxi/:slug" element={<TaxiDetailPage />} />
+        <Route path="taxi/book" element={<TaxiBookingPage />} />
+        <Route path="taxi/:slug" element={<Navigate to="/taxi/book" replace />} />
+        <Route path="drivers" element={<DriversPage />} />
+        <Route path="drivers/book" element={<DriverBookingPage />} />
+        <Route path="drivers/:slug" element={<Navigate to="/drivers/book" replace />} />
         <Route path="horses" element={<HorsesPage />} />
-        <Route path="horses/:slug" element={<HorseDetailPage />} />
+        <Route path="horses/book" element={<HorseBookingPage />} />
+        <Route path="horses/:slug" element={<Navigate to="/horses/book" replace />} />
+        {/* Shop pages — coming soon
         <Route path="strawberries" element={<ProductsPage vertical="STRAWBERRY" />} />
         <Route path="strawberries/:slug" element={<ProductDetailPage vertical="STRAWBERRY" />} />
         <Route path="mapro" element={<ProductsPage vertical="MAPRO" />} />
         <Route path="mapro/:slug" element={<ProductDetailPage vertical="MAPRO" />} />
         <Route path="combos" element={<CombosPage />} />
         <Route path="combos/:slug" element={<ComboDetailPage />} />
+        */}
         <Route path="driver-enquiry" element={<EnquiryPage type="DRIVER" />} />
         <Route path="hourly-enquiry" element={<EnquiryPage type="HOURLY" />} />
         <Route path="search" element={<SearchPage />} />
@@ -152,13 +164,19 @@ export default function App() {
 
       <Route path="dashboard/vendor" element={
         <ProtectedRoute roles={vendorRoles}>
-          <DashboardLayout navItems={vendorNav} title="Vendor Dashboard" />
+          <VendorShell />
         </ProtectedRoute>
       }>
         <Route index element={<VendorOverview />} />
+        <Route path="listings" element={<VendorListings />} />
+        <Route path="listings/new" element={<VendorListingForm />} />
+        <Route path="listings/:vertical/:id/edit" element={<VendorListingForm />} />
+        <Route path="pricing" element={<VendorPricing />} />
         <Route path="bookings" element={<VendorBookings />} />
         <Route path="availability" element={<VendorAvailability />} />
+        <Route path="reviews" element={<VendorReviews />} />
         <Route path="wallet" element={<VendorWallet />} />
+        <Route path="subscription" element={<VendorMySubscription />} />
         <Route path="kyc" element={<VendorKYC />} />
       </Route>
 

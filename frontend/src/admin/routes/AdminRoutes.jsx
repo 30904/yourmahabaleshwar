@@ -2,6 +2,7 @@ import { useRoutes, Navigate } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import PropertyListPage from '../pages/properties/PropertyListPage';
 import PropertyFormPage from '../pages/properties/PropertyFormPage';
+import AdminListingFormPage from '../pages/listings/AdminListingFormPage';
 import AmenitiesPage from '../pages/properties/AmenitiesPage';
 import RoomTypesPage from '../pages/properties/RoomTypesPage';
 import BookingListPage from '../pages/bookings/BookingListPage';
@@ -22,9 +23,11 @@ import OfficeStaffPage from '../pages/system/OfficeStaffPage';
 import CmsHubPage from '../pages/cms/CmsHubPage';
 import BlogsPage from '../pages/cms/BlogsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
+import ServiceMonetizationPage from '../pages/settings/ServiceMonetizationPage';
 import UploadCenterPage from '../pages/upload/UploadCenterPage';
 import KycPage from '../pages/kyc/KycPage';
 import ReviewsModerationPage from '../pages/ReviewsModerationPage';
+import DeleteReviewsPage from '../pages/customers/DeleteReviewsPage';
 import GuidePackagesPage from '../pages/guides/GuidePackagesPage';
 import TaxiHourlyPage from '../pages/taxi/TaxiHourlyPage';
 import EnquiriesPage from '../pages/bookings/EnquiriesPage';
@@ -39,22 +42,33 @@ const adminRouteConfig = [
   { path: 'properties/homestays', element: <HomestayHorseListPage kind="homestays" /> },
   { path: 'properties/horses', element: <HomestayHorseListPage kind="horses" /> },
   { path: 'properties/tents', element: <PropertyListPage typeFilter="tents" /> },
-  { path: 'properties/new', element: <PropertyFormPage /> },
+  { path: 'properties/new', element: <Navigate to="/admin/listings/new?type=HOTEL" replace /> },
   { path: 'properties/edit/:id', element: <PropertyFormPage /> },
+  { path: 'listings/new', element: <AdminListingFormPage /> },
+  { path: 'listings/:vertical/:id/edit', element: <AdminListingFormPage /> },
   { path: 'properties/amenities', element: <AmenitiesPage /> },
   { path: 'properties/room-types', element: <RoomTypesPage /> },
   { path: 'guides', element: <GuideListPage /> },
   { path: 'guides/kyc-pending', element: <GuideListPage kycFilter="pending" /> },
   { path: 'guides/approved', element: <GuideListPage kycFilter="approved" /> },
   { path: 'guides/packages', element: <GuidePackagesPage /> },
-  { path: 'taxi', element: <DriverListPage /> },
-  { path: 'taxi/kyc-pending', element: <KycPage /> },
+  { path: 'taxi', element: <DriverListPage vendorType="TAXI" /> },
+  { path: 'taxi/kyc-pending', element: <DriverListPage vendorType="TAXI" kycFilter="pending" /> },
+  { path: 'taxi/approved', element: <DriverListPage vendorType="TAXI" kycFilter="approved" /> },
   { path: 'taxi/hourly', element: <TaxiHourlyPage /> },
+  { path: 'drivers', element: <DriverListPage vendorType="DRIVER" /> },
+  { path: 'drivers/kyc-pending', element: <DriverListPage vendorType="DRIVER" kycFilter="pending" /> },
+  { path: 'drivers/approved', element: <DriverListPage vendorType="DRIVER" kycFilter="approved" /> },
   { path: 'bookings', element: <BookingListPage /> },
+  { path: 'bookings/unassigned', element: <BookingListPage assignmentFilter="UNASSIGNED" /> },
+  { path: 'bookings/guides', element: <BookingListPage serviceTenant="GUIDE" /> },
+  { path: 'bookings/taxi', element: <BookingListPage serviceTenant="TAXI" /> },
+  { path: 'bookings/drivers', element: <BookingListPage serviceTenant="DRIVER" /> },
+  { path: 'bookings/tents', element: <BookingListPage serviceTenant="TENT" /> },
+  { path: 'bookings/horses', element: <BookingListPage serviceTenant="HORSE" /> },
   { path: 'bookings/hotels', element: <BookingListPage type="HOTEL" /> },
-  { path: 'bookings/tents', element: <BookingListPage type="TENT" /> },
-  { path: 'bookings/guides', element: <BookingListPage type="GUIDE" /> },
-  { path: 'bookings/taxi', element: <BookingListPage type="TAXI" /> },
+  { path: 'bookings/homestays', element: <BookingListPage type="HOMESTAY" /> },
+  { path: 'bookings/resorts', element: <BookingListPage type="RESORT" /> },
   { path: 'bookings/enquiries', element: <EnquiriesPage /> },
   { path: 'bookings/cancelled', element: <BookingListPage statusFilter="CANCELLED" /> },
   { path: 'pricing/coupons', element: <CouponsPage /> },
@@ -63,6 +77,7 @@ const adminRouteConfig = [
   { path: 'ads', element: <AdsPage /> },
   { path: 'customers', element: <CustomerListPage /> },
   { path: 'customers/reviews', element: <ReviewsModerationPage /> },
+  { path: 'customers/delete-reviews', element: <DeleteReviewsPage /> },
   { path: 'vendors', element: <VendorListPage /> },
   { path: 'vendors/payouts', element: <PayoutsPage /> },
   { path: 'finance', element: <FinancePage /> },
@@ -82,6 +97,7 @@ const adminRouteConfig = [
   { path: 'reports/destinations', element: <DomainToolsPage /> },
   { path: 'kyc', element: <KycPage /> },
   { path: 'settings', element: <SettingsPage /> },
+  { path: 'settings/service-monetization', element: <ServiceMonetizationPage /> },
   { path: 'upload-center', element: <UploadCenterPage /> },
   { path: 'backups', element: <BackupsPage /> },
   { path: 'domain-tools', element: <DomainToolsPage /> },

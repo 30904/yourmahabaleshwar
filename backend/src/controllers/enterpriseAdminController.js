@@ -13,10 +13,17 @@ import Blog from '../models/Blog.js';
 import FAQ from '../models/FAQ.js';
 import Coupon from '../models/Coupon.js';
 import PlatformSettings from '../models/PlatformSettings.js';
+import Homestay from '../models/Homestay.js';
+import Horse from '../models/Horse.js';
 import { ROLES, VENDOR_ROLES } from '../constants/roles.js';
 import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices } from '../utils/listingEnrich.js';
 import { normalizePropertyImages } from '../utils/propertyImages.js';
+import { APPROVAL_STATUS, approvalFilter } from '../utils/listingApproval.js';
+import {
+  isStayListingType,
+  startSubscriptionOnApproval,
+} from '../services/stayListingSubscriptionService.js';
 
 function buildHotelData(body, userId) {
   const slug = body.name
@@ -36,10 +43,15 @@ function buildHotelData(body, userId) {
     amenities: Array.isArray(body.amenities) ? body.amenities : [],
     rating: Number(body.rating) || 4,
     isActive: body.isActive !== false && body.isActive !== 'false',
+    approvalStatus:
+      body.isActive !== false && body.isActive !== 'false'
+        ? APPROVAL_STATUS.APPROVED
+        : APPROVAL_STATUS.PENDING,
     isFeatured: body.isFeatured === true || body.isFeatured === 'true',
     checkInTime: body.checkInTime || '14:00',
     checkOutTime: body.checkOutTime || '11:00',
     policies: body.policies,
+    gstNumber: body.gstNumber,
     commissionRate: Number(body.commissionRate) || 10,
     vendor: body.vendor || userId,
   };
@@ -190,18 +202,13 @@ export const getEnterpriseDashboard = async (req, res) => {
 export const getAdminProperties = async (req, res) => {
   // Admin default: show BOTH active + inactive. Public hotel APIs stay active-only.
   const { type, search, status = 'all', page = 1, limit = 50 } = req.query;
-  const filter = {};
+  const filter = { ...approvalFilter(status) };
   if (type && type !== 'ALL') filter.type = type.toUpperCase();
   if (search) filter.name = { $regex: search, $options: 'i' };
   if (status === 'featured') filter.isFeatured = true;
-  else if (status === 'active') filter.isActive = true;
-  else if (status === 'inactive') filter.isActive = false;
-  // status === 'all' (default): no isActive filter
 
-  const tentFilter = {};
+  const tentFilter = { ...approvalFilter(status) };
   if (search) tentFilter.name = { $regex: search, $options: 'i' };
-  if (status === 'active') tentFilter.isActive = true;
-  else if (status === 'inactive') tentFilter.isActive = false;
 
   const skip = (page - 1) * limit;
   const [raw, total] = await Promise.all([
@@ -245,20 +252,109 @@ export const createAdminProperty = async (req, res) => {
 /** Toggle active flag only — safe for admin list actions (does not wipe other fields). */
 export const setAdminPropertyActive = async (req, res) => {
   try {
-    const { isActive, listingType } = req.body;
+    const { isActive, listingType, commissionRate, renewalPrice } = req.body;
     if (typeof isActive !== 'boolean') return error(res, 'isActive boolean required', 400);
 
-    if (listingType === 'TENT') {
-      const tent = await Tent.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
-      if (!tent) return error(res, 'Tent not found', 404);
-      return success(res, tent, isActive ? 'Marked active' : 'Marked inactive');
+    const isActivating = isActive === true;
+    const shouldSetCommission = isActivating && commissionRate != null;
+    const parsedCommission = shouldSetCommission ? Number(commissionRate) : null;
+    if (isActivating && (parsedCommission == null || !Number.isFinite(parsedCommission))) {
+      // We require commission when turning a listing on from pending/inactive.
+      return error(res, 'commissionRate number is required when activating', 400);
     }
 
-    const hotel = await Hotel.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
-    if (!hotel) return error(res, 'Property not found', 404);
-    return success(res, hotel, isActive ? 'Marked active' : 'Marked inactive');
+    const update = { isActive };
+    if (isActivating) {
+      update.commissionRate = parsedCommission;
+      update.approvalStatus = APPROVAL_STATUS.APPROVED;
+      if (renewalPrice != null && Number.isFinite(Number(renewalPrice)) && isStayListingType(listingType)) {
+        update.renewalPrice = Number(renewalPrice);
+      }
+    } else {
+      update.approvalStatus = APPROVAL_STATUS.REJECTED;
+    }
+
+    if (listingType === 'TENT') {
+      const doc = await Tent.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Tent not found', 404);
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
+    }
+
+    if (listingType === 'HOMESTAY') {
+      const doc = await Homestay.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Homestay not found', 404);
+      if (isActivating) {
+        await startSubscriptionOnApproval('HOMESTAY', doc._id, { renewalPrice });
+      }
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
+    }
+
+    if (listingType === 'HORSE') {
+      const doc = await Horse.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Horse not found', 404);
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
+    }
+
+    if (listingType === 'GUIDE') {
+      const doc = await Guide.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Guide not found', 404);
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
+    }
+
+    if (listingType === 'DRIVER' || listingType === 'TAXI') {
+      const doc = await Driver.findByIdAndUpdate(req.params.id, update, { new: true });
+      if (!doc) return error(res, 'Driver not found', 404);
+      return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
+    }
+
+    // HOTEL / RESORT
+    const doc = await Hotel.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!doc) return error(res, 'Property not found', 404);
+    if (isActivating && isStayListingType(listingType || doc.type)) {
+      await startSubscriptionOnApproval(listingType || doc.type, doc._id, { renewalPrice });
+    }
+    return success(res, doc, isActive ? 'Listing approved' : 'Listing rejected');
   } catch (err) {
     return error(res, err.message || 'Failed to update status', 500);
+  }
+};
+
+export const getAdminListingReview = async (req, res) => {
+  try {
+    const type = String(req.query.type || 'HOTEL').toUpperCase();
+    const { id } = req.params;
+    let listing = null;
+    let rooms = [];
+
+    if (type === 'TENT') {
+      listing = await Tent.findById(id).populate('operator', 'name email phone');
+    } else if (type === 'HOMESTAY') {
+      listing = await Homestay.findById(id).populate('vendor', 'name email phone');
+    } else if (type === 'HORSE') {
+      listing = await Horse.findById(id).populate('operator', 'name email phone');
+    } else if (type === 'GUIDE') {
+      listing = await Guide.findById(id).populate('user', 'name email phone');
+    } else if (type === 'DRIVER' || type === 'TAXI') {
+      listing = await Driver.findById(id).populate('user', 'name email phone');
+    } else {
+      listing = await Hotel.findById(id).populate('vendor', 'name email phone');
+      if (listing) rooms = await Room.find({ hotel: listing._id });
+    }
+
+    if (!listing) return error(res, 'Listing not found', 404);
+
+    const vendorUser = listing.vendor || listing.operator || listing.user || null;
+    const vendorId = vendorUser?._id || vendorUser;
+    const kyc = vendorId ? await KYC.findOne({ user: vendorId }) : null;
+
+    return success(res, {
+      listing,
+      rooms: type === 'HOMESTAY' ? listing.rooms || [] : rooms,
+      kyc,
+      vendor: vendorUser,
+    });
+  } catch (err) {
+    return error(res, err.message || 'Failed to load listing review', 500);
   }
 };
 
@@ -268,9 +364,17 @@ export const updateAdminProperty = async (req, res) => {
     if (!existing) return error(res, 'Property not found', 404);
 
     const update = buildHotelData(req.body, req.user._id);
+    delete update.isActive;
+    delete update.approvalStatus;
+    delete update.commissionRate;
+    delete update.slug;
 
     if (req.body.images?.length) {
       update.images = await normalizePropertyImages(req.body.images);
+    }
+
+    if (req.body.renewalPrice != null && Number.isFinite(Number(req.body.renewalPrice))) {
+      update.renewalPrice = Number(req.body.renewalPrice);
     }
 
     const hotel = await Hotel.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
@@ -296,15 +400,18 @@ export const getAdminProperty = async (req, res) => {
 };
 
 export const getAdminBookings = async (req, res) => {
-  const { type, status, page = 1, limit = 25 } = req.query;
+  const { type, status, serviceTenant, assignmentStatus, page = 1, limit = 25 } = req.query;
   const filter = {};
   if (type) filter.type = type.toUpperCase();
   if (status) filter.status = status.toUpperCase();
+  if (serviceTenant) filter.serviceTenant = String(serviceTenant).toUpperCase();
+  if (assignmentStatus) filter.assignmentStatus = String(assignmentStatus).toUpperCase();
   const skip = (page - 1) * limit;
   const [items, total] = await Promise.all([
     Booking.find(filter)
       .populate('customer', 'name email phone')
-      .populate('hotel tent guide driver room')
+      .populate('vendor', 'name email role')
+      .populate('hotel tent guide driver horse room homestay')
       .sort('-createdAt')
       .skip(skip)
       .limit(Number(limit)),
@@ -334,10 +441,29 @@ export const getAdminGuides = async (req, res) => {
 };
 
 export const getAdminDrivers = async (req, res) => {
+  const { search, kycStatus, vendorType } = req.query;
   const filter = {};
-  if (req.query.search) filter.name = { $regex: req.query.search, $options: 'i' };
-  const drivers = await Driver.find(filter).populate('user', 'name email phone').sort('-createdAt');
-  return success(res, drivers);
+  if (search) filter.name = { $regex: search, $options: 'i' };
+  const vt = String(vendorType || '').toUpperCase();
+  if (vt === 'TAXI' || vt === 'DRIVER') {
+    const role = vt === 'TAXI' ? ROLES.TAXI_OPERATOR : ROLES.DRIVER;
+    const ownerIds = await User.find({ role }).distinct('_id');
+    filter.user = { $in: ownerIds };
+  }
+  const drivers = await Driver.find(filter).populate('user', 'name email phone role').sort('-createdAt');
+  let kycMap = {};
+  if (drivers.length) {
+    const kycs = await KYC.find({ user: { $in: drivers.map((d) => d.user) } });
+    kycMap = Object.fromEntries(kycs.map((k) => [k.user.toString(), k]));
+  }
+  const items = drivers.map((d) => ({
+    ...d.toObject(),
+    kyc: kycMap[d.user?._id?.toString()] || null,
+  }));
+  const filtered = kycStatus
+    ? items.filter((i) => (i.kyc?.status || 'NONE') === kycStatus.toUpperCase())
+    : items;
+  return success(res, filtered);
 };
 
 export const getAdminVendors = async (req, res) => {
@@ -349,6 +475,7 @@ export const getAdminVendors = async (req, res) => {
         ROLES.HOMESTAY_VENDOR,
         ROLES.TENT_OPERATOR,
         ROLES.GUIDE,
+        ROLES.TAXI_OPERATOR,
         ROLES.DRIVER,
         ROLES.HORSE_OPERATOR,
       ],

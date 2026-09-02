@@ -3,7 +3,12 @@ import mongoose from 'mongoose';
 const vendorSubscriptionSchema = new mongoose.Schema(
   {
     vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    plan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan', required: true },
+    plan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
+    tenantType: {
+      type: String,
+      enum: ['GUIDE', 'TAXI', 'DRIVER', 'TENT', 'HORSE'],
+    },
+    unlimitedBookings: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ['ACTIVE', 'EXPIRED', 'CANCELLED'],
@@ -14,6 +19,7 @@ const vendorSubscriptionSchema = new mongoose.Schema(
     autoRenew: { type: Boolean, default: false },
     amountPaid: { type: Number, default: 0 },
     paymentRef: { type: String },
+    unlimitedWarningSentAt: { type: Date },
   },
   { timestamps: true }
 );

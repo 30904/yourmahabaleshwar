@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes.js';
 import hotelRoutes from './hotelRoutes.js';
+import resortRoutes from './resortRoutes.js';
 import tentRoutes from './tentRoutes.js';
 import guideRoutes from './guideRoutes.js';
 import driverRoutes from './driverRoutes.js';
@@ -15,6 +16,8 @@ import adminRoutes from './adminRoutes.js';
 import userRoutes from './userRoutes.js';
 import searchRoutes from './searchRoutes.js';
 import miscRoutes from './miscRoutes.js';
+import staySubscriptionRoutes from './staySubscriptionRoutes.js';
+import serviceMonetizationRoutes from './serviceMonetizationRoutes.js';
 
 const router = Router();
 
@@ -25,6 +28,7 @@ router.get('/health', (req, res) =>
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/hotels', hotelRoutes);
+router.use('/resorts', resortRoutes);
 router.use('/tents', tentRoutes);
 router.use('/guides', guideRoutes);
 router.use('/drivers', driverRoutes);
@@ -37,6 +41,8 @@ router.use('/enquiries', enquiryRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/admin', adminRoutes);
 router.use('/search', searchRoutes);
+router.use('/stay-subscriptions', staySubscriptionRoutes);
+router.use('/service-monetization', serviceMonetizationRoutes);
 router.use('/', miscRoutes);
 
 export default router;

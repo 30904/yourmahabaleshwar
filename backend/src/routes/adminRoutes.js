@@ -6,6 +6,8 @@ import * as catalog from '../controllers/catalogController.js';
 import * as phase1b from '../controllers/phase1bController.js';
 import * as domain from '../controllers/domainController.js';
 import * as phase4 from '../controllers/phase4Controller.js';
+import * as staySub from '../controllers/stayListingSubscriptionController.js';
+import * as serviceMon from '../controllers/serviceMonetizationController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAdminActions } from '../middleware/audit.js';
 import { uploadBannerImage, uploadBlogCover, uploadExcel } from '../middleware/upload.js';
@@ -30,6 +32,7 @@ router.get('/dashboard', authorize(...staffAndAdmin), admin.getDashboardStats);
 router.get('/enterprise/dashboard', authorize(...staffAndAdmin), enterprise.getEnterpriseDashboard);
 router.get('/enterprise/properties', authorize(...staffAndAdmin), enterprise.getAdminProperties);
 router.patch('/enterprise/properties/:id/status', authorize(...staffAndAdmin), enterprise.setAdminPropertyActive);
+router.get('/enterprise/listings/:id/review', authorize(...staffAndAdmin), enterprise.getAdminListingReview);
 router.get('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise.getAdminProperty);
 router.post('/enterprise/properties', authorize(...adminOnly), enterprise.createAdminProperty);
 router.put('/enterprise/properties/:id', authorize(...adminOnly), enterprise.updateAdminProperty);
@@ -80,6 +83,13 @@ router.post('/subscriptions/assign', authorize(...adminOnly), phase1b.assignSubs
 router.get('/subscriptions/me', authorize(...vendorAndAdmin), phase1b.mySubscription);
 router.post('/subscriptions/points/purchase', authorize(...vendorAndAdmin), phase1b.purchasePoints);
 
+router.patch('/stay-subscriptions/:listingType/:listingId/renewal-price', authorize(...staffAndAdmin), staySub.adminSetStayRenewalPrice);
+router.post('/stay-subscriptions/:listingType/:listingId/renew', authorize(...staffAndAdmin), staySub.adminRenewStaySubscription);
+
+router.get('/service-monetization', authorize(...adminOnly), serviceMon.adminGetServiceMonetization);
+router.patch('/service-monetization/:tenantType', authorize(...adminOnly), serviceMon.adminUpdateServiceMonetization);
+router.post('/service-monetization/unlimited/grant', authorize(...adminOnly), serviceMon.adminGrantUnlimitedMonthly);
+
 router.get('/wallet', authorize(...vendorAndAdmin), phase1b.getWallet);
 router.post('/payouts/generate', authorize(...adminOnly), phase1b.generateVendorPayouts);
 router.get('/payouts/detailed', authorize(...adminOnly), phase1b.listPayoutsDetailed);
@@ -127,7 +137,7 @@ router.post('/guide-packages', authorize(...adminOnly, ROLES.GUIDE), domain.crea
 router.patch('/guide-packages/:id', authorize(...adminOnly, ROLES.GUIDE), domain.updateGuidePackage);
 router.delete('/guide-packages/:id', authorize(...adminOnly), domain.deleteGuidePackage);
 
-router.get('/taxi-hourly-packages', authorize(...staffAndAdmin, ROLES.DRIVER), domain.listTaxiHourlyPackages);
+router.get('/taxi-hourly-packages', authorize(...staffAndAdmin, ROLES.TAXI_OPERATOR, ROLES.DRIVER), domain.listTaxiHourlyPackages);
 router.post('/taxi-hourly-packages', authorize(...adminOnly), domain.createTaxiHourlyPackage);
 router.patch('/taxi-hourly-packages/:id', authorize(...adminOnly), domain.updateTaxiHourlyPackage);
 

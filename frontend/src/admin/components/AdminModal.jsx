@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export default function AdminModal({ open, title, onClose, children, wide = false }) {
+export default function AdminModal({ open, title, onClose, children, wide = false, xl = false, stacked = false }) {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
@@ -18,9 +18,13 @@ export default function AdminModal({ open, title, onClose, children, wide = fals
   if (!open) return null;
 
   return (
-    <div className="admin-modal-overlay" onClick={onClose} role="presentation">
+    <div
+      className={`admin-modal-overlay${stacked ? ' admin-modal-overlay--stacked' : ''}`}
+      onClick={onClose}
+      role="presentation"
+    >
       <div
-        className={`admin-modal ${wide ? 'admin-modal--wide' : ''}`}
+        className={`admin-modal ${xl ? 'admin-modal--xl' : wide ? 'admin-modal--wide' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

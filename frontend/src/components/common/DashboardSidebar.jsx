@@ -22,6 +22,7 @@ export default function DashboardSidebar({ items, open, onClose }) {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.end}
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-booking px-3 py-2.5 text-sm font-medium transition ${

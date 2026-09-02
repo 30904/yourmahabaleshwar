@@ -1,14 +1,17 @@
+import { useTranslation } from 'react-i18next';
 import TrustBadges from '../common/TrustBadges';
 import HomeSectionHeader from './HomeSectionHeader';
 
 export default function HomeWhyBook() {
+  const { t } = useTranslation();
+
   return (
     <section className="home-why-section py-12 sm:py-16">
       <div className="page-container">
         <HomeSectionHeader
-          eyebrow="Why us"
-          title="Book with confidence"
-          subtitle="The same trust you expect from global booking platforms — built for Mahabaleshwar"
+          eyebrow={t('home.whyBook.eyebrow')}
+          title={t('home.whyBook.title')}
+          subtitle={t('home.whyBook.subtitle')}
         />
         <div className="mt-8">
           <TrustBadges />

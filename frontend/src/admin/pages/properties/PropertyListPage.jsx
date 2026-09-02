@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
-import AdminModal from '../../components/AdminModal';
-import RowActions, { buildMasterActions } from '../../components/RowActions';
+import RowActions from '../../components/RowActions';
+import ListingReviewModal from '../../components/ListingReviewModal';
 import {
   fetchAdminProperties,
   setAdminPropertyActive,
@@ -14,6 +14,7 @@ import {
   deleteTent,
 } from '../../../services/enterpriseAdminApi';
 import { formatCurrency } from '../../../utils/format';
+import { listingStatusOf } from '../../../utils/listingStatus';
 
 export default function PropertyListPage({ typeFilter }) {
   const [hotels, setHotels] = useState([]);
@@ -22,7 +23,7 @@ export default function PropertyListPage({ typeFilter }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [view, setView] = useState('table');
   const [loading, setLoading] = useState(true);
-  const [viewing, setViewing] = useState(null);
+  const [review, setReview] = useState({ row: null, mode: 'view' });
 
   const load = () => {
     setLoading(true);
@@ -54,46 +55,25 @@ export default function PropertyListPage({ typeFilter }) {
       String(a.name || '').localeCompare(String(b.name || ''))
   );
 
-  const toggleActive = async (row) => {
-    try {
-      const next = row.isActive === false;
-      await setAdminPropertyActive(row._id, {
-        isActive: next,
-        listingType: row.listingType === 'TENT' ? 'TENT' : row.listingType,
-      });
-      toast.success(next ? 'Marked active' : 'Marked inactive — still visible here, hidden on website');
-      load();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Update failed');
-    }
-  };
-
   const remove = async (row) => {
-    if (!window.confirm(`Mark "${row.name}" inactive and hide it from the website?`)) return;
+    if (!window.confirm(`Delete "${row.name}"? This hides it from the website.`)) return;
     try {
-      // Soft-deactivate so the row stays in admin (status INACTIVE)
-      await setAdminPropertyActive(row._id, {
-        isActive: false,
-        listingType: row.listingType === 'TENT' ? 'TENT' : row.listingType,
-      });
-      toast.success('Marked inactive — still listed in admin');
+      if (row.listingType === 'TENT') await deleteTent(row._id);
+      else await deleteHotel(row._id);
+      toast.success('Listing deleted');
       load();
     } catch (e) {
-      // Fallback hard delete for tents only if status API fails
       try {
-        if (row.listingType === 'TENT') await deleteTent(row._id);
-        else await deleteHotel(row._id);
-        toast.success('Removed');
+        await setAdminPropertyActive(row._id, {
+          isActive: false,
+          listingType: row.listingType === 'TENT' ? 'TENT' : row.listingType,
+        });
+        toast.success('Listing removed from the website');
         load();
       } catch {
         toast.error(e.response?.data?.message || 'Delete failed');
       }
     }
-  };
-
-  const publicPath = (row) => {
-    if (row.listingType === 'TENT') return `/tents/${row.slug}`;
-    return `/hotels/${row.slug}`;
   };
 
   const columns = [
@@ -125,10 +105,20 @@ export default function PropertyListPage({ typeFilter }) {
       label: 'Price',
       render: (r) => formatCurrency(r.priceFrom || r.pricePerNight),
     },
+    ...(typeFilter !== 'tents'
+      ? [
+          {
+            key: 'renewalPrice',
+            label: 'Sub. renewal',
+            render: (r) =>
+              r.listingType === 'TENT' ? '—' : r.renewalPrice != null ? formatCurrency(r.renewalPrice) : 'Not set',
+          },
+        ]
+      : []),
     {
       key: 'status',
       label: 'Status',
-      render: (r) => <StatusBadge status={r.isActive !== false ? 'ACTIVE' : 'INACTIVE'} />,
+      render: (r) => <StatusBadge status={listingStatusOf(r)} />,
     },
     {
       key: 'featured',
@@ -140,13 +130,11 @@ export default function PropertyListPage({ typeFilter }) {
       label: 'Action',
       render: (r) => (
         <RowActions
-          items={buildMasterActions({
-            isActive: r.isActive !== false,
-            onView: () => setViewing(r),
-            editTo: r.listingType !== 'TENT' ? `/admin/properties/edit/${r._id}` : undefined,
-            onToggleActive: () => toggleActive(r),
-            onDelete: () => remove(r),
-          })}
+          items={[
+            { key: 'view', label: 'View', onClick: () => setReview({ row: r, mode: 'view' }) },
+            { key: 'edit', label: 'Edit', onClick: () => setReview({ row: r, mode: 'edit' }) },
+            { key: 'delete', label: 'Delete', onClick: () => remove(r), tone: 'danger' },
+          ]}
         />
       ),
     },
@@ -165,12 +153,12 @@ export default function PropertyListPage({ typeFilter }) {
     <div className="space-y-6">
       <PageHeader
         title={title}
-        subtitle="Admin sees active & inactive. Website visitors only see active listings."
+        subtitle="Open View or Edit to review documents, set commission, and approve or reject."
         breadcrumbs={[{ label: 'Admin', to: '/admin' }, { label: title }]}
         actions={
-          <Link to="/admin/properties/new" className="admin-btn-primary">
+          <Link to="/admin/listings/new?type=HOTEL" className="admin-btn-primary">
             <Plus size={18} />
-            Add Property
+            Add Listing
           </Link>
         }
       />
@@ -192,8 +180,9 @@ export default function PropertyListPage({ typeFilter }) {
           aria-label="Filter by status"
         >
           <option value="all">All statuses</option>
-          <option value="active">Active only</option>
-          <option value="inactive">Inactive only</option>
+          <option value="approved">Approved only</option>
+          <option value="pending">Pending only</option>
+          <option value="rejected">Rejected only</option>
         </select>
         <div className="flex gap-1 rounded-lg border border-slate-200 p-1">
           <button
@@ -219,29 +208,14 @@ export default function PropertyListPage({ typeFilter }) {
         <DataTable columns={columns} data={rows} emptyMessage="No properties found" />
       )}
 
-      <AdminModal open={!!viewing} title={viewing?.name || 'Property'} onClose={() => setViewing(null)}>
-        {viewing && (
-          <div className="space-y-2 text-sm text-slate-700">
-            <p>
-              <span className="font-semibold">Type:</span> {viewing.listingType}
-            </p>
-            <p>
-              <span className="font-semibold">Price:</span>{' '}
-              {formatCurrency(viewing.priceFrom || viewing.pricePerNight)}
-            </p>
-            <p>
-              <span className="font-semibold">Status:</span>{' '}
-              {viewing.isActive !== false ? 'Active' : 'Inactive'}
-            </p>
-            <p className="text-slate-600">{viewing.description || '—'}</p>
-            {viewing.slug && (
-              <a className="text-primary underline" href={publicPath(viewing)} target="_blank" rel="noreferrer">
-                Open public page
-              </a>
-            )}
-          </div>
-        )}
-      </AdminModal>
+      <ListingReviewModal
+        open={!!review.row}
+        mode={review.mode}
+        listingType={review.row?.listingType}
+        listingId={review.row?._id}
+        onClose={() => setReview({ row: null, mode: 'view' })}
+        onChanged={load}
+      />
     </div>
   );
 }

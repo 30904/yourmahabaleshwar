@@ -1,0 +1,102 @@
+.service-booking-page {
+  background: var(--background, #f8fafc);
+  min-height: calc(100vh - 72px);
+  padding: 1.5rem 0 3rem;
+}
+
+.service-booking-page__inner {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .service-booking-page__inner {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .service-booking-page__inner {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.service-booking-page__header {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.service-booking-page__header h1 {
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.service-booking-page__header p {
+  margin-top: 0.5rem;
+  max-width: 52rem;
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.service-booking-form {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+@media (min-width: 768px) {
+  .service-booking-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.service-booking-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.service-booking-form label.service-booking-form__full,
+.service-booking-form .service-booking-form__full {
+  grid-column: 1 / -1;
+}
+
+.service-booking-form input,
+.service-booking-form textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.service-booking-form-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.service-booking-form-toolbar .form-date {
+  font-size: 0.875rem;
+  color: #64748b;
+}

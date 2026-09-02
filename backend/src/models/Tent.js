@@ -21,6 +21,7 @@ const tentSchema = new mongoose.Schema(
       noRefundHours: { type: Number, default: 24 },
     },
     isActive: { type: Boolean, default: true },
+    approvalStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' },
     isFeatured: { type: Boolean, default: false },
     commissionRate: { type: Number, default: 10 },
   },

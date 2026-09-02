@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import logoImg from '../../assets/logo.png';
 
 const variants = {
-  navbar: 'block h-12 w-auto sm:h-14 md:h-16',
+  navbar: 'block h-9 w-auto max-w-[124px] sm:h-11 sm:max-w-[144px] xl:h-12 xl:max-w-[156px]',
   footer: 'block h-20 w-auto sm:h-24',
   auth: 'block h-24 w-auto sm:h-28 mx-auto',
   sidebar: 'block h-14 w-auto',

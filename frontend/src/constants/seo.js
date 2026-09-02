@@ -59,6 +59,16 @@ export const ROUTE_SEO = [
     description: 'Hire verified local guides for viewpoints, treks, and custom Mahabaleshwar tours.',
   },
   {
+    test: /^\/drivers\/[^/]+$/,
+    title: 'Driver',
+    description: 'Book a local driver for transfers and sightseeing in Mahabaleshwar.',
+  },
+  {
+    test: /^\/drivers/,
+    title: 'Drivers in Mahabaleshwar',
+    description: 'Reliable local drivers for sightseeing and transfers in Mahabaleshwar.',
+  },
+  {
     test: /^\/taxi\/[^/]+$/,
     title: 'Taxi & Driver',
     description: 'Book a local taxi or driver for transfers and sightseeing in Mahabaleshwar.',
