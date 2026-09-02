@@ -1,8 +1,9 @@
 import { SITE_NAME, SITE_URL } from './site';
+import { getMediaUrl } from '../utils/mediaUrl.js';
 
 export const DEFAULT_TITLE = 'Tourism Marketplace';
 export const DEFAULT_DESCRIPTION =
-  'Book hotels, resorts, homestays, tents, guides, taxi, horse rides, strawberries & Mapro products in Mahabaleshwar — YOURMAHABALESHWAR.COM';
+  'Book hotels, resorts, homestays/villas, tents, guides, taxi, horse rides, strawberries & Mapro products in Mahabaleshwar — YOURMAHABALESHWAR.COM';
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`;
 export const TWITTER_HANDLE = '@yourmahabaleshwar';
 
@@ -24,19 +25,24 @@ export const ROUTE_SEO = [
     description: 'Discover hotels with valley views, spas & strawberry breakfasts. Book stays in Mahabaleshwar online.',
   },
   {
+    test: /^\/resorts\/[^/]+$/,
+    title: 'Resort in Mahabaleshwar',
+    description: 'Resort details, rooms, and booking in Mahabaleshwar on YOURMAHABALESHWAR.COM.',
+  },
+  {
     test: /^\/resorts/,
     title: 'Resorts in Mahabaleshwar',
     description: 'Browse resorts and leisure stays in Mahabaleshwar. Compare prices and book with confidence.',
   },
   {
     test: /^\/homestays\/[^/]+$/,
-    title: 'Homestay in Mahabaleshwar',
-    description: 'Homestay details and booking in Mahabaleshwar — local hospitality on YOURMAHABALESHWAR.COM.',
+    title: 'Homestay/Villa in Mahabaleshwar',
+    description: 'Homestay/villa details and booking in Mahabaleshwar — local hospitality on YOURMAHABALESHWAR.COM.',
   },
   {
     test: /^\/homestays/,
-    title: 'Homestays in Mahabaleshwar',
-    description: 'Authentic Mahabaleshwar homestays. Stay with local hosts and explore the hills.',
+    title: 'Homestays/Villas in Mahabaleshwar',
+    description: 'Authentic Mahabaleshwar homestays/villas. Stay with local hosts and explore the hills.',
   },
   {
     test: /^\/tents\/[^/]+$/,
@@ -218,8 +224,8 @@ export function absoluteAssetUrl(pathOrUrl) {
 export function firstImageUrl(images) {
   if (!images?.length) return null;
   const first = images[0];
-  if (typeof first === 'string') return first;
-  return first?.url || first?.src || null;
+  const raw = typeof first === 'string' ? first : first?.url || first?.src || null;
+  return raw ? getMediaUrl(raw) : null;
 }
 
 export function truncateMeta(text, max = 160) {

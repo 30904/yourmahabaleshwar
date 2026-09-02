@@ -38,6 +38,7 @@ import StatusBadge from '../components/StatusBadge';
 import CurrencyIcon from '../../components/common/CurrencyIcon';
 import { fetchEnterpriseDashboard } from '../../services/enterpriseAdminApi';
 import { CURRENCY_SYMBOL, formatCurrency } from '../../utils/format';
+import useAdminAccess from '../../hooks/useAdminAccess';
 
 const PIE_COLORS = ['#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#00ACC1', '#E53935'];
 const STATUS_COLORS = { CONFIRMED: '#43A047', PENDING: '#FB8C00', COMPLETED: '#1E88E5', CANCELLED: '#E53935', REFUNDED: '#78909C' };
@@ -68,6 +69,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
+  const { canSeeFinance, isStaff } = useAdminAccess();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -135,7 +137,7 @@ export default function DashboardPage() {
       >
         <motion.div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="admin-dash-hero-eyebrow">SM Enterprises · Owner Panel</p>
+            <p className="admin-dash-hero-eyebrow">SM Enterprises · {isStaff ? 'Staff Panel' : 'Owner Panel'}</p>
             <h1 className="admin-dash-hero-title">Platform Overview</h1>
             <p className="admin-dash-hero-date">
               <Clock size={14} className="inline -mt-0.5 mr-1" />
@@ -181,20 +183,24 @@ export default function DashboardPage() {
 
       {/* Primary KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <KpiCard
-          icon={CurrencyIcon}
-          label="Total Revenue"
-          value={formatCurrency(k.totalRevenue)}
-          color="green"
-          change={`Commission ${formatCurrency(k.commission)}`}
-        />
-        <KpiCard
-          icon={TrendingUp}
-          label="This Month"
-          value={formatCurrency(k.monthRevenue)}
-          color="blue"
-          change={`${k.monthBookings ?? 0} paid bookings`}
-        />
+        {canSeeFinance && (
+          <>
+            <KpiCard
+              icon={CurrencyIcon}
+              label="Total Revenue"
+              value={formatCurrency(k.totalRevenue)}
+              color="green"
+              change={`Commission ${formatCurrency(k.commission)}`}
+            />
+            <KpiCard
+              icon={TrendingUp}
+              label="This Month"
+              value={formatCurrency(k.monthRevenue)}
+              color="blue"
+              change={`${k.monthBookings ?? 0} paid bookings`}
+            />
+          </>
+        )}
         <KpiCard icon={Calendar} label="Today's Bookings" value={String(k.todayBookings ?? 0)} color="violet" />
         <KpiCard icon={Building2} label="Active Properties" value={String(k.activeProperties ?? 0)} color="blue" change={`${k.hotels ?? 0} hotels · ${k.resorts ?? 0} resorts`} />
         <KpiCard icon={Shield} label="Pending KYC" value={String(k.pendingKyc ?? 0)} color="orange" />
@@ -225,6 +231,7 @@ export default function DashboardPage() {
 
       {/* Charts row 1 */}
       <div className="grid gap-6 lg:grid-cols-3">
+        {canSeeFinance ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -265,6 +272,28 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </div>
         </motion.div>
+        ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="admin-card admin-chart-card lg:col-span-2"
+        >
+          <h3 className="admin-card-title">Bookings trend</h3>
+          <p className="mb-4 text-xs text-slate-500">Last 14 days</p>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dailyChart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="bookings" name="Bookings" fill="#1E88E5" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -353,7 +382,7 @@ export default function DashboardPage() {
                   <th>Customer</th>
                   <th>Type</th>
                   <th>Status</th>
-                  <th className="text-right">Amount</th>
+                  {canSeeFinance && <th className="text-right">Amount</th>}
                 </tr>
               </thead>
               <tbody>
@@ -370,12 +399,14 @@ export default function DashboardPage() {
                     <td>
                       <StatusBadge status={b.status} />
                     </td>
-                    <td className="text-right font-semibold">{formatCurrency(b.total)}</td>
+                    {canSeeFinance && (
+                      <td className="text-right font-semibold">{formatCurrency(b.total)}</td>
+                    )}
                   </tr>
                 ))}
                 {!data?.recentBookings?.length && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">
+                    <td colSpan={canSeeFinance ? 5 : 4} className="py-8 text-center text-slate-500">
                       No bookings yet. Run seed or create a test booking.
                     </td>
                   </tr>

@@ -13,6 +13,7 @@ import { fetchMyBookings, fetchVendorBookings, fetchAllBookings, updateBookingSt
 import { fetchVendorMonetizationGate } from '../../services/serviceMonetizationApi';
 import { payForBooking, requestRefund, getRefundPreview } from '../../services/paymentsApi';
 import { createReview } from '../../services/listingsApi';
+import { getMediaUrl } from '../../utils/mediaUrl';
 import { useAuth } from '../../context/AuthContext';
 
 const statusColor = {
@@ -114,7 +115,7 @@ export default function BookingsList({ mode = 'customer', allowStatusUpdate = fa
     }
     try {
       await createReview({ bookingId: b._id, rating: Number(draft.rating), comment: draft.comment || '' });
-      toast.success('Review submitted for moderation');
+      toast.success(t('booking.reviewPublished'));
       setReviewDraft((prev) => ({ ...prev, [b._id]: {} }));
     } catch (e) {
       toast.error(e.response?.data?.message || 'Review failed');
@@ -188,6 +189,19 @@ export default function BookingsList({ mode = 'customer', allowStatusUpdate = fa
                         ID: {b.guestRegistration.idProof.type}
                         {b.guestRegistration.idProof.number ? ` · ${b.guestRegistration.idProof.number}` : ''}
                         {b.guestRegistration.idProof.nationality ? ` · ${b.guestRegistration.idProof.nationality}` : ''}
+                        {b.guestRegistration.idProof.documentUrl && (
+                          <>
+                            {' · '}
+                            <a
+                              href={getMediaUrl(b.guestRegistration.idProof.documentUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary underline"
+                            >
+                              View document
+                            </a>
+                          </>
+                        )}
                       </p>
                     )}
                     {b.guestRegistration.coTravellers?.length > 0 && (

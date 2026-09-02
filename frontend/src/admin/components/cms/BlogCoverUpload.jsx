@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { ImagePlus, Link2, Upload, X } from 'lucide-react';
 import { getMediaUrl } from '../../../utils/mediaUrl';
 
@@ -13,12 +13,16 @@ export default function BlogCoverUpload({
   register,
 }) {
   const inputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
   const preview = imagePreview || (existingUrl && !imageFile ? getMediaUrl(existingUrl) : '');
 
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
+  const handleFile = (file) => {
     if (!file?.type.startsWith('image/')) return;
     onImageFile(file);
+  };
+
+  const handleFileInput = (e) => {
+    handleFile(e.target.files?.[0]);
     e.target.value = '';
   };
 
@@ -53,15 +57,25 @@ export default function BlogCoverUpload({
             </div>
           ) : (
             <div
-              className="admin-photo-upload admin-blog-cover-drop"
+              className={`admin-photo-upload admin-blog-cover-drop ${dragOver ? 'file-dropzone-active' : ''}`}
               role="button"
               tabIndex={0}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                handleFile(e.dataTransfer.files?.[0]);
+              }}
               onClick={() => inputRef.current?.click()}
               onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
             >
-              <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} />
+              <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileInput} />
               <ImagePlus size={28} className="text-admin-primary" />
-              <span className="font-semibold text-slate-800">Upload cover image</span>
+              <span className="font-semibold text-slate-800">Drag & drop cover image</span>
               <span className="text-xs text-slate-500">1200×630 recommended · JPG, PNG, WebP</span>
             </div>
           )}

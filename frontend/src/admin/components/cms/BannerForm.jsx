@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { ImagePlus, Link2, Upload, X } from 'lucide-react';
 
 export default function BannerForm({
@@ -12,12 +12,15 @@ export default function BannerForm({
   onImageMode,
 }) {
   const inputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
 
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return;
+  const handleFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
     onImageFile(file);
+  };
+
+  const handleFileInput = (e) => {
+    handleFile(e.target.files?.[0]);
     e.target.value = '';
   };
 
@@ -65,15 +68,25 @@ export default function BannerForm({
               </div>
             ) : (
               <div
-                className="admin-photo-upload"
+                className={`admin-photo-upload ${dragOver ? 'file-dropzone-active' : ''}`}
                 role="button"
                 tabIndex={0}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  handleFile(e.dataTransfer.files?.[0]);
+                }}
                 onClick={() => inputRef.current?.click()}
                 onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
               >
-                <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} />
+                <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileInput} />
                 <ImagePlus size={32} className="text-admin-primary" />
-                <span className="font-semibold text-slate-800">Click to upload banner</span>
+                <span className="font-semibold text-slate-800">Drag & drop or click to upload banner</span>
                 <span className="text-xs text-slate-500">JPG, PNG or WebP · Recommended 1920×600px</span>
               </div>
             )}

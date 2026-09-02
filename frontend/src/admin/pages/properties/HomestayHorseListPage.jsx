@@ -7,6 +7,7 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import RowActions from '../../components/RowActions';
 import ListingReviewModal from '../../components/ListingReviewModal';
+import { HOMESTAY_VILLA } from '../../../constants/homestayVillaLabels';
 import { deleteHomestay, deleteHorse } from '../../../services/enterpriseAdminApi';
 import api from '../../../services/api';
 import { formatCurrency } from '../../../utils/format';
@@ -49,7 +50,7 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
   const columns = [
     {
       key: 'name',
-      label: isHorse ? 'Ride / Operator' : 'Homestay',
+      label: isHorse ? 'Ride / Operator' : HOMESTAY_VILLA.singular,
       render: (r) => (
         <div>
           <p className="font-semibold">{r.name}</p>
@@ -104,11 +105,11 @@ export default function HomestayHorseListPage({ kind = 'homestays' }) {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isHorse ? 'Horse Rides' : 'Homestays'}
+        title={isHorse ? 'Horse Rides' : HOMESTAY_VILLA.plural}
         subtitle="Open View or Edit to review documents, set commission, and approve or reject."
         actions={
           <Link to={`/admin/listings/new?type=${listingType}`} className="admin-btn-primary">
-            <Plus size={18} /> Add {isHorse ? 'Horse Ride' : 'Homestay'}
+            <Plus size={18} /> Add {isHorse ? 'Horse Ride' : HOMESTAY_VILLA.singular}
           </Link>
         }
       />

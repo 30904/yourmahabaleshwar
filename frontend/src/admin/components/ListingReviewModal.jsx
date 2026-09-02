@@ -14,6 +14,7 @@ import { adminSetStayRenewalPrice } from '../../services/staySubscriptionApi';
 import { formatCurrency } from '../../utils/format';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { listingStatusOf } from '../../utils/listingStatus';
+import useAdminAccess from '../../hooks/useAdminAccess';
 
 const DOC_FIELDS = [
   ['Aadhaar number', 'aadhar'],
@@ -81,6 +82,7 @@ function formFromListing(listing, rooms) {
 const STAY_LISTING_TYPES = new Set(['HOTEL', 'RESORT', 'HOMESTAY']);
 
 export default function ListingReviewModal({ open, mode = 'view', listingType, listingId, onClose, onChanged }) {
+  const { canApprove } = useAdminAccess();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [acting, setActing] = useState('');
@@ -697,6 +699,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
             )}
           </section>
 
+          {canApprove && (
           <section className="space-y-3 border-t border-slate-200 pt-4">
             <h4 className="admin-section-title">Commission</h4>
             <p className="text-sm text-slate-600">Required to approve. Example: 10% of ₹100 = ₹10 platform commission.</p>
@@ -714,12 +717,13 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
             </label>
             {!commissionValid && <p className="text-sm text-red-600">Enter a valid commission of 0 or more.</p>}
           </section>
+          )}
 
-          {isStayListing && (
+          {canApprove && isStayListing && (
             <section className="space-y-3 border-t border-slate-200 pt-4">
               <h4 className="admin-section-title">Listing subscription — this property only</h4>
               <p className="text-sm text-slate-600">
-                First year is free when approved. Set a separate yearly renewal price for <strong>this listing only</strong> — each hotel, resort and homestay can have a different price.
+                First year is free when approved. Set a separate yearly renewal price for <strong>this listing only</strong> — each hotel, resort and homestay/villa can have a different price.
               </p>
               {listing?.subscriptionExpiresAt && (
                 <Info
@@ -762,17 +766,21 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
             <button type="button" className="admin-btn-secondary" onClick={onClose}>
               Close
             </button>
-            <button type="button" className="admin-btn-danger-solid" onClick={requestReject} disabled={!!acting}>
-              Reject
-            </button>
-            <button
-              type="button"
-              className="admin-btn-success"
-              onClick={requestApprove}
-              disabled={!!acting || !commissionValid || !renewalPriceValid}
-            >
-              Approve
-            </button>
+            {canApprove && (
+              <>
+                <button type="button" className="admin-btn-danger-solid" onClick={requestReject} disabled={!!acting}>
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn-success"
+                  onClick={requestApprove}
+                  disabled={!!acting || !commissionValid || !renewalPriceValid}
+                >
+                  Approve
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

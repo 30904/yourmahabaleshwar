@@ -81,7 +81,7 @@ export default function SettingsPage() {
           <input type="number" min="1" className="admin-input" {...register('staySubscriptionWarningDays')} />
         </label>
         <p className="sm:col-span-2 text-sm text-slate-500">
-          Used only when a listing has no price set yet. Each hotel, resort and homestay should have its own renewal price configured in the listing review screen.
+          Used only when a listing has no price set yet. Each hotel, resort and homestay/villa should have its own renewal price configured in the listing review screen.
         </p>
       </div>
 

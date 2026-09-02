@@ -870,11 +870,42 @@
     background-image: none;
     box-shadow: none;
   }
-  .admin-shell .admin-modal-body::-webkit-scrollbar-thumb:active,
   .admin-modal-body::-webkit-scrollbar-thumb:active {
     background: #cbd5e1;
     background-image: none;
   }
+
+  .customer-detail-bookings-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .customer-detail-bookings-scroll {
+    max-height: min(360px, 42vh);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 0.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .customer-detail-bookings-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .customer-detail-bookings-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: #cbd5e1;
+  }
+
+  .customer-detail-bookings-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
   .admin-content {
     flex: 1;
     padding: 1.5rem;
@@ -2133,5 +2164,127 @@
 
   .admin-banner-preview-remove:hover {
     background: #dc2626;
+  }
+
+  .file-dropzone {
+    position: relative;
+    display: flex;
+    min-height: 9rem;
+    cursor: pointer;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 2px dashed #cbd5e1;
+    background: #f8fafc;
+    padding: 1.25rem;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .file-dropzone:hover:not(.file-dropzone-disabled),
+  .file-dropzone-active {
+    border-color: #1e88e5;
+    background: #e3f2fd;
+  }
+
+  .file-dropzone-disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+  .file-dropzone-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .file-dropzone-preview {
+    max-height: 8rem;
+    max-width: 100%;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+
+  .file-dropzone-pdf {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #475569;
+  }
+
+  .file-dropzone-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .file-dropzone-action {
+    display: flex;
+    height: 1.75rem;
+    width: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: rgba(15, 23, 42, 0.65);
+    color: #fff;
+  }
+
+  .file-dropzone-filename {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: #64748b;
+  }
+
+  .document-thumb-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .document-thumb {
+    display: flex;
+    width: 7rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    padding: 0.35rem;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.15s;
+  }
+
+  .document-thumb:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  }
+
+  .document-thumb-img {
+    height: 4.5rem;
+    width: 100%;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  .document-thumb-pdf {
+    display: flex;
+    height: 4.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .document-thumb-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #334155;
   }
 }

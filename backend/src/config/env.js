@@ -38,6 +38,17 @@ export const env = {
   jwtRefreshExpire: process.env.JWT_REFRESH_EXPIRE || '7d',
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 5242880,
   uploadPath: process.env.UPLOAD_PATH || './src/uploads',
+  storagePrefix: (process.env.S3_PREFIX || process.env.STORAGE_PREFIX || 'your-mahabaleshwar').replace(/^\/|\/$/g, ''),
+  cdnBaseUrl: (process.env.CLOUDFRONT_DOMAIN || process.env.CDN_BASE_URL || '').replace(/\/$/, ''),
+  s3: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-south-1',
+    bucket: process.env.S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || '',
+    get enabled() {
+      return Boolean(this.accessKeyId && this.secretAccessKey && this.bucket);
+    },
+  },
   trustProxy: parseTrustProxy(),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX, 10) || (process.env.NODE_ENV === 'production' ? 100 : 200),
   publicApiUrl: process.env.PUBLIC_API_URL || '',

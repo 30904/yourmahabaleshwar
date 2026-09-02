@@ -4,9 +4,12 @@ import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import AssignVendorModal from '../../components/AssignVendorModal';
+import useAdminAccess from '../../../hooks/useAdminAccess';
 import { fetchAdminBookings, updateBookingStatus } from '../../../services/enterpriseAdminApi';
 import { formatCurrency } from '../../../utils/format';
 import { bookingTitle } from '../../../utils/listingHelpers';
+import { getMediaUrl } from '../../../utils/mediaUrl';
+import { HOMESTAY_VILLA } from '../../../constants/homestayVillaLabels';
 
 const TITLE_BY_TENANT = {
   GUIDE: 'Guide Bookings',
@@ -19,7 +22,7 @@ const TITLE_BY_TENANT = {
 const TITLE_BY_TYPE = {
   HOTEL: 'Hotel Bookings',
   RESORT: 'Resort Bookings',
-  HOMESTAY: 'Homestay Bookings',
+  HOMESTAY: HOMESTAY_VILLA.bookings,
   TENT: 'Tent Bookings',
   GUIDE: 'Guide Bookings',
   TAXI: 'Taxi Bookings',
@@ -47,6 +50,7 @@ function confirmBookingErrorMessage(error) {
 }
 
 export default function BookingListPage({ type, serviceTenant, statusFilter, assignmentFilter }) {
+  const { canAssignVendor, canSeeFinance } = useAdminAccess();
   const [data, setData] = useState({ items: [] });
   const [loading, setLoading] = useState(true);
   const [assignBooking, setAssignBooking] = useState(null);
@@ -99,22 +103,35 @@ export default function BookingListPage({ type, serviceTenant, statusFilter, ass
         ),
     },
     { key: 'customer', label: 'Customer', render: (r) => r.customer?.name || '—' },
+    {
+      key: 'idProofDoc',
+      label: 'ID document',
+      render: (r) => {
+        const url = r.guestRegistration?.idProof?.documentUrl;
+        if (!url) return '—';
+        return (
+          <a href={getMediaUrl(url)} target="_blank" rel="noopener noreferrer" className="text-admin-primary underline text-xs">
+            View
+          </a>
+        );
+      },
+    },
     { key: 'item', label: 'Item', render: (r) => bookingTitle(r) },
-    { key: 'total', label: 'Total', render: (r) => formatCurrency(r.total) },
+    ...(canSeeFinance ? [{ key: 'total', label: 'Total', render: (r) => formatCurrency(r.total) }] : []),
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'payment', label: 'Payment', render: (r) => <StatusBadge status={r.paymentStatus} /> },
     {
       key: 'actions',
       label: 'Actions',
       render: (r) => {
-        if (r.serviceTenant && r.assignmentStatus === 'UNASSIGNED') {
+        if (canAssignVendor && r.serviceTenant && r.assignmentStatus === 'UNASSIGNED') {
           return (
             <button type="button" className="admin-btn-primary !py-1.5 !px-3 text-xs" onClick={() => setAssignBooking(r)}>
               Assign vendor
             </button>
           );
         }
-        if (r.status === 'PENDING') {
+        if (canAssignVendor && r.status === 'PENDING') {
           return (
             <button
               type="button"

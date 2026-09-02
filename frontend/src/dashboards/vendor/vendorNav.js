@@ -50,7 +50,7 @@ const TITLE_KEYS = {
 
 const AVAILABILITY_TYPES = {
   [ROLES.HOTEL_VENDOR]: [{ value: 'room', label: 'Hotel room' }],
-  [ROLES.HOMESTAY_VENDOR]: [{ value: 'homestay', label: 'Homestay' }],
+  [ROLES.HOMESTAY_VENDOR]: [{ value: 'homestay', label: 'Homestay/Villa' }],
   [ROLES.TENT_OPERATOR]: [{ value: 'tent', label: 'Tent' }],
   [ROLES.HORSE_OPERATOR]: [{ value: 'horse', label: 'Horse' }],
   [ROLES.TAXI_OPERATOR]: [{ value: 'driver', label: 'Taxi fleet' }],

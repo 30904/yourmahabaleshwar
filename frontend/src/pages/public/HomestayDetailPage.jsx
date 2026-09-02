@@ -3,13 +3,16 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, Images, Wifi, Car, Coffee, Waves } from 'lucide-react';
 import { fetchHomestayBySlug, fetchReviews } from '../../services/listingsApi';
 import ReviewScore from '../../components/property/ReviewScore';
+import ListingReviewsSection from '../../components/property/ListingReviewsSection';
 import RoomCard from '../../components/property/RoomCard';
 import HomestayGuestBookingForm from '../../components/booking/HomestayGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
+import { resolveMediaUrls } from '../../utils/mediaUrl';
 import { formatCurrency } from '../../utils/format';
+import { HOMESTAY_VILLA } from '../../constants/homestayVillaLabels';
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200';
 const amenityIcons = { WiFi: Wifi, 'Free WiFi': Wifi, Parking: Car, 'Free parking': Car, Breakfast: Coffee, Pool: Waves };
@@ -55,7 +58,7 @@ export default function HomestayDetailPage() {
   ];
 
   const roomOptions = item.rooms || [];
-  const images = item.images?.length ? item.images : [FALLBACK_IMG];
+  const images = item.images?.length ? resolveMediaUrls(item.images) : [FALLBACK_IMG];
   const fromPrice = selectedRoom?.basePrice ?? item.priceFrom;
   const locationLabel =
     [item.address?.line1, item.address?.city || item.location, item.address?.state]
@@ -74,14 +77,14 @@ export default function HomestayDetailPage() {
     <div className="page-container py-8">
       <Seo
         title={item.name}
-        description={truncateMeta(item.description || `${item.name} — homestay in Mahabaleshwar.`)}
+        description={truncateMeta(item.description || `${item.name} — ${HOMESTAY_VILLA.singularLower} in Mahabaleshwar.`)}
         image={firstImageUrl(item.images) || '/logo.png'}
         type="article"
       />
 
       <nav className="mb-4 text-sm text-primary">
         <Link to="/">Home</Link> &gt;{' '}
-        <Link to="/homestays">Homestays</Link>{' '}
+        <Link to="/homestays">{HOMESTAY_VILLA.plural}</Link>{' '}
         &gt; <span className="text-slate-600">{item.name}</span>
       </nav>
 
@@ -162,7 +165,7 @@ export default function HomestayDetailPage() {
                 <p className="mb-3 text-xs text-slate-500">
                   {showBookingForm
                     ? 'Complete the booking form below.'
-                    : 'Open the homestay guest booking form to continue.'}
+                    : `Open the ${HOMESTAY_VILLA.singularLower} guest booking form to continue.`}
                 </p>
                 {!showBookingForm ? (
                   <button
@@ -181,7 +184,7 @@ export default function HomestayDetailPage() {
               </div>
             ) : (
               <div>
-                <p className="mb-3 text-xs text-slate-500">Sign in to book this homestay.</p>
+                <p className="mb-3 text-xs text-slate-500">Sign in to book this {HOMESTAY_VILLA.singularLower}.</p>
                 <Link to="/login" className="btn-primary block w-full text-center">
                   Sign in to book
                 </Link>
@@ -240,34 +243,18 @@ export default function HomestayDetailPage() {
                 />
               ))
             ) : (
-              <p className="text-sm text-slate-600">No rooms listed for this homestay yet.</p>
+              <p className="text-sm text-slate-600">No rooms listed for this {HOMESTAY_VILLA.singularLower} yet.</p>
             )}
           </div>
         )}
 
         {tab === 'reviews' && (
-          <div className="mt-6 max-w-3xl card p-6">
-            <ReviewScore
-              score={item.score || item.rating}
-              label={item.scoreLabel}
-              reviewCount={reviews.length || item.reviewCount}
-              size="lg"
-            />
-            {reviews.length > 0 ? (
-              <div className="mt-6 space-y-3">
-                {reviews.map((r) => (
-                  <div key={r._id} className="rounded-xl border border-slate-100 p-4">
-                    <p className="font-medium text-slate-900">
-                      {r.user?.name || 'Guest'} · {r.rating}/5
-                    </p>
-                    {r.comment ? <p className="mt-1 text-sm text-slate-600">{r.comment}</p> : null}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-4 text-slate-600">No guest reviews yet. Complete a booking to be the first to review.</p>
-            )}
-          </div>
+          <ListingReviewsSection
+            reviews={reviews}
+            score={item.score || item.rating}
+            label={item.scoreLabel}
+            reviewCount={reviews.length || item.reviewCount}
+          />
         )}
 
         {tab === 'policies' && (

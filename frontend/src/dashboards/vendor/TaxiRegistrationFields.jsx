@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 import { VEHICLE_TYPES } from './vendorListingFormConfig';
 
@@ -231,12 +232,11 @@ export default function TaxiRegistrationFields({ form, setField, isEdit = false 
             onChange={(e) => setField('hourlyRate', e.target.value)}
             required
           />
-          <Input
-            className="sm:col-span-2"
+          <ListingImageField
             label={t('taxiRegistration.fleetPhotoUrl')}
             value={form.imageUrl}
-            onChange={(e) => setField('imageUrl', e.target.value)}
-            placeholder="https://"
+            onChange={(url) => setField('imageUrl', url)}
+            vertical="TAXI"
           />
           <p className="sm:col-span-2 text-xs text-slate-500">{t('taxiRegistration.commissionNote')}</p>
         </div>

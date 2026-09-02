@@ -1,20 +1,13 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { persistFile, isLegacyUploadPath } from '../services/storageService.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDir = path.resolve(__dirname, '..', 'uploads', 'properties');
-
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-/** Persist data-URI images to disk; pass through http(s) URLs unchanged */
-export async function normalizePropertyImages(images = []) {
+/** Persist data-URI images or pass through http(s) URLs, legacy paths, and storage keys */
+export async function normalizePropertyImages(images = [], meta = {}) {
   const normalized = [];
 
   for (const src of images) {
     if (!src || typeof src !== 'string') continue;
 
-    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/uploads/')) {
+    if (src.startsWith('http://') || src.startsWith('https://') || isLegacyUploadPath(src)) {
       normalized.push(src);
       continue;
     }
@@ -24,14 +17,18 @@ export async function normalizePropertyImages(images = []) {
       if (!match) continue;
       const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
       const buffer = Buffer.from(match[2], 'base64');
-      const filename = `prop-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
-      const filepath = path.join(uploadDir, filename);
-      fs.writeFileSync(filepath, buffer);
-      normalized.push(`/uploads/properties/${filename}`);
+      const saved = await persistFile({
+        buffer,
+        mimeType: `image/${match[1]}`,
+        originalName: `upload.${ext}`,
+        category: 'property-image',
+        meta,
+      });
+      normalized.push(saved.key);
       continue;
     }
 
-    normalized.push(src);
+    normalized.push(src.replace(/^\/uploads\//, ''));
   }
 
   return normalized;

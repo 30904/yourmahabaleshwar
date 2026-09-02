@@ -24,11 +24,24 @@ const fileFilter = (req, file, cb) => {
   else cb(new Error('Only images and PDF files allowed'), false);
 };
 
-export const upload = multer({
-  storage,
+const memoryStorage = multer.memoryStorage();
+
+const multerOptions = {
   limits: { fileSize: env.maxFileSize || 10 * 1024 * 1024 },
   fileFilter,
+};
+
+export const upload = multer({
+  storage,
+  ...multerOptions,
 });
+
+export const uploadMemory = multer({
+  storage: memoryStorage,
+  ...multerOptions,
+});
+
+export const uploadMemorySingle = (field) => uploadMemory.single(field);
 
 export const uploadBannerImage = upload.single('image');
 export const uploadBlogCover = upload.single('coverImage');
@@ -68,4 +81,24 @@ export const uploadFields = upload.fields([
   { name: 'photo', maxCount: 1 },
 ]);
 
-export const uploadKycDocs = uploadFields;
+const kycMemory = uploadMemory.fields([
+  { name: 'aadharDoc', maxCount: 1 },
+  { name: 'panDoc', maxCount: 1 },
+  { name: 'rcDoc', maxCount: 1 },
+  { name: 'pucDoc', maxCount: 1 },
+  { name: 'insuranceDoc', maxCount: 1 },
+  { name: 'licenseDoc', maxCount: 1 },
+  { name: 'addressProofDoc', maxCount: 1 },
+  { name: 'gstDoc', maxCount: 1 },
+  { name: 'businessRegDoc', maxCount: 1 },
+  { name: 'hotelLicenseDoc', maxCount: 1 },
+  { name: 'guideLicenseDoc', maxCount: 1 },
+  { name: 'fitnessDoc', maxCount: 1 },
+  { name: 'permitDoc', maxCount: 1 },
+  { name: 'bankProofDoc', maxCount: 1 },
+  { name: 'photo', maxCount: 1 },
+]);
+
+export const uploadKycDocs = kycMemory;
+export const uploadBannerImageMemory = uploadMemory.single('image');
+export const uploadBlogCoverMemory = uploadMemory.single('coverImage');

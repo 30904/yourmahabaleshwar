@@ -10,6 +10,7 @@ import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../context/AuthContext';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
+import { listingCoverImage } from '../../utils/mediaUrl';
 
 export default function ProductDetailPage({ vertical = 'STRAWBERRY' }) {
   const { slug } = useParams();
@@ -62,7 +63,7 @@ export default function ProductDetailPage({ vertical = 'STRAWBERRY' }) {
         type="website"
       />
       <img
-        src={item.images?.[0] || 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=900'}
+        src={listingCoverImage(item) || 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=900'}
         alt={item.name}
         className="h-80 w-full rounded-2xl object-cover"
       />

@@ -3,7 +3,7 @@ import PublicLayout from './layouts/PublicLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import ProtectedRoute from './routes/ProtectedRoute';
 import AppSeo from './components/seo/AppSeo';
-import { ROLES } from './constants/roles';
+import { ROLES, ADMIN_ROLES } from './constants/roles';
 
 import HomePage from './pages/public/HomePage';
 import HotelsPage from './pages/public/HotelsPage';
@@ -99,6 +99,7 @@ export default function App() {
         <Route path="hotels" element={<HotelsPage />} />
         <Route path="hotels/:slug" element={<HotelDetailPage />} />
         <Route path="resorts" element={<ResortsPage />} />
+        <Route path="resorts/:slug" element={<HotelDetailPage />} />
         <Route path="homestays" element={<HomestaysPage />} />
         <Route path="homestays/:slug" element={<HomestayDetailPage />} />
         <Route path="tents" element={<TentsPage />} />
@@ -194,14 +195,7 @@ export default function App() {
       <Route
         path="admin/*"
         element={
-          <ProtectedRoute
-            roles={[
-              ROLES.SUPER_ADMIN,
-              ROLES.OFFICE_STAFF_HOTEL,
-              ROLES.OFFICE_STAFF_GUIDE,
-              ROLES.MARKETING_STAFF,
-            ]}
-          >
+          <ProtectedRoute roles={ADMIN_ROLES}>
             <AdminLayout />
           </ProtectedRoute>
         }

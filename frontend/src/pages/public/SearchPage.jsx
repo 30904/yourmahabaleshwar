@@ -7,6 +7,7 @@ import Skeleton from '../../components/ui/Skeleton';
 import { globalSearch } from '../../services/listingsApi';
 import { dummyHotels } from '../../data/dummyListings';
 import { normalizeHotel } from '../../utils/listingHelpers';
+import { HOMESTAY_VILLA } from '../../constants/homestayVillaLabels';
 
 export default function SearchPage() {
   const { t } = useTranslation();
@@ -93,7 +94,7 @@ export default function SearchPage() {
           </div>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Link to="/homestays" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Homestays</Link>
+          <Link to="/homestays" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{HOMESTAY_VILLA.plural}</Link>
           <Link to="/hotels" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Hotels</Link>
           <Link to="/resorts" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">Resorts</Link>
         </div>

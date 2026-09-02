@@ -4,12 +4,14 @@ import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import RowActions, { buildMasterActions } from '../../components/RowActions';
+import CustomerDetailModal from '../../components/CustomerDetailModal';
 import { fetchAdminCustomers } from '../../../services/enterpriseAdminApi';
 import api from '../../../services/api';
 
 export default function CustomerListPage() {
   const [customers, setCustomers] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [viewCustomerId, setViewCustomerId] = useState(null);
 
   const load = () =>
     fetchAdminCustomers()
@@ -53,6 +55,7 @@ export default function CustomerListPage() {
         <RowActions
           items={buildMasterActions({
             isActive: r.isActive !== false,
+            onView: () => setViewCustomerId(r._id),
             onToggleActive: () => toggleActive(r),
           })}
         />
@@ -79,6 +82,11 @@ export default function CustomerListPage() {
         <p className="text-sm text-slate-500">{rows.length} shown</p>
       </div>
       <DataTable columns={columns} data={rows} />
+      <CustomerDetailModal
+        open={!!viewCustomerId}
+        customerId={viewCustomerId}
+        onClose={() => setViewCustomerId(null)}
+      />
     </div>
   );
 }

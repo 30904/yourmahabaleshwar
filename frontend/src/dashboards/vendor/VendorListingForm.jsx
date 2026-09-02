@@ -38,6 +38,7 @@ import DriverRegistrationFields from './DriverRegistrationFields';
 import TaxiRegistrationFields from './TaxiRegistrationFields';
 import HorseRegistrationFields from './HorseRegistrationFields';
 import FormLanguageToggle from '../../components/common/FormLanguageToggle';
+import ListingImageField from './ListingImageField';
 import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
 
 const VENDOR_LISTINGS_PATH = '/dashboard/vendor/listings';
@@ -369,12 +370,11 @@ export default function VendorListingForm({ adminMode = false } = {}) {
           )}
 
           {form.imageUrl !== undefined && (
-            <Input
-              className="sm:col-span-2"
+            <ListingImageField
               label={t('vendor.imageUrl')}
               value={form.imageUrl}
-              onChange={(e) => setField('imageUrl', e.target.value)}
-              placeholder="https://"
+              onChange={(url) => setField('imageUrl', url)}
+              vertical={vertical}
             />
           )}
         </Card>

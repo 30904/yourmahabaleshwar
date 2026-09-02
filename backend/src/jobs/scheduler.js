@@ -2,6 +2,7 @@ import { runBackup } from '../services/backupService.js';
 import VendorSubscription from '../models/VendorSubscription.js';
 import { expireStayListingSubscriptions, backfillMissingStaySubscriptions } from '../services/stayListingSubscriptionService.js';
 import { expireServiceUnlimitedSubscriptions } from '../services/serviceMonetizationService.js';
+import { publishPendingReviews } from '../controllers/reviewController.js';
 import Advertisement from '../models/Advertisement.js';
 import { createNotification } from '../services/notificationService.js';
 
@@ -39,6 +40,10 @@ export const startScheduledJobs = () => {
 
   backfillMissingStaySubscriptions().catch((err) =>
     console.error('[job] stay subscription backfill failed', err.message)
+  );
+
+  publishPendingReviews().catch((err) =>
+    console.error('[job] review publish backfill failed', err.message)
   );
 
   // Daily backup — every 24h

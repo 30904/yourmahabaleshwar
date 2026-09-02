@@ -5,12 +5,13 @@ import * as uploadCenter from '../controllers/uploadCenterController.js';
 import * as catalog from '../controllers/catalogController.js';
 import * as phase1b from '../controllers/phase1bController.js';
 import * as domain from '../controllers/domainController.js';
+import * as staff from '../controllers/staffController.js';
 import * as phase4 from '../controllers/phase4Controller.js';
 import * as staySub from '../controllers/stayListingSubscriptionController.js';
 import * as serviceMon from '../controllers/serviceMonetizationController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAdminActions } from '../middleware/audit.js';
-import { uploadBannerImage, uploadBlogCover, uploadExcel } from '../middleware/upload.js';
+import { uploadBannerImageMemory, uploadBlogCoverMemory, uploadExcel } from '../middleware/upload.js';
 import { ROLES, STAFF_ROLES, VENDOR_ROLES, MARKETING_ROLES } from '../constants/roles.js';
 
 const router = Router();
@@ -31,22 +32,23 @@ router.use(auditAdminActions);
 router.get('/dashboard', authorize(...staffAndAdmin), admin.getDashboardStats);
 router.get('/enterprise/dashboard', authorize(...staffAndAdmin), enterprise.getEnterpriseDashboard);
 router.get('/enterprise/properties', authorize(...staffAndAdmin), enterprise.getAdminProperties);
-router.patch('/enterprise/properties/:id/status', authorize(...staffAndAdmin), enterprise.setAdminPropertyActive);
+router.patch('/enterprise/properties/:id/status', authorize(...adminOnly), enterprise.setAdminPropertyActive);
 router.get('/enterprise/listings/:id/review', authorize(...staffAndAdmin), enterprise.getAdminListingReview);
 router.get('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise.getAdminProperty);
-router.post('/enterprise/properties', authorize(...adminOnly), enterprise.createAdminProperty);
-router.put('/enterprise/properties/:id', authorize(...adminOnly), enterprise.updateAdminProperty);
+router.post('/enterprise/properties', authorize(...staffAndAdmin), enterprise.createAdminProperty);
+router.put('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise.updateAdminProperty);
 router.get('/enterprise/bookings', authorize(...staffAndAdmin), enterprise.getAdminBookings);
 router.get('/enterprise/guides', authorize(...staffAndAdmin), enterprise.getAdminGuides);
 router.get('/enterprise/drivers', authorize(...staffAndAdmin), enterprise.getAdminDrivers);
 router.get('/enterprise/vendors', authorize(...staffAndAdmin), enterprise.getAdminVendors);
 router.get('/enterprise/customers', authorize(...staffAndAdmin), enterprise.getAdminCustomers);
+router.get('/enterprise/customers/:id', authorize(...staffAndAdmin), enterprise.getAdminCustomerDetail);
 router.get('/enterprise/coupons', authorize(...staffAndAdmin), enterprise.getCoupons);
 router.post('/enterprise/coupons', authorize(...adminOnly), enterprise.createCoupon);
 router.patch('/enterprise/coupons/:id', authorize(...adminOnly), enterprise.updateCoupon);
 router.get('/enterprise/settings', authorize(...adminOnly), enterprise.getPlatformSettings);
 router.put('/enterprise/settings', authorize(...adminOnly), enterprise.updatePlatformSettings);
-router.get('/enterprise/finance', authorize(...staffAndAdmin), enterprise.getFinanceSummary);
+router.get('/enterprise/finance', authorize(...adminOnly), enterprise.getFinanceSummary);
 router.get('/upload-center/types', authorize(...adminOnly), uploadCenter.getUploadTypes);
 router.get('/upload-center/templates/:type', authorize(...adminOnly), uploadCenter.downloadTemplate);
 router.post('/upload-center/import/:type', authorize(...adminOnly), uploadExcel, uploadCenter.importUpload);
@@ -59,18 +61,18 @@ router.post('/catalog/room-types', authorize(...adminOnly), catalog.createRoomTy
 router.put('/catalog/room-types/:id', authorize(...adminOnly), catalog.updateRoomType);
 router.delete('/catalog/room-types/:id', authorize(...adminOnly), catalog.deleteRoomType);
 router.get('/users', authorize(...adminOnly), admin.getUsers);
-router.get('/kyc', authorize(...adminOnly), admin.getKycList);
+router.get('/kyc', authorize(...staffAndAdmin), admin.getKycList);
 router.patch('/kyc/:id', authorize(...adminOnly), admin.updateKyc);
 router.get('/payouts', authorize(...adminOnly), admin.getPayouts);
-router.get('/banners', authorize(...adminOnly), admin.getCmsBanners);
-router.post('/banners', authorize(...adminOnly), uploadBannerImage, admin.createBanner);
-router.get('/blogs', authorize(...adminOnly), admin.getCmsBlogs);
-router.get('/blogs/:id', authorize(...adminOnly), admin.getCmsBlog);
-router.post('/blogs', authorize(...adminOnly), uploadBlogCover, admin.createBlog);
-router.put('/blogs/:id', authorize(...adminOnly), uploadBlogCover, admin.updateBlog);
+router.get('/banners', authorize(...staffAndAdmin), admin.getCmsBanners);
+router.post('/banners', authorize(...staffAndAdmin), uploadBannerImageMemory, admin.createBanner);
+router.get('/blogs', authorize(...staffAndAdmin), admin.getCmsBlogs);
+router.get('/blogs/:id', authorize(...staffAndAdmin), admin.getCmsBlog);
+router.post('/blogs', authorize(...staffAndAdmin), uploadBlogCoverMemory, admin.createBlog);
+router.put('/blogs/:id', authorize(...staffAndAdmin), uploadBlogCoverMemory, admin.updateBlog);
 router.delete('/blogs/:id', authorize(...adminOnly), admin.deleteBlog);
-router.get('/faqs', authorize(...adminOnly), admin.getCmsFaqs);
-router.post('/faqs', authorize(...adminOnly), admin.createFaq);
+router.get('/faqs', authorize(...staffAndAdmin), admin.getCmsFaqs);
+router.post('/faqs', authorize(...staffAndAdmin), admin.createFaq);
 
 // Phase 1B
 router.post('/phase1b/seed-defaults', authorize(...adminOnly), phase1b.seedPhase1bDefaults);
@@ -83,8 +85,8 @@ router.post('/subscriptions/assign', authorize(...adminOnly), phase1b.assignSubs
 router.get('/subscriptions/me', authorize(...vendorAndAdmin), phase1b.mySubscription);
 router.post('/subscriptions/points/purchase', authorize(...vendorAndAdmin), phase1b.purchasePoints);
 
-router.patch('/stay-subscriptions/:listingType/:listingId/renewal-price', authorize(...staffAndAdmin), staySub.adminSetStayRenewalPrice);
-router.post('/stay-subscriptions/:listingType/:listingId/renew', authorize(...staffAndAdmin), staySub.adminRenewStaySubscription);
+router.patch('/stay-subscriptions/:listingType/:listingId/renewal-price', authorize(...adminOnly), staySub.adminSetStayRenewalPrice);
+router.post('/stay-subscriptions/:listingType/:listingId/renew', authorize(...adminOnly), staySub.adminRenewStaySubscription);
 
 router.get('/service-monetization', authorize(...adminOnly), serviceMon.adminGetServiceMonetization);
 router.patch('/service-monetization/:tenantType', authorize(...adminOnly), serviceMon.adminUpdateServiceMonetization);
@@ -101,7 +103,7 @@ router.patch('/ads/packages/:id', authorize(...adminOnly), phase1b.updateAdPacka
 router.get('/ads', authorize(...staffAndAdmin), phase1b.listAdvertisements);
 router.post('/ads', authorize(...adminOnly), phase1b.createAdvertisement);
 router.post('/ads/:id/track', phase1b.trackAdEvent);
-router.get('/ads/analytics', authorize(...staffAndAdmin), phase1b.adAnalytics);
+router.get('/ads/analytics', authorize(...adminOnly), phase1b.adAnalytics);
 router.get('/ads/featured', authorize(...staffAndAdmin), phase1b.listFeatured);
 router.post('/ads/featured', authorize(...adminOnly), phase1b.setFeatured);
 
@@ -110,8 +112,8 @@ router.post('/campaigns', authorize(...MARKETING_ROLES), phase1b.createCampaign)
 router.patch('/campaigns/:id', authorize(...MARKETING_ROLES), phase1b.updateCampaign);
 router.post('/campaigns/:id/send', authorize(...MARKETING_ROLES), phase1b.sendCampaign);
 
-router.get('/reports/hub', authorize(...staffAndAdmin), phase1b.getReportsHub);
-router.get('/reports/hub/export', authorize(...staffAndAdmin), async (req, res) => {
+router.get('/reports/hub', authorize(...adminOnly), phase1b.getReportsHub);
+router.get('/reports/hub/export', authorize(...adminOnly), async (req, res) => {
   const { exportReport } = await import('../controllers/exportController.js');
   return exportReport(req, res);
 });
@@ -155,14 +157,20 @@ router.get('/document-requirements', authorize(...staffAndAdmin, ...VENDOR_ROLES
 router.put('/document-requirements', authorize(...adminOnly), domain.upsertDocumentRequirement);
 router.post('/document-requirements/seed', authorize(...adminOnly), domain.seedDocumentRequirements);
 
-router.get('/payments', authorize(...staffAndAdmin), domain.listPayments);
-router.get('/refunds', authorize(...staffAndAdmin), domain.listRefunds);
+router.get('/payments', authorize(...adminOnly), domain.listPayments);
+router.get('/refunds', authorize(...adminOnly), domain.listRefunds);
 router.patch('/refunds/:bookingId', authorize(...adminOnly), domain.moderateRefund);
 
-router.patch('/banners/:id', authorize(...adminOnly), domain.updateBanner);
+router.patch('/banners/:id', authorize(...staffAndAdmin), domain.updateBanner);
 router.delete('/banners/:id', authorize(...adminOnly), domain.deleteBanner);
-router.patch('/faqs/:id', authorize(...adminOnly), domain.updateFaq);
+router.patch('/faqs/:id', authorize(...staffAndAdmin), domain.updateFaq);
 router.delete('/faqs/:id', authorize(...adminOnly), domain.deleteFaq);
+
+router.get('/staff', authorize(...adminOnly), staff.listStaff);
+router.get('/staff/:id', authorize(...adminOnly), staff.getStaff);
+router.post('/staff', authorize(...adminOnly), staff.createStaff);
+router.patch('/staff/:id', authorize(...adminOnly), staff.updateStaff);
+router.post('/staff/:id/reset-password', authorize(...adminOnly), staff.resetStaffPassword);
 
 router.get('/commission-rates', authorize(...adminOnly), domain.getCommissionRates);
 router.put('/commission-rates', authorize(...adminOnly), domain.updateListingCommission);

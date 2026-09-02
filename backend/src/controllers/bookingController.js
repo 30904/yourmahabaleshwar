@@ -394,7 +394,7 @@ export const createTaxiBooking = async (req, res) => {
 export const createHomestayBooking = async (req, res) => {
   const { homestayId, roomId, checkIn, checkOut, guests, guestRegistration } = req.body;
   const homestay = await Homestay.findById(homestayId);
-  if (!homestay) return error(res, 'Homestay not found', 404);
+  if (!homestay) return error(res, 'Homestay/Villa not found', 404);
 
   if (rangeHasBlocked(homestay.blockedDates, checkIn, checkOut)) {
     return error(res, 'Selected dates are blocked', 400);
@@ -422,7 +422,7 @@ export const createHomestayBooking = async (req, res) => {
     capacity: room.totalRooms || 1,
     extraFilter: { homestayRoomId: String(roomId) },
   });
-  if (conflict) return error(res, 'Homestay room not available', 400);
+  if (conflict) return error(res, 'Homestay/Villa room not available', 400);
 
   const nights = getNights(checkIn, checkOut);
   const subtotal = room.basePrice * nights;
@@ -485,7 +485,7 @@ export const createHomestayBooking = async (req, res) => {
     ...pricing,
     commission: Math.round(pricing.subtotal * ((homestay.commissionRate || 10) / 100)),
   });
-  return success(res, booking, 'Homestay booking created', 201);
+  return success(res, booking, 'Homestay/Villa booking created', 201);
 };
 
 export const createHorseBooking = async (req, res) => {

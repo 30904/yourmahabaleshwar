@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
+import ImageUploadField from '../ui/ImageUploadField';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import { formatCurrency } from '../../utils/format';
+import { useAuth } from '../../context/AuthContext';
 
 function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-slate-900">{children}</h3>;
@@ -66,6 +68,7 @@ export default function StayGuestBookingFormCore({
   paymentModeName = 'paymentMode',
 }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const idTypes = useMemo(
     () => [
@@ -182,6 +185,17 @@ export default function StayGuestBookingFormCore({
               </div>
             </div>
             <Input label={t('stayGuestBooking.idNumber')} value={form.idNumber} onChange={(e) => setField('idNumber', e.target.value)} required />
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label={t('stayGuestBooking.idProofUpload')}
+                hint={t('stayGuestBooking.idProofUploadHint')}
+                value={form.idProofDocumentUrl || ''}
+                onChange={(url) => setField('idProofDocumentUrl', url)}
+                category="booking-id-proof"
+                meta={{ userId: user?._id }}
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+              />
+            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('stayGuestBooking.nationality')}</label>
               <select className="input-field" value={form.nationality} onChange={(e) => setField('nationality', e.target.value)}>

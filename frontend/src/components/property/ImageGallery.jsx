@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Grid2x2 } from 'lucide-react';
+import { resolveMediaUrls } from '../../utils/mediaUrl';
 
 export default function ImageGallery({ images = [], name = 'Property' }) {
-  const imgs = images.length ? images : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200'];
+  const imgs = useMemo(() => {
+    const resolved = resolveMediaUrls(images);
+    return resolved.length ? resolved : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200'];
+  }, [images]);
   const [main, setMain] = useState(0);
 
   return (

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { MapPin, Images, Wifi, Car, Coffee, Waves } from 'lucide-react';
 import ReviewScore from '../../components/property/ReviewScore';
+import ListingReviewsSection from '../../components/property/ListingReviewsSection';
 import RoomCard from '../../components/property/RoomCard';
 import HotelGuestBookingForm from '../../components/booking/HotelGuestBookingForm';
 import Skeleton from '../../components/ui/Skeleton';
@@ -11,6 +12,7 @@ import { dummyHotels } from '../../data/dummyListings';
 import { normalizeHotel } from '../../utils/listingHelpers';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
+import { resolveMediaUrls } from '../../utils/mediaUrl';
 import { formatCurrency } from '../../utils/format';
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200';
@@ -18,6 +20,8 @@ const amenityIcons = { WiFi: Wifi, 'Free WiFi': Wifi, Parking: Car, 'Free parkin
 
 export default function HotelDetailPage() {
   const { slug } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [property, setProperty] = useState(null);
   const [rooms, setRooms] = useState([]);
@@ -54,6 +58,12 @@ export default function HotelDetailPage() {
     setPhotoIndex(0);
   }, [slug]);
 
+  useEffect(() => {
+    if (property?.type === 'RESORT' && location.pathname.startsWith('/hotels/')) {
+      navigate(`/resorts/${slug}`, { replace: true });
+    }
+  }, [property, location.pathname, slug, navigate]);
+
   if (loading) return <div className="page-container py-8"><Skeleton className="h-[400px]" /></div>;
   if (!property) return <div className="page-container py-16 text-center">Property not found</div>;
 
@@ -67,7 +77,7 @@ export default function HotelDetailPage() {
   const roomOptions = rooms.length ? rooms : property.rooms || [];
   const propertyLabel = property.type === 'RESORT' ? 'Resort' : 'Hotel';
   const fromPrice = selectedRoom?.basePrice ?? property.priceFrom ?? property.priceRangeFrom;
-  const images = property.images?.length ? property.images : [FALLBACK_IMG];
+  const images = property.images?.length ? resolveMediaUrls(property.images) : [FALLBACK_IMG];
   const locationLabel =
     [property.address?.line1, property.address?.city, property.address?.state].filter(Boolean).join(', ') ||
     'Mahabaleshwar';
@@ -254,28 +264,12 @@ export default function HotelDetailPage() {
         )}
 
         {tab === 'reviews' && (
-          <div className="mt-6 max-w-3xl card p-6">
-            <ReviewScore
-              score={property.score || property.rating}
-              label={property.scoreLabel}
-              reviewCount={reviews.length || property.reviewCount}
-              size="lg"
-            />
-            {reviews.length > 0 ? (
-              <div className="mt-6 space-y-3">
-                {reviews.map((r) => (
-                  <div key={r._id} className="rounded-xl border border-slate-100 p-4">
-                    <p className="font-medium text-slate-900">
-                      {r.user?.name || 'Guest'} · {r.rating}/5
-                    </p>
-                    {r.comment ? <p className="mt-1 text-sm text-slate-600">{r.comment}</p> : null}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-4 text-slate-600">No guest reviews yet. Complete a booking to be the first to review.</p>
-            )}
-          </div>
+          <ListingReviewsSection
+            reviews={reviews}
+            score={property.score || property.rating}
+            label={property.scoreLabel}
+            reviewCount={reviews.length || property.reviewCount}
+          />
         )}
 
         {tab === 'policies' && (

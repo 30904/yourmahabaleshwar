@@ -25,10 +25,13 @@ export const denyIfVendorCannotEdit = (req, doc) => {
   return null;
 };
 
-/** Vendor-created listings wait for superadmin before going live; admin-created listings go live immediately. */
+/** Vendor-created listings wait for superadmin before going live; only super-admin listings auto-approve. */
 export const stampPendingIfVendor = (req, data) => {
   if (isListingAdmin(req.user)) {
     return { ...data, isActive: true, approvalStatus: APPROVAL_STATUS.APPROVED };
+  }
+  if (STAFF_ROLES.includes(req.user?.role)) {
+    return { ...data, isActive: false, approvalStatus: APPROVAL_STATUS.PENDING };
   }
   return { ...data, isActive: false, approvalStatus: APPROVAL_STATUS.PENDING };
 };

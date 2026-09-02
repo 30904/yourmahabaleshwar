@@ -186,29 +186,14 @@ export const adminCreateVendor = async (req, res) => {
 export const submitKyc = async (req, res) => {
   const payload = { ...req.body, user: req.user._id, status: 'PENDING' };
 
-  // Attach uploaded files as /uploads/<filename>
   if (req.files) {
-    const fileFields = [
-      'aadharDoc',
-      'panDoc',
-      'rcDoc',
-      'pucDoc',
-      'insuranceDoc',
-      'licenseDoc',
-      'addressProofDoc',
-      'gstDoc',
-      'businessRegDoc',
-      'hotelLicenseDoc',
-      'guideLicenseDoc',
-      'fitnessDoc',
-      'permitDoc',
-      'bankProofDoc',
-    ];
-    for (const field of fileFields) {
-      if (req.files[field]?.[0]) {
-        payload[field] = `/uploads/${req.files[field][0].filename}`;
-      }
-    }
+    const { persistMulterFiles } = await import('../services/storageService.js');
+    const userId = req.user._id.toString();
+    const saved = await persistMulterFiles(req.files, 'kyc', (field) => ({
+      userId,
+      docField: field,
+    }));
+    Object.assign(payload, saved);
   }
 
   if (typeof payload.bankDetails === 'string') {

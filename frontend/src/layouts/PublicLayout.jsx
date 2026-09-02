@@ -4,7 +4,10 @@ import Footer from '../components/common/Footer';
 
 export default function PublicLayout() {
   const { pathname } = useLocation();
-  const hideBreadcrumb = ['/hotels', '/resorts', '/search'].some((p) => pathname.startsWith(p)) || pathname.includes('/hotels/');
+  const hideBreadcrumb =
+    ['/hotels', '/resorts', '/search'].some((p) => pathname.startsWith(p)) ||
+    pathname.includes('/hotels/') ||
+    pathname.includes('/resorts/');
 
   return (
     <div className="flex min-h-screen flex-col">

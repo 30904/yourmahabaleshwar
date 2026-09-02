@@ -19,14 +19,14 @@ import CampaignsPage from '../pages/marketing/CampaignsPage';
 import ReportsHubPage from '../pages/reports/ReportsHubPage';
 import BackupsPage from '../pages/system/BackupsPage';
 import DomainToolsPage from '../pages/system/DomainToolsPage';
-import OfficeStaffPage from '../pages/system/OfficeStaffPage';
+import StaffManagementPage from '../pages/system/StaffManagementPage';
+import AdminSuperRoute from '../components/AdminSuperRoute';
 import CmsHubPage from '../pages/cms/CmsHubPage';
 import BlogsPage from '../pages/cms/BlogsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import ServiceMonetizationPage from '../pages/settings/ServiceMonetizationPage';
 import UploadCenterPage from '../pages/upload/UploadCenterPage';
 import KycPage from '../pages/kyc/KycPage';
-import ReviewsModerationPage from '../pages/ReviewsModerationPage';
 import DeleteReviewsPage from '../pages/customers/DeleteReviewsPage';
 import GuidePackagesPage from '../pages/guides/GuidePackagesPage';
 import TaxiHourlyPage from '../pages/taxi/TaxiHourlyPage';
@@ -76,15 +76,15 @@ const adminRouteConfig = [
   { path: 'pricing/seasonal', element: <DomainToolsPage /> },
   { path: 'ads', element: <AdsPage /> },
   { path: 'customers', element: <CustomerListPage /> },
-  { path: 'customers/reviews', element: <ReviewsModerationPage /> },
+  { path: 'customers/reviews', element: <Navigate to="/admin/customers/delete-reviews" replace /> },
   { path: 'customers/delete-reviews', element: <DeleteReviewsPage /> },
   { path: 'vendors', element: <VendorListPage /> },
-  { path: 'vendors/payouts', element: <PayoutsPage /> },
-  { path: 'finance', element: <FinancePage /> },
-  { path: 'finance/commission', element: <FinancePage section="commission" /> },
-  { path: 'finance/transactions', element: <FinancePage section="transactions" /> },
-  { path: 'finance/gst', element: <ReportsHubPage focus="gst" /> },
-  { path: 'finance/subscriptions', element: <SubscriptionsPage /> },
+  { path: 'vendors/payouts', element: <AdminSuperRoute finance><PayoutsPage /></AdminSuperRoute> },
+  { path: 'finance', element: <AdminSuperRoute finance><FinancePage /></AdminSuperRoute> },
+  { path: 'finance/commission', element: <AdminSuperRoute finance><FinancePage section="commission" /></AdminSuperRoute> },
+  { path: 'finance/transactions', element: <AdminSuperRoute finance><FinancePage section="transactions" /></AdminSuperRoute> },
+  { path: 'finance/gst', element: <AdminSuperRoute finance><ReportsHubPage focus="gst" /></AdminSuperRoute> },
+  { path: 'finance/subscriptions', element: <AdminSuperRoute finance><SubscriptionsPage /></AdminSuperRoute> },
   { path: 'marketing', element: <CampaignsPage /> },
   { path: 'shop', element: <ProductsCombosAdminPage /> },
   { path: 'cms', element: <CmsHubPage /> },
@@ -92,16 +92,16 @@ const adminRouteConfig = [
   { path: 'cms/blogs', element: <BlogsPage /> },
   { path: 'cms/faqs', element: <CmsHubPage tab="faqs" /> },
   { path: 'cms/seo', element: <SettingsPage /> },
-  { path: 'reports', element: <ReportsHubPage /> },
-  { path: 'reports/revenue', element: <ReportsHubPage focus="revenue" /> },
+  { path: 'reports', element: <AdminSuperRoute finance><ReportsHubPage /></AdminSuperRoute> },
+  { path: 'reports/revenue', element: <AdminSuperRoute finance><ReportsHubPage focus="revenue" /></AdminSuperRoute> },
   { path: 'reports/destinations', element: <DomainToolsPage /> },
   { path: 'kyc', element: <KycPage /> },
-  { path: 'settings', element: <SettingsPage /> },
-  { path: 'settings/service-monetization', element: <ServiceMonetizationPage /> },
-  { path: 'upload-center', element: <UploadCenterPage /> },
-  { path: 'backups', element: <BackupsPage /> },
-  { path: 'domain-tools', element: <DomainToolsPage /> },
-  { path: 'staff', element: <OfficeStaffPage /> },
+  { path: 'settings', element: <AdminSuperRoute><SettingsPage /></AdminSuperRoute> },
+  { path: 'settings/service-monetization', element: <AdminSuperRoute><ServiceMonetizationPage /></AdminSuperRoute> },
+  { path: 'upload-center', element: <AdminSuperRoute><UploadCenterPage /></AdminSuperRoute> },
+  { path: 'backups', element: <AdminSuperRoute><BackupsPage /></AdminSuperRoute> },
+  { path: 'domain-tools', element: <AdminSuperRoute><DomainToolsPage /></AdminSuperRoute> },
+  { path: 'staff', element: <AdminSuperRoute><StaffManagementPage /></AdminSuperRoute> },
   { path: 'notifications', element: <CampaignsPage /> },
   { path: '*', element: <Navigate to="/admin" replace /> },
 ];

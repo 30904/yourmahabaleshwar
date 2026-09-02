@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 
 function SectionTitle({ children }) {
@@ -111,12 +112,11 @@ export default function HotelResortRegistrationFields({ form, setField, toggleAm
             onChange={(e) => setField('website', e.target.value)}
             placeholder="https://"
           />
-          <Input
-            className="sm:col-span-2"
+          <ListingImageField
             label={t('stayRegistration.imageUrl')}
             value={form.imageUrl}
-            onChange={(e) => setField('imageUrl', e.target.value)}
-            placeholder="https://"
+            onChange={(url) => setField('imageUrl', url)}
+            vertical={form.type === 'RESORT' ? 'RESORT' : 'HOTEL'}
           />
         </div>
       </Card>

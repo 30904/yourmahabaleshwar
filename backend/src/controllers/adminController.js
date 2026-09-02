@@ -11,6 +11,8 @@ import Banner from '../models/Banner.js';
 import Blog from '../models/Blog.js';
 import FAQ from '../models/FAQ.js';
 import { success, error } from '../utils/apiResponse.js';
+import { persistMulterFile } from '../services/storageService.js';
+import { canSeeFinance, canApprove } from '../utils/roleAccess.js';
 
 export const getDashboardStats = async (req, res) => {
   const [users, hotels, tents, guides, drivers, bookings, enquiries, pendingKyc] = await Promise.all([
@@ -23,11 +25,7 @@ export const getDashboardStats = async (req, res) => {
     Enquiry.countDocuments({ status: 'NEW' }),
     KYC.countDocuments({ status: 'PENDING' }),
   ]);
-  const revenue = await Booking.aggregate([
-    { $match: { paymentStatus: 'PAID' } },
-    { $group: { _id: null, total: { $sum: '$total' }, commission: { $sum: '$commission' } } },
-  ]);
-  return success(res, {
+  const payload = {
     users,
     hotels,
     tents,
@@ -36,8 +34,17 @@ export const getDashboardStats = async (req, res) => {
     bookings,
     enquiries,
     pendingKyc,
-    revenue: revenue[0] || { total: 0, commission: 0 },
-  });
+  };
+
+  if (canSeeFinance(req.user?.role)) {
+    const revenue = await Booking.aggregate([
+      { $match: { paymentStatus: 'PAID' } },
+      { $group: { _id: null, total: { $sum: '$total' }, commission: { $sum: '$commission' } } },
+    ]);
+    payload.revenue = revenue[0] || { total: 0, commission: 0 };
+  }
+
+  return success(res, payload);
 };
 
 export const getKycList = async (req, res) => {
@@ -46,6 +53,9 @@ export const getKycList = async (req, res) => {
 };
 
 export const updateKyc = async (req, res) => {
+  if (!canApprove(req.user?.role)) {
+    return error(res, 'Only super admin can approve or reject KYC', 403);
+  }
   const kyc = await KYC.findByIdAndUpdate(
     req.params.id,
     { ...req.body, reviewedBy: req.user._id, reviewedAt: new Date() },
@@ -86,7 +96,13 @@ export const getCmsBanners = async (req, res) => success(res, await Banner.find(
 
 export const createBanner = async (req, res) => {
   const imageUrl = req.body.imageUrl?.trim();
-  const uploaded = req.file ? `/uploads/${req.file.filename}` : null;
+  let uploaded = null;
+  if (req.file) {
+    const saved = await persistMulterFile(req.file, 'cms-banner', {
+      bannerId: req.body.bannerId || 'new',
+    });
+    uploaded = saved.key;
+  }
   const image = uploaded || imageUrl;
 
   if (!image) return error(res, 'Banner image is required (upload a file or paste URL)', 400);
@@ -152,7 +168,11 @@ export const createBlog = async (req, res) => {
     if (!req.body.title?.trim()) return error(res, 'Title is required', 400);
     if (!req.body.content?.trim()) return error(res, 'Content is required', 400);
 
-    const coverPath = req.file ? `/uploads/${req.file.filename}` : null;
+    let coverPath = null;
+    if (req.file) {
+      const saved = await persistMulterFile(req.file, 'cms-blog', { blogId: 'new' });
+      coverPath = saved.key;
+    }
     const payload = buildBlogPayload({ ...req.body, _coverPath: coverPath }, req.user._id);
 
     const existing = await Blog.findOne({ slug: payload.slug });
@@ -171,7 +191,11 @@ export const updateBlog = async (req, res) => {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return error(res, 'Blog not found', 404);
 
-    const coverPath = req.file ? `/uploads/${req.file.filename}` : null;
+    let coverPath = null;
+    if (req.file) {
+      const saved = await persistMulterFile(req.file, 'cms-blog', { blogId: blog._id.toString() });
+      coverPath = saved.key;
+    }
     const payload = buildBlogPayload({ ...req.body, _coverPath: coverPath }, req.user._id, blog);
 
     if (payload.slug !== blog.slug) {

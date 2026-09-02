@@ -2,9 +2,10 @@ import { Link } from 'react-router-dom';
 import { Star, MapPin } from 'lucide-react';
 import Badge from '../ui/Badge';
 import { formatCurrency } from '../../utils/format';
+import { listingCoverImage } from '../../utils/mediaUrl';
 
 export default function ListingCard({ item, type, linkPrefix }) {
-  const image = item.images?.[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600';
+  const image = listingCoverImage(item) || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600';
   const price =
     item.priceFrom ||
     item.pricePerNight ||
