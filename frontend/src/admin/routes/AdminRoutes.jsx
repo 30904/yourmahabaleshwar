@@ -19,6 +19,7 @@ import CampaignsPage from '../pages/marketing/CampaignsPage';
 import ReportsHubPage from '../pages/reports/ReportsHubPage';
 import BackupsPage from '../pages/system/BackupsPage';
 import DomainToolsPage from '../pages/system/DomainToolsPage';
+import StaffCreatePage from '../pages/system/StaffCreatePage';
 import StaffManagementPage from '../pages/system/StaffManagementPage';
 import AdminSuperRoute from '../components/AdminSuperRoute';
 import CmsHubPage from '../pages/cms/CmsHubPage';
@@ -101,7 +102,8 @@ const adminRouteConfig = [
   { path: 'upload-center', element: <AdminSuperRoute><UploadCenterPage /></AdminSuperRoute> },
   { path: 'backups', element: <AdminSuperRoute><BackupsPage /></AdminSuperRoute> },
   { path: 'domain-tools', element: <AdminSuperRoute><DomainToolsPage /></AdminSuperRoute> },
-  { path: 'staff', element: <AdminSuperRoute><StaffManagementPage /></AdminSuperRoute> },
+  { path: 'staff', element: <AdminSuperRoute><StaffCreatePage /></AdminSuperRoute> },
+  { path: 'staff-management', element: <AdminSuperRoute><StaffManagementPage /></AdminSuperRoute> },
   { path: 'notifications', element: <CampaignsPage /> },
   { path: '*', element: <Navigate to="/admin" replace /> },
 ];

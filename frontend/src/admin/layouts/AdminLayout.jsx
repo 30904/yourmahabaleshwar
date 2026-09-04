@@ -18,6 +18,8 @@ const breadcrumbMap = {
   '/admin/drivers': ['Admin', 'Drivers'],
   '/admin/finance': ['Admin', 'Finance'],
   '/admin/cms': ['Admin', 'CMS'],
+  '/admin/staff': ['Admin', 'Staff'],
+  '/admin/staff-management': ['Admin', 'Staff Management'],
   '/admin/settings': ['Admin', 'Settings'],
   '/admin/settings/service-monetization': ['Admin', 'Settings', 'Service subscriptions'],
   '/admin/customers/reviews': ['Admin', 'Reviews'],

@@ -1280,11 +1280,15 @@
   .admin-input {
     width: 100%;
     border-radius: 10px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #94a3b8;
     background: #fff;
     padding: 0.6rem 0.875rem;
     font-size: 0.875rem;
     outline: none;
+    color: #0f172a;
+  }
+  .admin-input::placeholder {
+    color: #64748b;
   }
   .admin-input:focus {
     border-color: #1e88e5;

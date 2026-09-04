@@ -194,6 +194,7 @@ export const adminNavGroups = [
       { to: '/admin/backups', label: 'Backups', icon: HardDrive, superAdminOnly: true },
       { to: '/admin/domain-tools', label: 'Domain Tools', icon: Tags, superAdminOnly: true },
       { to: '/admin/staff', label: 'Staff', icon: UserCog, superAdminOnly: true },
+      { to: '/admin/staff-management', label: 'Staff Management', icon: Users, superAdminOnly: true },
       { to: '/admin/notifications', label: 'Notifications', icon: Bell },
     ],
   },
