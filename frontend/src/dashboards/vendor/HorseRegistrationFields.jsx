@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { defaultRoute } from './vendorListingFormConfig';
@@ -225,12 +226,11 @@ export default function HorseRegistrationFields({
               {t('horseRegistration.no')}
             </label>
           </div>
-          <Input
-            className="sm:col-span-2"
+          <ListingImageField
             label={t('horseRegistration.profilePhotoUrl')}
             value={form.imageUrl}
-            onChange={(e) => setField('imageUrl', e.target.value)}
-            placeholder="https://"
+            onChange={(url) => setField('imageUrl', url)}
+            vertical="HORSE"
           />
           <p className="sm:col-span-2 text-xs text-slate-500">{t('horseRegistration.commissionNote')}</p>
         </div>

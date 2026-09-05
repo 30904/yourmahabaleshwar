@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 
 const LANGUAGE_VALUES = [
@@ -288,12 +289,11 @@ export default function GuideRegistrationFields({ form, setField, toggleLanguage
             value={form.bikeAddonPrice}
             onChange={(e) => setField('bikeAddonPrice', e.target.value)}
           />
-          <Input
-            className="sm:col-span-2"
+          <ListingImageField
             label={t('guideRegistration.profilePhotoUrl')}
             value={form.imageUrl}
-            onChange={(e) => setField('imageUrl', e.target.value)}
-            placeholder="https://"
+            onChange={(url) => setField('imageUrl', url)}
+            vertical="GUIDE"
           />
           <p className="sm:col-span-2 text-xs text-slate-500">{t('guideRegistration.commissionNote')}</p>
         </div>

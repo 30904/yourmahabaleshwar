@@ -70,6 +70,9 @@ export const fetchAdminVendors = (params) =>
 export const fetchAdminCustomers = () =>
   api.get('/admin/enterprise/customers').then((r) => r.data.data);
 
+export const fetchAdminCustomerDetail = (id) =>
+  api.get(`/admin/enterprise/customers/${id}`).then((r) => r.data.data);
+
 export const fetchCoupons = () =>
   api.get('/admin/enterprise/coupons').then((r) => r.data.data);
 

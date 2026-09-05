@@ -25,9 +25,22 @@ export const VENDOR_ROLES = [
   ROLES.PRODUCT_VENDOR,
 ];
 
-export const ADMIN_ROLES = [
-  ROLES.SUPER_ADMIN,
+export const STAFF_ROLES = [
   ROLES.OFFICE_STAFF_HOTEL,
   ROLES.OFFICE_STAFF_GUIDE,
   ROLES.MARKETING_STAFF,
 ];
+
+export const ADMIN_ROLES = [ROLES.SUPER_ADMIN, ...STAFF_ROLES];
+
+export const ROLE_LABELS = {
+  [ROLES.SUPER_ADMIN]: 'Super Admin',
+  [ROLES.OFFICE_STAFF_HOTEL]: 'Staff',
+  [ROLES.OFFICE_STAFF_GUIDE]: 'Staff',
+  [ROLES.MARKETING_STAFF]: 'Marketing Staff',
+};
+
+export function getRoleLabel(role) {
+  if (!role) return '';
+  return ROLE_LABELS[role] || role.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+}

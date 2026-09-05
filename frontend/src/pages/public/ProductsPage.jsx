@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Skeleton from '../../components/ui/Skeleton';
 import { fetchProducts } from '../../services/listingsApi';
 import { formatCurrency } from '../../utils/format';
+import { listingCoverImage } from '../../utils/mediaUrl';
 
 export default function ProductsPage({ vertical = 'STRAWBERRY' }) {
   const { t } = useTranslation();
@@ -39,7 +40,7 @@ export default function ProductsPage({ vertical = 'STRAWBERRY' }) {
             items.map((p) => (
               <Link key={p._id} to={`${base}/${p.slug}`} className="card overflow-hidden hover:shadow-md">
                 <img
-                  src={p.images?.[0] || 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600'}
+                  src={listingCoverImage(p) || 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600'}
                   alt=""
                   className="h-44 w-full object-cover"
                 />

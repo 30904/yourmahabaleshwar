@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import ReviewScore from './ReviewScore';
 import { formatCurrency } from '../../utils/format';
+import { listingCoverImage } from '../../utils/mediaUrl';
 import { useAuth } from '../../context/AuthContext';
 import { addToWishlist, removeFromWishlist } from '../../services/userApi';
 
@@ -19,7 +20,7 @@ export default function PropertyCard({
   const { isAuthenticated } = useAuth();
   const resolvedPriceSuffix = priceSuffix ?? t('property.perNight');
   const [saved, setSaved] = useState(false);
-  const image = item.images?.[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
+  const image = listingCoverImage(item) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
   const price = item[priceKey] || item.pricePerNight || item.package6hr || item.perTripPrice;
   const original = item.originalPrice;
 

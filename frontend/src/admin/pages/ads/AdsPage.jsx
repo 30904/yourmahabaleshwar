@@ -13,8 +13,19 @@ import {
   seedPhase1bDefaults,
 } from '../../../services/enterpriseAdminApi';
 import { formatCurrency } from '../../../utils/format';
+import useAdminAccess from '../../../hooks/useAdminAccess';
+
+const LISTING_TYPE_LABELS = {
+  HOTEL: 'HOTEL',
+  RESORT: 'RESORT',
+  HOMESTAY: 'HOMESTAY/VILLA',
+  TENT: 'TENT',
+  HORSE: 'HORSE',
+  BANNER: 'BANNER',
+};
 
 export default function AdsPage() {
+  const { canSeeFinance, canApprove } = useAdminAccess();
   const [packages, setPackages] = useState([]);
   const [ads, setAds] = useState([]);
   const [analytics, setAnalytics] = useState(null);
@@ -23,15 +34,18 @@ export default function AdsPage() {
 
   const load = async () => {
     try {
-      const [p, a, an, f] = await Promise.all([
-        fetchAdPackages(),
-        fetchAdvertisements(),
-        fetchAdAnalytics(),
-        fetchFeaturedListings(),
-      ]);
+      const requests = [fetchAdPackages(), fetchAdvertisements(), fetchFeaturedListings()];
+      if (canSeeFinance) requests.splice(2, 0, fetchAdAnalytics());
+      const results = await Promise.all(requests);
+      let p, a, an, f;
+      if (canSeeFinance) {
+        [p, a, an, f] = results;
+      } else {
+        [p, a, f] = results;
+      }
       setPackages(p || []);
       setAds(a || []);
-      setAnalytics(an);
+      setAnalytics(an || null);
       setFeatured(f);
     } catch {
       toast.error('Failed to load ads');
@@ -62,6 +76,7 @@ export default function AdsPage() {
         }
       />
 
+      {canSeeFinance && (
       <div className="grid gap-4 sm:grid-cols-3">
         {(analytics?.byStatus || []).map((row) => (
           <div key={row._id} className="admin-card p-4">
@@ -73,7 +88,9 @@ export default function AdsPage() {
           </div>
         ))}
       </div>
+      )}
 
+      {canApprove && (
       <div className="admin-card space-y-3 p-5">
         <h3 className="font-semibold">Activate advertisement</h3>
         <div className="grid gap-3 sm:grid-cols-4">
@@ -85,7 +102,7 @@ export default function AdsPage() {
           </select>
           <select className="admin-input" value={form.listingType} onChange={(e) => setForm({ ...form, listingType: e.target.value })}>
             {['HOTEL', 'RESORT', 'HOMESTAY', 'TENT', 'HORSE', 'BANNER'].map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>{LISTING_TYPE_LABELS[t] || t}</option>
             ))}
           </select>
           <input className="admin-input" placeholder="Listing ID" value={form.listingId} onChange={(e) => setForm({ ...form, listingId: e.target.value })} />
@@ -110,11 +127,13 @@ export default function AdsPage() {
           </button>
         </div>
       </div>
+      )}
 
       <div className="admin-card p-5">
         <h3 className="mb-3 font-semibold">Currently featured</h3>
         <div className="flex flex-wrap gap-2 text-sm">
           {(featured?.hotels || []).map((h) => (
+            canApprove ? (
             <button
               key={h._id}
               type="button"
@@ -126,6 +145,9 @@ export default function AdsPage() {
             >
               {h.name} ×
             </button>
+            ) : (
+              <span key={h._id} className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">{h.name}</span>
+            )
           ))}
           {(featured?.tents || []).map((h) => (
             <span key={h._id} className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">{h.name}</span>

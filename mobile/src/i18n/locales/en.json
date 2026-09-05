@@ -19,7 +19,7 @@
     "kyc": "KYC",
     "hotels": "Hotels",
     "resorts": "Resorts",
-    "homestays": "Homestays",
+    "homestays": "Homestays/Villas",
     "tents": "Tents",
     "guides": "Guides",
     "taxi": "Taxi",
@@ -44,7 +44,7 @@
   },
   "home": {
     "headline": "Discover Mahabaleshwar",
-    "subhead": "Hotels, homestays, tents, guides, taxi & horse rides",
+    "subhead": "Hotels, homestays/villas, tents, guides, taxi & horse rides",
     "browse": "Browse categories"
   },
   "booking": {

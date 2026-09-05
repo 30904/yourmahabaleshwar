@@ -11,7 +11,7 @@ const actions = [
   { label: 'List refunds', method: 'get', path: '/admin/refunds' },
   { label: 'Destinations analytics', method: 'get', path: '/admin/analytics/destinations' },
   { label: 'Commission rates', method: 'get', path: '/admin/commission-rates' },
-  { label: 'Admin homestays', method: 'get', path: '/admin/enterprise/homestays' },
+  { label: 'Admin homestays/villas', method: 'get', path: '/admin/enterprise/homestays' },
   { label: 'Admin horses', method: 'get', path: '/admin/enterprise/horses' },
 ];
 

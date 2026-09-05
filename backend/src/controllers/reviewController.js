@@ -36,17 +36,17 @@ const listingIdOf = (review) =>
 const updateListingRating = async (listingType, listingId) => {
   const field = fieldByType[listingType];
   if (!field || !listingId) return;
-  const approved = await Review.find({ [field]: listingId, isApproved: true });
+  const reviews = await Review.find({ [field]: listingId, isApproved: { $ne: false } });
   const Model = listingModels[listingType];
   if (!Model) return;
-  if (!approved.length) {
+  if (!reviews.length) {
     await Model.findByIdAndUpdate(listingId, { rating: 0, reviewCount: 0 });
     return;
   }
-  const avg = approved.reduce((s, r) => s + r.rating, 0) / approved.length;
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
   await Model.findByIdAndUpdate(listingId, {
     rating: Math.round(avg * 10) / 10,
-    reviewCount: approved.length,
+    reviewCount: reviews.length,
   });
 };
 
@@ -65,6 +65,7 @@ export const createReview = async (req, res) => {
     rating,
     comment,
     listingType: booking.type,
+    isApproved: true,
   };
 
   if (booking.hotel) payload.hotel = booking.hotel;
@@ -76,7 +77,10 @@ export const createReview = async (req, res) => {
 
   try {
     const review = await Review.create(payload);
-    return success(res, review, 'Review submitted for moderation', 201);
+    if (review.listingType) {
+      await updateListingRating(review.listingType, listingIdOf(review));
+    }
+    return success(res, review, 'Review published', 201);
   } catch (err) {
     if (err.code === 11000) return error(res, 'You already reviewed this booking', 400);
     return error(res, err.message, 400);
@@ -85,7 +89,7 @@ export const createReview = async (req, res) => {
 
 export const listReviews = async (req, res) => {
   const { listingType, listingId } = req.query;
-  const filter = { isApproved: true };
+  const filter = { isApproved: { $ne: false } };
   if (listingType && listingId) {
     const field = fieldByType[listingType];
     if (field) filter[field] = listingId;
@@ -174,6 +178,23 @@ export const listVendorReviews = async (req, res) => {
   });
 };
 
+/** Publish legacy reviews that were waiting for admin approval (one-time on startup). */
+export const publishPendingReviews = async () => {
+  const pending = await Review.find({ isApproved: false }).select('listingType hotel tent guide driver homestay horse');
+  if (!pending.length) return;
+
+  await Review.updateMany({ isApproved: false }, { $set: { isApproved: true } });
+
+  const seen = new Set();
+  for (const review of pending) {
+    const listingId = listingIdOf(review);
+    const key = `${review.listingType}:${listingId}`;
+    if (!review.listingType || !listingId || seen.has(key)) continue;
+    seen.add(key);
+    await updateListingRating(review.listingType, listingId);
+  }
+};
+
 export const listPendingReviews = async (req, res) => {
   const reviews = await Review.find({ isApproved: false })
     .populate('user', 'name email')
@@ -214,6 +235,12 @@ export const listAdminReviews = async (req, res) => {
     if (driverBookingIds.length) filter.booking = { $nin: driverBookingIds };
   } else {
     filter.listingType = tenant;
+  }
+
+  const listingId = req.query.listingId;
+  if (listingId) {
+    const field = fieldByType[tenant];
+    if (field) filter[field] = listingId;
   }
 
   const reviews = await Review.find(filter)

@@ -89,7 +89,7 @@ function OpenBookingCard({ booking, accepting, onRequestAccept, t }) {
           </p>
           <p className="mt-1 text-sm text-slate-600">
             {t('openBookings.customer')}: {booking.customer?.name || lead.fullName || '—'}
-            {booking.customer?.phone || lead.mobile ? ` · ${booking.customer?.phone || lead.mobile}` : ''}
+            <span className="text-slate-400"> · {t('openBookings.phoneHidden')}</span>
           </p>
           <p className="mt-1 text-sm text-slate-600">
             {t('openBookings.date')}: {formatDate(booking.checkIn)}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Skeleton from '../../components/ui/Skeleton';
 import { fetchCombos } from '../../services/listingsApi';
 import { formatCurrency } from '../../utils/format';
+import { listingCoverImage } from '../../utils/mediaUrl';
 
 export default function CombosPage() {
   const { t } = useTranslation();
@@ -30,7 +31,7 @@ export default function CombosPage() {
         {items.map((c) => (
           <Link key={c._id} to={`/combos/${c.slug}`} className="card flex flex-col gap-4 p-4 sm:flex-row">
             <img
-              src={c.images?.[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'}
+              src={listingCoverImage(c) || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'}
               alt=""
               className="h-36 w-full rounded-xl object-cover sm:w-56"
             />

@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import * as booking from '../controllers/bookingController.js';
 import { protect, authorize } from '../middleware/auth.js';
-import { ROLES, VENDOR_ROLES } from '../constants/roles.js';
+import { ROLES, VENDOR_ROLES, STAFF_ROLES } from '../constants/roles.js';
+
+const staffAndAdmin = [ROLES.SUPER_ADMIN, ...STAFF_ROLES];
 
 const router = Router();
 
@@ -24,8 +26,8 @@ router.post('/combo', async (req, res) => {
 router.get('/my', booking.getMyBookings);
 router.get('/vendor', authorize(...VENDOR_ROLES), booking.getVendorBookings);
 router.get('/vendor/open', authorize(...VENDOR_ROLES), booking.getOpenServiceBookings);
-router.get('/all', authorize(ROLES.SUPER_ADMIN, ROLES.OFFICE_STAFF_HOTEL, ROLES.OFFICE_STAFF_GUIDE), booking.getAllBookings);
-router.patch('/:id/assign', authorize(ROLES.SUPER_ADMIN, ROLES.OFFICE_STAFF_HOTEL, ROLES.OFFICE_STAFF_GUIDE), booking.assignVendorToBooking);
+router.get('/all', authorize(...staffAndAdmin), booking.getAllBookings);
+router.patch('/:id/assign', authorize(ROLES.SUPER_ADMIN), booking.assignVendorToBooking);
 router.patch('/:id/accept', authorize(...VENDOR_ROLES), booking.acceptOpenServiceBooking);
 router.get('/vendor/monetization-gate', authorize(...VENDOR_ROLES), booking.getVendorMonetizationGate);
 router.get('/:id/invoice', booking.downloadInvoice);

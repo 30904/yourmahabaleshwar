@@ -691,8 +691,8 @@ const seed = async () => {
     staySubscriptionWarningDays: { type: Number, default: 30 },
     seoTitle: 'YOURMAHABALESHWAR.COM | Book Mahabaleshwar Stays & Experiences',
     seoDescription:
-      'Book hotels, resorts, homestays, tents, guides, taxi, horse rides, strawberries and Mapro products in Mahabaleshwar.',
-    seoKeywords: ['Mahabaleshwar', 'hotels', 'homestay', 'Mapro', 'strawberry', 'taxi', 'guides'],
+      'Book hotels, resorts, homestays/villas, tents, guides, taxi, horse rides, strawberries and Mapro products in Mahabaleshwar.',
+    seoKeywords: ['Mahabaleshwar', 'hotels', 'homestay/villa', 'Mapro', 'strawberry', 'taxi', 'guides'],
     supportEmail: 'support@yourmahabaleshwar.com',
     supportPhone: '9876543210',
   });

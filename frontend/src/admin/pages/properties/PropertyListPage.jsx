@@ -14,6 +14,7 @@ import {
   deleteTent,
 } from '../../../services/enterpriseAdminApi';
 import { formatCurrency } from '../../../utils/format';
+import { listingCoverImage } from '../../../utils/mediaUrl';
 import { listingStatusOf } from '../../../utils/listingStatus';
 
 export default function PropertyListPage({ typeFilter }) {
@@ -83,7 +84,7 @@ export default function PropertyListPage({ typeFilter }) {
       render: (row) => (
         <div className="flex items-center gap-3">
           <img
-            src={row.images?.[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=120'}
+            src={listingCoverImage(row) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=120'}
             alt=""
             className="h-12 w-16 rounded-lg object-cover"
           />

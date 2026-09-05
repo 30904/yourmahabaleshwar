@@ -26,6 +26,7 @@ import { createNotification } from '../services/notificationService.js';
 import { computeRefundAmount } from './paymentController.js';
 import {
   denyIfNotOwner,
+  denyIfSingleListingExceeded,
   stampOwnerOnCreate,
   stripOwnerOnUpdate,
 } from '../utils/vendorListingAccess.js';
@@ -186,29 +187,14 @@ export const adminCreateVendor = async (req, res) => {
 export const submitKyc = async (req, res) => {
   const payload = { ...req.body, user: req.user._id, status: 'PENDING' };
 
-  // Attach uploaded files as /uploads/<filename>
   if (req.files) {
-    const fileFields = [
-      'aadharDoc',
-      'panDoc',
-      'rcDoc',
-      'pucDoc',
-      'insuranceDoc',
-      'licenseDoc',
-      'addressProofDoc',
-      'gstDoc',
-      'businessRegDoc',
-      'hotelLicenseDoc',
-      'guideLicenseDoc',
-      'fitnessDoc',
-      'permitDoc',
-      'bankProofDoc',
-    ];
-    for (const field of fileFields) {
-      if (req.files[field]?.[0]) {
-        payload[field] = `/uploads/${req.files[field][0].filename}`;
-      }
-    }
+    const { persistMulterFiles } = await import('../services/storageService.js');
+    const userId = req.user._id.toString();
+    const saved = await persistMulterFiles(req.files, 'kyc', (field) => ({
+      userId,
+      docField: field,
+    }));
+    Object.assign(payload, saved);
   }
 
   if (typeof payload.bankDetails === 'string') {
@@ -324,8 +310,12 @@ export const seedDocumentRequirements = async (req, res) => {
 };
 
 // ─── Listing CRUD helpers ────────────────────────────────────
-const crudCreate = (Model, ownerField) => async (req, res) => {
+const crudCreate = (Model, ownerField, { enforceSingleListing = false } = {}) => async (req, res) => {
   try {
+    if (enforceSingleListing) {
+      const blocked = await denyIfSingleListingExceeded(req, Model, ownerField);
+      if (blocked) return error(res, blocked.message, blocked.status);
+    }
     const data = stampOwnerOnCreate(req, { ...req.body }, ownerField);
     if (!data.slug && data.name) data.slug = slugify(data.name);
     const doc = await Model.create(data);
@@ -393,7 +383,7 @@ export const getMyHomestay = crudGetMine(Homestay, 'vendor');
 
 export const createHorse = async (req, res) => {
   req.body = stampPendingIfVendor(req, req.body);
-  return crudCreate(Horse, 'operator')(req, res);
+  return crudCreate(Horse, 'operator', { enforceSingleListing: true })(req, res);
 };
 export const updateHorse = crudUpdate(Horse, 'operator', { requireApproved: true });
 export const deleteHorse = crudDelete(Horse, 'operator');
@@ -411,7 +401,7 @@ export const getMyTent = crudGetMine(Tent, 'operator');
 
 export const createGuide = async (req, res) => {
   req.body = stampPendingIfVendor(req, req.body);
-  return crudCreate(Guide, 'user')(req, res);
+  return crudCreate(Guide, 'user', { enforceSingleListing: true })(req, res);
 };
 export const updateGuide = crudUpdate(Guide, 'user', { requireApproved: true });
 export const deleteGuide = crudDelete(Guide, 'user');
@@ -420,7 +410,7 @@ export const getMyGuide = crudGetMine(Guide, 'user');
 
 export const createDriver = async (req, res) => {
   req.body = stampPendingIfVendor(req, req.body);
-  return crudCreate(Driver, 'user')(req, res);
+  return crudCreate(Driver, 'user', { enforceSingleListing: true })(req, res);
 };
 export const updateDriver = crudUpdate(Driver, 'user', { requireApproved: true });
 export const deleteDriver = crudDelete(Driver, 'user');

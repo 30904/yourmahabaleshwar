@@ -10,6 +10,7 @@ import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../context/AuthContext';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
+import { listingCoverImage } from '../../utils/mediaUrl';
 
 export default function ComboDetailPage() {
   const { slug } = useParams();
@@ -62,7 +63,7 @@ export default function ComboDetailPage() {
         type="website"
       />
       <img
-        src={item.images?.[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200'}
+        src={listingCoverImage(item) || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200'}
         alt={item.name}
         className="h-64 w-full rounded-2xl object-cover"
       />

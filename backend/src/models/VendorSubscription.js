@@ -19,6 +19,8 @@ const vendorSubscriptionSchema = new mongoose.Schema(
     autoRenew: { type: Boolean, default: false },
     amountPaid: { type: Number, default: 0 },
     paymentRef: { type: String },
+    invoiceNumber: { type: String },
+    invoiceUrl: { type: String },
     unlimitedWarningSentAt: { type: Date },
   },
   { timestamps: true }

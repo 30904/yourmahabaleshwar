@@ -3,9 +3,13 @@ import { Outlet, useLocation } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminHeader from '../components/AdminHeader';
 
+import { HOMESTAY_VILLA } from '../../constants/homestayVillaLabels';
+
 const breadcrumbMap = {
   '/admin': ['Admin', 'Dashboard'],
   '/admin/properties': ['Admin', 'Properties'],
+  '/admin/properties/homestays': ['Admin', 'Properties', HOMESTAY_VILLA.plural],
+  '/admin/bookings/homestays': ['Admin', 'Bookings', HOMESTAY_VILLA.bookings],
   '/admin/listings/new': ['Admin', 'Listings', 'Add Listing'],
   '/admin/bookings': ['Admin', 'Bookings'],
   '/admin/bookings/unassigned': ['Admin', 'Bookings', 'Needs assignment'],
@@ -14,6 +18,10 @@ const breadcrumbMap = {
   '/admin/drivers': ['Admin', 'Drivers'],
   '/admin/finance': ['Admin', 'Finance'],
   '/admin/cms': ['Admin', 'CMS'],
+  '/admin/staff': ['Admin', 'Staff'],
+  '/admin/staff-management': ['Admin', 'Staff Management'],
+  '/admin/canvasser': ['Admin', 'Canvasser'],
+  '/admin/canvasser-management': ['Admin', 'Canvasser Management'],
   '/admin/settings': ['Admin', 'Settings'],
   '/admin/settings/service-monetization': ['Admin', 'Settings', 'Service subscriptions'],
   '/admin/customers/reviews': ['Admin', 'Reviews'],
@@ -25,7 +33,9 @@ export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  const breadcrumbs = breadcrumbMap[location.pathname] || ['Admin', location.pathname.split('/').pop()];
+  const breadcrumbs =
+    breadcrumbMap[location.pathname] ||
+    ['Admin', location.pathname.split('/').pop() === 'homestays' ? HOMESTAY_VILLA.plural : location.pathname.split('/').pop()];
 
   return (
     <div className={`admin-shell theme-scrollbar ${collapsed ? 'admin-shell-collapsed' : ''}`}>

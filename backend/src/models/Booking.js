@@ -61,6 +61,8 @@ const bookingSchema = new mongoose.Schema(
         type: { type: String },
         number: { type: String },
         nationality: { type: String },
+        documentUrl: { type: String },
+        documentName: { type: String },
       },
       coTravellers: [
         {

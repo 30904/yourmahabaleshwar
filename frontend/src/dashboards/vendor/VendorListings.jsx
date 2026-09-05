@@ -4,7 +4,7 @@ import { Pencil, PencilOff, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import { fetchMyVendorListings } from '../../services/vendorListingsApi';
+import { fetchMyVendorListings, isSingleListingVendorRole } from '../../services/vendorListingsApi';
 import Badge from '../../components/ui/Badge';
 import Card from '../../components/ui/Card';
 import Skeleton from '../../components/ui/Skeleton';
@@ -80,6 +80,7 @@ export default function VendorListings() {
   }, [listings, statusFilter]);
 
   const createLabel = t('vendor.createListing');
+  const singleListingLocked = isSingleListingVendorRole(user?.role) && listings.length >= 1;
 
   if (loading) return <Skeleton className="h-48" />;
 
@@ -88,11 +89,13 @@ export default function VendorListings() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-slate-900">{t('vendor.listings')}</h2>
-          <p className="mt-1 text-sm text-slate-500">{t('vendor.listingsHint')}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {singleListingLocked ? t('vendor.singleListingHint') : t('vendor.listingsHint')}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusFilterButtons value={statusFilter} onChange={setStatusFilter} t={t} />
-          <CreateListingButton label={createLabel} />
+          {!singleListingLocked && <CreateListingButton label={createLabel} />}
         </div>
       </div>
 

@@ -24,6 +24,7 @@ import {
   getPlatformMonetization,
 } from '../services/walletService.js';
 import { createNotification } from '../services/notificationService.js';
+import { issueSubscriptionInvoice } from '../services/subscriptionInvoiceService.js';
 import { sendEmail } from '../services/emailService.js';
 import { sendSMS } from '../services/smsService.js';
 import { sendWhatsApp } from '../services/whatsappService.js';
@@ -68,6 +69,28 @@ export const assignSubscription = async (req, res) => {
     paymentRef,
     autoRenew,
   });
+
+  if (Number(amountPaid) > 0) {
+    try {
+      const invoice = await issueSubscriptionInvoice({
+        vendorId,
+        kind: 'PLAN_SUBSCRIPTION',
+        title: plan.name || 'Vendor subscription plan',
+        description: `Plan active until ${endDate.toLocaleDateString('en-IN')}`,
+        amount: amountPaid,
+        paymentRef,
+        metadata: { planId: String(planId), planCode: plan.code },
+        vendorSubscriptionId: sub._id,
+      });
+      if (invoice) {
+        sub.invoiceNumber = invoice.invoiceNumber;
+        sub.invoiceUrl = invoice.invoiceUrl;
+        await sub.save();
+      }
+    } catch {
+      /* invoice non-blocking */
+    }
+  }
 
   if (plan.pointsIncluded > 0) {
     await rechargePoints({

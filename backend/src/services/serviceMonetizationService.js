@@ -10,6 +10,7 @@ import {
 } from '../constants/serviceMonetization.js';
 import { createNotification } from './notificationService.js';
 import { createOrder, verifyPaymentSignature } from './razorpayService.js';
+import { issueSubscriptionInvoice } from './subscriptionInvoiceService.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -196,7 +197,8 @@ export async function confirmPointsRecharge(vendorId, tenantType, paymentData, a
   vendor.pointBalance = (vendor.pointBalance || 0) + points;
   await vendor.save();
 
-  await WalletTransaction.create({
+  const paymentRef = razorpayPaymentId || razorpayOrderId;
+  const tx = await WalletTransaction.create({
     vendor: vendorId,
     type: 'POINTS_PURCHASE',
     points,
@@ -204,8 +206,29 @@ export async function confirmPointsRecharge(vendorId, tenantType, paymentData, a
     pointsAfter: vendor.pointBalance,
     balanceAfter: vendor.walletBalance,
     description: `Purchased ${points} points (${tenant})`,
-    metadata: { tenantType: tenant, paymentRef: razorpayPaymentId || razorpayOrderId },
+    metadata: { tenantType: tenant, paymentRef },
   });
+
+  let invoice = null;
+  try {
+    invoice = await issueSubscriptionInvoice({
+      vendorId,
+      kind: 'POINTS_RECHARGE',
+      title: 'Service points recharge',
+      description: `${points} points for ${tenant} bookings`,
+      amount,
+      paymentRef,
+      metadata: { tenantType: tenant, points },
+      walletTransactionId: tx._id,
+    });
+    if (invoice) {
+      tx.invoiceNumber = invoice.invoiceNumber;
+      tx.invoiceUrl = invoice.invoiceUrl;
+      await tx.save();
+    }
+  } catch {
+    /* invoice non-blocking */
+  }
 
   await createNotification({
     userId: vendorId,
@@ -215,7 +238,13 @@ export async function confirmPointsRecharge(vendorId, tenantType, paymentData, a
     link: '/dashboard/vendor/subscription',
   });
 
-  return { pointBalance: vendor.pointBalance, pointsAdded: points };
+  return {
+    pointBalance: vendor.pointBalance,
+    pointsAdded: points,
+    invoiceNumber: invoice?.invoiceNumber,
+    invoiceUrl: invoice?.invoiceUrl,
+    invoiceId: invoice?.invoiceId,
+  };
 }
 
 export async function createUnlimitedMonthlyOrder(vendorId, tenantType) {
@@ -247,6 +276,7 @@ export async function activateUnlimitedMonthly(vendorId, tenantType, { paymentRe
     { status: 'EXPIRED' }
   );
 
+  const paid = amountPaid ?? config.unlimitedMonthlyPrice;
   const sub = await VendorSubscription.create({
     vendor: vendorId,
     tenantType: tenant,
@@ -254,9 +284,31 @@ export async function activateUnlimitedMonthly(vendorId, tenantType, { paymentRe
     status: 'ACTIVE',
     startDate: now,
     endDate,
-    amountPaid: amountPaid ?? config.unlimitedMonthlyPrice,
+    amountPaid: paid,
     paymentRef,
   });
+
+  let invoiceMeta = null;
+  try {
+    const invoice = await issueSubscriptionInvoice({
+      vendorId,
+      kind: 'UNLIMITED_MONTHLY',
+      title: 'Unlimited monthly bookings',
+      description: `Unlimited ${tenant} bookings until ${endDate.toLocaleDateString('en-IN')}`,
+      amount: paid,
+      paymentRef,
+      metadata: { tenantType: tenant, endDate: endDate.toISOString() },
+      vendorSubscriptionId: sub._id,
+    });
+    if (invoice) {
+      sub.invoiceNumber = invoice.invoiceNumber;
+      sub.invoiceUrl = invoice.invoiceUrl;
+      await sub.save();
+      invoiceMeta = invoice;
+    }
+  } catch {
+    /* invoice non-blocking */
+  }
 
   await createNotification({
     userId: vendorId,
@@ -266,7 +318,11 @@ export async function activateUnlimitedMonthly(vendorId, tenantType, { paymentRe
     link: '/dashboard/vendor/subscription',
   });
 
-  return sub;
+  const payload = sub.toObject();
+  if (invoiceMeta) {
+    payload.invoiceId = invoiceMeta.invoiceId;
+  }
+  return payload;
 }
 
 export async function confirmUnlimitedMonthly(vendorId, tenantType, paymentData) {

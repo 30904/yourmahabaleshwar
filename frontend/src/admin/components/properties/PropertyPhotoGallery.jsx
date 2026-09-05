@@ -1,22 +1,46 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { ImagePlus, Star, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { uploadStorageFile } from '../../../services/uploadApi';
+import { getMediaUrl } from '../../../utils/mediaUrl';
 
-export default function PropertyPhotoGallery({ images, coverIndex, onChange, onCoverChange }) {
+export default function PropertyPhotoGallery({ images, coverIndex, onChange, onCoverChange, propertyId }) {
   const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
-  const addFiles = (e) => {
-    const files = Array.from(e.target.files || []);
+  const uploadFiles = async (files) => {
     if (!files.length) return;
-    const readers = files.map(
-      (file) =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const keys = await Promise.all(
+        files.map(async (file) => {
+          const result = await uploadStorageFile(file, {
+            category: 'property-image',
+            propertyId: propertyId || 'draft',
+          });
+          return result.key || result.url;
         })
-    );
-    Promise.all(readers).then((urls) => onChange([...images, ...urls]));
+      );
+      onChange([...images, ...keys]);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Photo upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onPick = async (e) => {
+    const files = Array.from(e.target.files || []);
+    await uploadFiles(files);
     e.target.value = '';
+  };
+
+  const onDrop = async (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith('image/'));
+    await uploadFiles(files);
   };
 
   const remove = (index) => {
@@ -29,15 +53,23 @@ export default function PropertyPhotoGallery({ images, coverIndex, onChange, onC
   return (
     <div className="admin-photo-gallery">
       <div
-        className="admin-photo-upload"
+        className={`admin-photo-upload ${dragOver ? 'file-dropzone-active' : ''}`}
         role="button"
         tabIndex={0}
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
+        onKeyDown={(e) => e.key === 'Enter' && !uploading && inputRef.current?.click()}
       >
-        <input ref={inputRef} type="file" multiple accept="image/*" className="hidden" onChange={addFiles} />
+        <input ref={inputRef} type="file" multiple accept="image/*" className="hidden" onChange={onPick} disabled={uploading} />
         <ImagePlus size={28} className="text-admin-primary" />
-        <span className="font-semibold text-slate-800">Upload property photos</span>
+        <span className="font-semibold text-slate-800">
+          {uploading ? 'Uploading…' : 'Drag & drop property photos'}
+        </span>
         <span className="text-xs text-slate-500">PNG, JPG · Min 3 photos recommended for best conversion</span>
         <span className="admin-btn-secondary mt-2 !text-sm pointer-events-none">Choose files</span>
       </div>
@@ -45,8 +77,8 @@ export default function PropertyPhotoGallery({ images, coverIndex, onChange, onC
       {images.length > 0 && (
         <div className="admin-photo-grid">
           {images.map((src, i) => (
-            <div key={`${i}-${src.slice(0, 24)}`} className={`admin-photo-item ${i === coverIndex ? 'admin-photo-item-cover' : ''}`}>
-              <img src={src} alt="" />
+            <div key={`${i}-${String(src).slice(0, 24)}`} className={`admin-photo-item ${i === coverIndex ? 'admin-photo-item-cover' : ''}`}>
+              <img src={getMediaUrl(src)} alt="" />
               {i === coverIndex && (
                 <span className="admin-photo-cover-badge">
                   <Star size={12} fill="currentColor" /> Cover photo
@@ -67,4 +99,3 @@ export default function PropertyPhotoGallery({ images, coverIndex, onChange, onC
     </div>
   );
 }
-

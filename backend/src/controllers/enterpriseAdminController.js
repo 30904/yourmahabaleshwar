@@ -15,7 +15,9 @@ import Coupon from '../models/Coupon.js';
 import PlatformSettings from '../models/PlatformSettings.js';
 import Homestay from '../models/Homestay.js';
 import Horse from '../models/Horse.js';
-import { ROLES, VENDOR_ROLES } from '../constants/roles.js';
+import Review from '../models/Review.js';
+import { ROLES, VENDOR_ROLES, STAFF_ROLES } from '../constants/roles.js';
+import { canApprove, canSeeFinance } from '../utils/roleAccess.js';
 import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices } from '../utils/listingEnrich.js';
 import { normalizePropertyImages } from '../utils/propertyImages.js';
@@ -25,12 +27,15 @@ import {
   startSubscriptionOnApproval,
 } from '../services/stayListingSubscriptionService.js';
 
-function buildHotelData(body, userId) {
+function buildHotelData(body, userId, options = {}) {
   const slug = body.name
     ?.toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
+
+  const staffCreated = options.staffCreated === true;
+  const autoApprove = !staffCreated && body.isActive !== false && body.isActive !== 'false';
 
   return {
     name: body.name?.trim(),
@@ -42,11 +47,8 @@ function buildHotelData(body, userId) {
     location: body.location,
     amenities: Array.isArray(body.amenities) ? body.amenities : [],
     rating: Number(body.rating) || 4,
-    isActive: body.isActive !== false && body.isActive !== 'false',
-    approvalStatus:
-      body.isActive !== false && body.isActive !== 'false'
-        ? APPROVAL_STATUS.APPROVED
-        : APPROVAL_STATUS.PENDING,
+    isActive: autoApprove,
+    approvalStatus: autoApprove ? APPROVAL_STATUS.APPROVED : APPROVAL_STATUS.PENDING,
     isFeatured: body.isFeatured === true || body.isFeatured === 'true',
     checkInTime: body.checkInTime || '14:00',
     checkOutTime: body.checkOutTime || '11:00',
@@ -168,7 +170,7 @@ export const getEnterpriseDashboard = async (req, res) => {
     { $project: { name: '$hotel.name', bookings: 1, revenue: 1 } },
   ]);
 
-  return success(res, {
+  const payload = {
     kpis: {
       totalRevenue: revenueAgg[0]?.total || 0,
       commission: revenueAgg[0]?.commission || 0,
@@ -196,7 +198,30 @@ export const getEnterpriseDashboard = async (req, res) => {
     recentBookings,
     recentEnquiries,
     pendingKycList,
-  });
+  };
+
+  if (!canSeeFinance(req.user?.role)) {
+    delete payload.kpis.totalRevenue;
+    delete payload.kpis.commission;
+    delete payload.kpis.monthRevenue;
+    delete payload.monthlyRevenue;
+    payload.dailyBookings = (payload.dailyBookings || []).map(({ _id, bookings: count }) => ({
+      _id,
+      bookings: count,
+    }));
+    payload.topHotels = (payload.topHotels || []).map(({ name, bookings: count }) => ({
+      name,
+      bookings: count,
+    }));
+    payload.recentBookings = (payload.recentBookings || []).map((b) => {
+      const row = b.toObject ? b.toObject() : { ...b };
+      delete row.total;
+      delete row.commission;
+      return row;
+    });
+  }
+
+  return success(res, payload);
 };
 
 export const getAdminProperties = async (req, res) => {
@@ -228,11 +253,14 @@ export const createAdminProperty = async (req, res) => {
   try {
     if (!req.body.name?.trim()) return error(res, 'Property name is required', 400);
 
-    const images = await normalizePropertyImages(req.body.images || []);
+    const images = await normalizePropertyImages(req.body.images || [], {
+      propertyId: req.body.propertyId || 'draft',
+    });
     if (!images.length) return error(res, 'At least one property image is required', 400);
 
+    const staffCreated = STAFF_ROLES.includes(req.user?.role);
     const hotel = await Hotel.create({
-      ...buildHotelData(req.body, req.user._id),
+      ...buildHotelData(req.body, req.user._id, { staffCreated }),
       images,
     });
 
@@ -252,6 +280,9 @@ export const createAdminProperty = async (req, res) => {
 /** Toggle active flag only — safe for admin list actions (does not wipe other fields). */
 export const setAdminPropertyActive = async (req, res) => {
   try {
+    if (!canApprove(req.user?.role)) {
+      return error(res, 'Only super admin can approve or reject listings', 403);
+    }
     const { isActive, listingType, commissionRate, renewalPrice } = req.body;
     if (typeof isActive !== 'boolean') return error(res, 'isActive boolean required', 400);
 
@@ -282,7 +313,7 @@ export const setAdminPropertyActive = async (req, res) => {
 
     if (listingType === 'HOMESTAY') {
       const doc = await Homestay.findByIdAndUpdate(req.params.id, update, { new: true });
-      if (!doc) return error(res, 'Homestay not found', 404);
+      if (!doc) return error(res, 'Homestay/Villa not found', 404);
       if (isActivating) {
         await startSubscriptionOnApproval('HOMESTAY', doc._id, { renewalPrice });
       }
@@ -370,7 +401,9 @@ export const updateAdminProperty = async (req, res) => {
     delete update.slug;
 
     if (req.body.images?.length) {
-      update.images = await normalizePropertyImages(req.body.images);
+      update.images = await normalizePropertyImages(req.body.images, {
+        propertyId: req.params.id,
+      });
     }
 
     if (req.body.renewalPrice != null && Number.isFinite(Number(req.body.renewalPrice))) {
@@ -489,6 +522,101 @@ export const getAdminVendors = async (req, res) => {
 export const getAdminCustomers = async (req, res) => {
   const customers = await User.find({ role: ROLES.CUSTOMER }).select('-password').sort('-createdAt').limit(200);
   return success(res, customers);
+};
+
+function bookingListingName(booking) {
+  return (
+    booking.hotel?.name ||
+    booking.tent?.name ||
+    booking.homestay?.name ||
+    booking.guide?.name ||
+    booking.driver?.name ||
+    booking.horse?.name ||
+    '—'
+  );
+}
+
+export const getAdminCustomerDetail = async (req, res) => {
+  const customer = await User.findOne({ _id: req.params.id, role: ROLES.CUSTOMER }).select(
+    '-password -refreshToken -resetPasswordToken -resetPasswordExpire'
+  );
+  if (!customer) return error(res, 'Customer not found', 404);
+
+  const [bookings, enquiries, reviewsCount, paidAgg, totalBookings] = await Promise.all([
+    Booking.find({ customer: customer._id })
+      .populate('hotel tent guide driver horse homestay room')
+      .sort('-createdAt')
+      .limit(50),
+    Enquiry.find({
+      $or: [
+        { customer: customer._id },
+        ...(customer.email ? [{ email: customer.email }] : []),
+        ...(customer.phone ? [{ phone: customer.phone }] : []),
+      ],
+    })
+      .sort('-createdAt')
+      .limit(20),
+    Review.countDocuments({ user: customer._id }),
+    Booking.aggregate([
+      { $match: { customer: customer._id, paymentStatus: 'PAID' } },
+      { $group: { _id: null, total: { $sum: '$total' }, count: { $sum: 1 } } },
+    ]),
+    Booking.countDocuments({ customer: customer._id }),
+  ]);
+
+  const documents = [];
+  if (customer.avatar) {
+    documents.push({
+      id: 'avatar',
+      label: 'Profile photo',
+      url: customer.avatar,
+      uploadedAt: customer.updatedAt,
+    });
+  }
+
+  for (const booking of bookings) {
+    const idProof = booking.guestRegistration?.idProof;
+    if (!idProof?.documentUrl) continue;
+    documents.push({
+      id: `${booking._id}-id-proof`,
+      label: `ID proof — ${booking.bookingNumber || 'Booking'}`,
+      url: idProof.documentUrl,
+      documentName: idProof.documentName,
+      idType: idProof.type,
+      idNumber: idProof.number,
+      nationality: idProof.nationality,
+      bookingId: booking._id,
+      bookingNumber: booking.bookingNumber,
+      bookingType: booking.type,
+      uploadedAt: booking.createdAt,
+    });
+  }
+
+  return success(res, {
+    customer,
+    stats: {
+      bookingsCount: totalBookings,
+      reviewsCount,
+      totalSpent: paidAgg[0]?.total || 0,
+      paidBookingsCount: paidAgg[0]?.count || 0,
+    },
+    bookings: bookings.map((b) => ({
+      _id: b._id,
+      bookingNumber: b.bookingNumber,
+      type: b.type,
+      status: b.status,
+      paymentStatus: b.paymentStatus,
+      total: b.total,
+      createdAt: b.createdAt,
+      checkIn: b.checkIn,
+      checkOut: b.checkOut,
+      guests: b.guests,
+      guestRegistration: b.guestRegistration,
+      listingName: bookingListingName(b),
+    })),
+    documents,
+    enquiries,
+  });
 };
 
 export const getCoupons = async (req, res) => success(res, await Coupon.find().sort('-createdAt'));

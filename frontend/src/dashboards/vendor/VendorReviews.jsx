@@ -4,7 +4,6 @@ import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { fetchVendorReviews } from '../../services/vendorListingsApi';
-import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Skeleton from '../../components/ui/Skeleton';
@@ -65,7 +64,6 @@ export default function VendorReviews() {
                   <th className="px-5 py-3 font-semibold">{t('vendor.reviewRating')}</th>
                   <th className="px-5 py-3 font-semibold">{t('vendor.reviewComment')}</th>
                   <th className="px-5 py-3 font-semibold">{t('vendor.bookingRef')}</th>
-                  <th className="px-5 py-3 font-semibold">{t('common.status')}</th>
                   <th className="px-5 py-3 font-semibold" />
                 </tr>
               </thead>
@@ -86,9 +84,6 @@ export default function VendorReviews() {
                       </td>
                       <td className="max-w-xs px-5 py-3 text-slate-600">{item.comment || '—'}</td>
                       <td className="px-5 py-3 font-mono text-xs text-slate-500">{item.bookingRef || '—'}</td>
-                      <td className="px-5 py-3">
-                        <ApprovalBadge approved={item.isApproved} t={t} />
-                      </td>
                       <td className="px-5 py-3 text-right">
                         {to ? (
                           <Link to={to} className="text-sm font-medium text-primary hover:underline">
@@ -133,7 +128,6 @@ function ReviewCard({ item, t }) {
             {item.listingType ? t(VERTICAL_LABEL_KEY[item.listingType] || 'vendor.listings') : ''}
           </p>
         </div>
-        <ApprovalBadge approved={item.isApproved} t={t} />
       </div>
       <div className="mt-2">
         <StarRating rating={item.rating} />
@@ -146,14 +140,6 @@ function ReviewCard({ item, t }) {
         </Link>
       ) : null}
     </Card>
-  );
-}
-
-function ApprovalBadge({ approved, t }) {
-  return (
-    <Badge color={approved ? 'success' : 'warning'}>
-      {approved ? t('vendor.reviewApproved') : t('vendor.reviewPending')}
-    </Badge>
   );
 }
 

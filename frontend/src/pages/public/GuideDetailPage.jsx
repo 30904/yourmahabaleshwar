@@ -10,6 +10,7 @@ import { dummyGuides } from '../../data/dummyListings';
 import { normalizeGuide } from '../../utils/listingHelpers';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
+import { resolveMediaUrls } from '../../utils/mediaUrl';
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900';
 
@@ -34,7 +35,7 @@ export default function GuideDetailPage() {
   if (loading) return <div className="page-container py-8"><Skeleton className="h-96" /></div>;
   if (!item) return <div className="page-container py-8">Not found</div>;
 
-  const images = item.images?.length ? item.images : [FALLBACK_IMG];
+  const images = item.images?.length ? resolveMediaUrls(item.images) : [FALLBACK_IMG];
   const priceFrom = item.package6hr ?? item.priceFrom;
 
   const bookPath = '/guides/book';

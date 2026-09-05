@@ -3,12 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, Images } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchHorseBySlug, fetchReviews } from '../../services/listingsApi';
+import ListingReviewsSection from '../../components/property/ListingReviewsSection';
 import ReviewScore from '../../components/property/ReviewScore';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
+import { resolveMediaUrls } from '../../utils/mediaUrl';
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5f?w=900';
 
@@ -38,7 +40,7 @@ export default function HorseDetailPage() {
   if (loading) return <div className="page-container py-8"><Skeleton className="h-96" /></div>;
   if (!item) return <div className="page-container py-8">Not found</div>;
 
-  const images = item.images?.length ? item.images : [FALLBACK_IMG];
+  const images = item.images?.length ? resolveMediaUrls(item.images) : [FALLBACK_IMG];
   const priceFrom = item.priceFrom ?? item.routes?.[0]?.price;
   const description = item.description || item.horseDetails;
 
@@ -169,19 +171,14 @@ export default function HorseDetailPage() {
       )}
 
       {reviews.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-lg font-bold text-slate-900">{t('horseGuestBooking.reviewsTitle')}</h2>
-          <div className="mt-3 space-y-3">
-            {reviews.map((r) => (
-              <div key={r._id} className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-                <p className="font-medium">
-                  {r.user?.name} · {r.rating}/5
-                </p>
-                <p className="mt-1 text-sm text-slate-600">{r.comment}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <ListingReviewsSection
+          reviews={reviews}
+          score={item.score || item.rating}
+          label={item.scoreLabel}
+          reviewCount={reviews.length || item.reviewCount}
+          className="mt-8"
+          scoreSize="md"
+        />
       )}
 
     </div>

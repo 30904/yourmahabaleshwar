@@ -16,7 +16,7 @@ const reviewSchema = new mongoose.Schema(
       type: String,
       enum: ['HOTEL', 'RESORT', 'HOMESTAY', 'TENT', 'GUIDE', 'TAXI', 'HORSE'],
     },
-    isApproved: { type: Boolean, default: false },
+    isApproved: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

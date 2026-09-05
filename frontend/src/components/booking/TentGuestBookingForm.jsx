@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import ImageUploadField from '../ui/ImageUploadField';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
@@ -49,6 +50,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     purpose: 'TOURISM',
     idType: 'AADHAAR',
     idNumber: '',
+    idProofDocumentUrl: '',
     nationality: 'INDIAN',
     specialRequests: '',
     coTravellers: [],
@@ -153,6 +155,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
             type: form.idType,
             number: form.idNumber,
             nationality: form.nationality || 'INDIAN',
+            documentUrl: form.idProofDocumentUrl || undefined,
           },
           coTravellers: (form.coTravellers || []).filter((c) => String(c.fullName || '').trim()),
           tentLabel,
@@ -324,6 +327,17 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               </div>
             </div>
             <Input label={t('stayGuestBooking.idNumber')} value={form.idNumber} onChange={(e) => setField('idNumber', e.target.value)} required />
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label={t('stayGuestBooking.idProofUpload')}
+                hint={t('stayGuestBooking.idProofUploadHint')}
+                value={form.idProofDocumentUrl || ''}
+                onChange={(url) => setField('idProofDocumentUrl', url)}
+                category="booking-id-proof"
+                meta={{ userId: user?._id }}
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+              />
+            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('stayGuestBooking.nationality')}</label>
               <select className="input-field" value={form.nationality} onChange={(e) => setField('nationality', e.target.value)}>

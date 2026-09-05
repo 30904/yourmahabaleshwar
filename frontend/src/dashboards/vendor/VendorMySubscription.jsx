@@ -11,6 +11,7 @@ import { fetchMyStaySubscriptions, payForStaySubscriptionRenewal } from '../../s
 import { formatCurrency } from '../../utils/format';
 import { ROLES } from '../../constants/roles';
 import VendorServiceSubscription from './VendorServiceSubscription';
+import VendorSubscriptionInvoices from './VendorSubscriptionInvoices';
 
 const STAY_ROLES = new Set([ROLES.HOTEL_VENDOR, ROLES.HOMESTAY_VENDOR]);
 const SERVICE_ROLES = new Set([
@@ -43,6 +44,7 @@ function VendorStaySubscription() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [renewingId, setRenewingId] = useState(null);
+  const [invoiceRefresh, setInvoiceRefresh] = useState(0);
 
   const load = () => {
     setLoading(true);
@@ -61,6 +63,7 @@ function VendorStaySubscription() {
     try {
       await payForStaySubscriptionRenewal(item.listingType, item.listingId, user);
       toast.success(t('staySubscription.renewSuccess'));
+      setInvoiceRefresh((n) => n + 1);
       load();
     } catch (err) {
       toast.error(err.response?.data?.message || err.message || t('staySubscription.renewFailed'));
@@ -162,6 +165,8 @@ function VendorStaySubscription() {
           })}
         </div>
       )}
+
+      <VendorSubscriptionInvoices refreshKey={invoiceRefresh} />
     </div>
   );
 }

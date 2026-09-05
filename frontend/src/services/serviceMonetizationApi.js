@@ -18,7 +18,7 @@ export const confirmServiceUnlimitedMonthly = (payload) =>
 
 export const payForServicePoints = async (amount, user) => {
   const orderResult = await orderServicePointsRecharge(amount);
-  await payWithRazorpay({
+  return payWithRazorpay({
     orderResult,
     user,
     description: 'Points recharge',
@@ -41,7 +41,7 @@ export const payForServicePoints = async (amount, user) => {
 
 export const payForServiceUnlimited = async (user) => {
   const orderResult = await orderServiceUnlimitedMonthly();
-  await payWithRazorpay({
+  return payWithRazorpay({
     orderResult,
     user,
     description: 'Unlimited monthly bookings',

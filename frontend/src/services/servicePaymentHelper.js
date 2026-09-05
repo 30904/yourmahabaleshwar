@@ -30,8 +30,8 @@ export async function payWithRazorpay({ orderResult, user, description, onSucces
       prefill: { name: user?.name, email: user?.email, contact: user?.phone },
       handler: async (response) => {
         try {
-          await onSuccess(response);
-          resolve(response);
+          const result = await onSuccess(response);
+          resolve(result ?? response);
         } catch (err) {
           reject(err);
         }

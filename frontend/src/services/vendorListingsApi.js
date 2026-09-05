@@ -35,6 +35,16 @@ export const ROLE_CREATE_VERTICALS = {
   [ROLES.PRODUCT_VENDOR]: ['PRODUCT'],
 };
 
+/** These vendors may own only one listing. */
+export const SINGLE_LISTING_VENDOR_ROLES = [
+  ROLES.GUIDE,
+  ROLES.TAXI_OPERATOR,
+  ROLES.DRIVER,
+  ROLES.HORSE_OPERATOR,
+];
+
+export const isSingleListingVendorRole = (role) => SINGLE_LISTING_VENDOR_ROLES.includes(role);
+
 export const ADMIN_CREATE_VERTICALS = [
   'HOTEL',
   'RESORT',

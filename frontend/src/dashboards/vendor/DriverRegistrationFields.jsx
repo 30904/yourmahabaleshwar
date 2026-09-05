@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 import { VEHICLE_TYPES } from './vendorListingFormConfig';
 
@@ -223,12 +224,11 @@ export default function DriverRegistrationFields({ form, setField, isEdit = fals
             onChange={(e) => setField('hourlyRate', e.target.value)}
             required
           />
-          <Input
-            className="sm:col-span-2"
+          <ListingImageField
             label={t('driverRegistration.profilePhotoUrl')}
             value={form.imageUrl}
-            onChange={(e) => setField('imageUrl', e.target.value)}
-            placeholder="https://"
+            onChange={(url) => setField('imageUrl', url)}
+            vertical="DRIVER"
           />
           <p className="sm:col-span-2 text-xs text-slate-500">{t('driverRegistration.commissionNote')}</p>
         </div>

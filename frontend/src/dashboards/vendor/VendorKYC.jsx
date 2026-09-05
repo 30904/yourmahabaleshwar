@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import FileDropzone from '../../components/ui/FileDropzone';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -231,26 +232,21 @@ export default function VendorKYC() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {docs.map((d) => (
-            <label
-              key={d.code}
-              className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 p-6 hover:border-primary"
-            >
-              <span className="text-sm font-medium">{d.label}</span>
-              {uploadedHints[d.code] && !files[d.code] && (
-                <span className="mt-1 text-xs text-emerald-600">{t('vendor.alreadyUploaded')}</span>
-              )}
-              {files[d.code] && (
-                <span className="mt-1 text-xs text-primary">{files[d.code].name}</span>
-              )}
-              <input
-                type="file"
-                className="mt-2 text-xs"
-                accept="image/*,.pdf"
-                onChange={(e) => onFile(d.code, e.target.files?.[0])}
+          {docs.map((d) => {
+            const field = CODE_TO_FIELD[d.code];
+            const existing = field ? uploadedHints[d.code] : '';
+            return (
+              <FileDropzone
+                key={d.code}
+                label={d.label}
+                hint="JPG, PNG or PDF"
+                value={files[d.code] || null}
+                existingUrl={!files[d.code] ? existing : ''}
+                onChange={(file) => onFile(d.code, file)}
+                disabled={status === 'APPROVED'}
               />
-            </label>
-          ))}
+            );
+          })}
         </div>
 
         <Button type="submit" className="mt-2" disabled={saving || status === 'APPROVED'}>

@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropertyCard from '../../components/property/PropertyCard';
 import BookingSearchBar from '../../components/search/BookingSearchBar';
 import Skeleton from '../../components/ui/Skeleton';
 import { fetchHomestays } from '../../services/listingsApi';
+import { HOMESTAY_VILLA } from '../../constants/homestayVillaLabels';
 
 export default function HomestaysPage() {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -14,8 +17,8 @@ export default function HomestaysPage() {
     <div className="bg-background pb-16">
       <div className="bg-primary py-6 text-white"><div className="page-container"><BookingSearchBar compact /></div></div>
       <div className="page-container py-8">
-        <h1 className="text-3xl font-bold">Homestays</h1>
-        <p className="mt-2 text-slate-600">{items.length} local homes in Mahabaleshwar</p>
+        <h1 className="text-3xl font-bold">{t('nav.homestays', HOMESTAY_VILLA.plural)}</h1>
+        <p className="mt-2 text-slate-600">{items.length} {t('home.categories.homestaysCount', 'local homes')} in Mahabaleshwar</p>
         <div className="mt-8 space-y-4">
           {loading ? <Skeleton className="h-52" /> : items.map((t) => (
             <PropertyCard key={t._id} item={t} linkPrefix="/homestays" priceKey="priceFrom" priceSuffix="/ night" itemType="HOMESTAY" />

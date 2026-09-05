@@ -81,7 +81,7 @@ export const getHomestayBySlug = async (req, res) => {
     isActive: { $ne: false },
     ...publicStaySubscriptionFilter(),
   });
-  if (!item) return error(res, 'Homestay not found', 404);
+  if (!item) return error(res, 'Homestay/Villa not found', 404);
   return success(res, enrichHomestay(item));
 };
 

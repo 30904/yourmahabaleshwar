@@ -5,6 +5,7 @@ import StayListingSubscription from '../models/StayListingSubscription.js';
 import { APPROVAL_STATUS, resolveListingStatus } from '../utils/listingApproval.js';
 import { createNotification } from './notificationService.js';
 import { createOrder, verifyPaymentSignature } from './razorpayService.js';
+import { issueSubscriptionInvoice } from './subscriptionInvoiceService.js';
 
 export const STAY_LISTING_TYPES = new Set(['HOTEL', 'RESORT', 'HOMESTAY']);
 
@@ -192,6 +193,36 @@ export async function renewStayListingSubscription(
     renewalPrice,
   });
 
+  const charged = Number(amountPaid ?? amount);
+  let invoiceMeta = null;
+  if (charged > 0) {
+    try {
+      const invoice = await issueSubscriptionInvoice({
+        vendorId: listing.vendor,
+        kind: 'STAY_LISTING_RENEWAL',
+        title: 'Stay listing subscription renewal',
+        description: `${listing.name} · Year ${yearNumber} · valid until ${endDate.toLocaleDateString('en-IN')}`,
+        amount: charged,
+        paymentRef,
+        metadata: {
+          listingType: type,
+          listingId: String(listingId),
+          listingName: listing.name,
+          yearNumber,
+        },
+        stayListingSubscriptionId: sub._id,
+      });
+      if (invoice) {
+        sub.invoiceNumber = invoice.invoiceNumber;
+        sub.invoiceUrl = invoice.invoiceUrl;
+        await sub.save();
+        invoiceMeta = invoice;
+      }
+    } catch {
+      /* invoice non-blocking */
+    }
+  }
+
   await createNotification({
     userId: listing.vendor,
     title: 'Listing subscription renewed',
@@ -199,7 +230,9 @@ export async function renewStayListingSubscription(
     type: 'SYSTEM',
   });
 
-  return sub;
+  const payload = sub.toObject();
+  if (invoiceMeta) payload.invoiceId = invoiceMeta.invoiceId;
+  return payload;
 }
 
 export async function createRenewalOrder(listingType, listingId, vendorId) {

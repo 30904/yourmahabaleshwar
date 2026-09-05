@@ -1,4 +1,4 @@
-/** Client legal copy for homestay partner onboarding (S.M. Enterprises). */
+/** Client legal copy for homestay/villa partner onboarding (S.M. Enterprises). */
 
 export const HOMESTAY_FORM_AMENITIES = [
   'Swimming Pool',
@@ -12,14 +12,14 @@ export const HOMESTAY_FORM_AMENITIES = [
 
 export const HOMESTAY_REGISTRATION_TERMS = [
   'All guests must present a valid government-issued photo ID at registration / check-in.',
-  'Illegal or unethical activities are strictly prohibited within the homestay premises.',
+  'Illegal or unethical activities are strictly prohibited within the homestay/villa premises.',
   'Guests are responsible for their valuables; management is not liable for loss or theft.',
   'Any damage to the property will be charged to the guest.',
   'Check-out time must be followed; late check-out may incur additional charges.',
 ];
 
 export const HOMESTAY_TERMS_AND_CONDITIONS = {
-  title: 'Homestay Terms & Conditions',
+  title: 'Homestay/Villa Terms & Conditions',
   sections: [
     {
       heading: '1. Registration & Identification',

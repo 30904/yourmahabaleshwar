@@ -2,6 +2,7 @@ import { Menu, Search, Bell, MessageSquare, Plus, ChevronDown, LogOut } from 'lu
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getRoleLabel } from '../../constants/roles';
 
 export default function AdminHeader({ onMenuClick, breadcrumbs = [] }) {
   const { user, logout } = useAuth();
@@ -51,7 +52,7 @@ export default function AdminHeader({ onMenuClick, breadcrumbs = [] }) {
             <span className="admin-avatar">{user?.name?.charAt(0) || 'A'}</span>
             <span className="hidden text-left sm:block">
               <span className="block text-sm font-semibold text-slate-900">{user?.name}</span>
-              <span className="block text-xs text-slate-500">Super Admin</span>
+              <span className="block text-xs text-slate-500">{getRoleLabel(user?.role)}</span>
             </span>
             <ChevronDown size={16} className="text-slate-400" />
           </button>

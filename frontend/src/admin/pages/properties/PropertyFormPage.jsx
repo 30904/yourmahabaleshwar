@@ -434,6 +434,7 @@ export default function PropertyFormPage() {
               coverIndex={coverIndex}
               onChange={setGallery}
               onCoverChange={setCoverIndex}
+              propertyId={id}
             />
           </section>
         );

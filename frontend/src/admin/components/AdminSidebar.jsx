@@ -3,12 +3,15 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '../../components/common/Logo';
-import { adminNavGroups } from '../config/navigation';
+import useAdminAccess from '../../hooks/useAdminAccess';
+import { getAdminNavForRole } from '../config/navigation';
 
 export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
   const location = useLocation();
+  const { role, isStaff } = useAdminAccess();
+  const navGroups = getAdminNavForRole(role);
   const [openGroups, setOpenGroups] = useState(() =>
-    Object.fromEntries(adminNavGroups.filter((g) => g.label).map((g) => [g.id, true]))
+    Object.fromEntries(navGroups.filter((g) => g.label).map((g) => [g.id, true]))
   );
 
   const toggleGroup = (id) => {
@@ -22,7 +25,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
           <div>
             <Logo variant="sm" className="!h-10" />
             <p className="mt-2 text-xs font-semibold text-slate-500">SM Enterprises</p>
-            <p className="text-[10px] uppercase tracking-wider text-slate-400">Owner Panel</p>
+            <p className="text-[10px] uppercase tracking-wider text-slate-400">{isStaff ? 'Staff Panel' : 'Owner Panel'}</p>
           </div>
         )}
         <button type="button" onClick={onToggle} className="admin-sidebar-toggle hidden lg:flex" aria-label="Toggle sidebar">
@@ -31,7 +34,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
       </div>
 
       <nav className="admin-sidebar-nav theme-scrollbar">
-        {adminNavGroups.map((group) => (
+        {navGroups.map((group) => (
           <div key={group.id} className="admin-nav-group">
             {group.label && !collapsed && (
               <button type="button" className="admin-nav-group-label" onClick={() => toggleGroup(group.id)}>
