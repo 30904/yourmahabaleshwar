@@ -6,6 +6,7 @@ import * as catalog from '../controllers/catalogController.js';
 import * as phase1b from '../controllers/phase1bController.js';
 import * as domain from '../controllers/domainController.js';
 import * as staff from '../controllers/staffController.js';
+import * as canvasser from '../controllers/canvasserController.js';
 import * as phase4 from '../controllers/phase4Controller.js';
 import * as staySub from '../controllers/stayListingSubscriptionController.js';
 import * as serviceMon from '../controllers/serviceMonetizationController.js';
@@ -76,6 +77,7 @@ router.post('/faqs', authorize(...staffAndAdmin), admin.createFaq);
 
 // Phase 1B
 router.post('/phase1b/seed-defaults', authorize(...adminOnly), phase1b.seedPhase1bDefaults);
+router.post('/cleanup/duplicate-service-listings', authorize(...adminOnly), admin.cleanupDuplicateServiceListings);
 
 router.get('/subscriptions/plans', authorize(...staffAndAdmin, ...VENDOR_ROLES), phase1b.listPlans);
 router.post('/subscriptions/plans', authorize(...adminOnly), phase1b.createPlan);
@@ -171,6 +173,11 @@ router.get('/staff/:id', authorize(...adminOnly), staff.getStaff);
 router.post('/staff', authorize(...adminOnly), staff.createStaff);
 router.patch('/staff/:id', authorize(...adminOnly), staff.updateStaff);
 router.post('/staff/:id/reset-password', authorize(...adminOnly), staff.resetStaffPassword);
+
+router.get('/canvassers', authorize(...staffAndAdmin), canvasser.listCanvassers);
+router.get('/canvassers/:id', authorize(...staffAndAdmin), canvasser.getCanvasser);
+router.post('/canvassers', authorize(...staffAndAdmin), canvasser.createCanvasser);
+router.patch('/canvassers/:id', authorize(...staffAndAdmin), canvasser.updateCanvasser);
 
 router.get('/commission-rates', authorize(...adminOnly), domain.getCommissionRates);
 router.put('/commission-rates', authorize(...adminOnly), domain.updateListingCommission);

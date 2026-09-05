@@ -173,7 +173,10 @@ export default function BookingsList({ mode = 'customer', allowStatusUpdate = fa
                   <p className="mt-1 text-xs text-emerald-700">{t('serviceBooking.assignedToYou')}</p>
                 )}
                 {mode !== 'customer' && b.customer?.name && (
-                  <p className="text-sm text-slate-600">{b.customer.name} · {b.customer.email}</p>
+                  <p className="text-sm text-slate-600">
+                    {b.customer.name}
+                    {b.customer.phone ? ` · ${b.customer.phone}` : b.customer.email ? ` · ${b.customer.email}` : ''}
+                  </p>
                 )}
                 {b.guestRegistration?.leadGuest?.fullName && (
                   <div className="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">

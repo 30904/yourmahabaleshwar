@@ -241,6 +241,14 @@
     "listingType": "Listing type",
     "listingCreatedApproved": "Listing created and approved — it is live immediately."
   },
+  "subscriptionInvoices": {
+    "title": "Subscription invoices",
+    "subtitle": "Invoices issued by Your Mahabaleshwar for points, unlimited plans, and listing renewals.",
+    "empty": "No subscription invoices yet.",
+    "loadFailed": "Could not load invoices",
+    "downloadFailed": "Could not download invoice",
+    "download": "Download"
+  },
   "staySubscription": {
     "nav": "My Subscription",
     "title": "My Subscription",
@@ -446,7 +454,9 @@
     "driverFormHint": "Complete the driver partner registration form. Your listing stays pending until admin approval.",
     "driverOnboardingWelcome": "Welcome. Finish this registration form to submit your driver profile. You can upload KYC documents anytime from the KYC page.",
     "horseFormHint": "Complete the horse ride registration form. Your listing stays pending until admin approval.",
-    "horseOnboardingWelcome": "Welcome. Finish this registration form to submit your horse ride listing. You can upload KYC documents anytime from the KYC page."
+    "horseOnboardingWelcome": "Welcome. Finish this registration form to submit your horse ride listing. You can upload KYC documents anytime from the KYC page.",
+    "singleListingOnly": "You can create only one listing. Edit your existing listing instead.",
+    "singleListingHint": "You can have only one listing. Use Edit to update it."
   },
   "guideRegistration": {
     "section1": "1. Personal Details",
@@ -625,11 +635,26 @@
     "confirmDeclarationSubmit": "I confirm this declaration and authorize submission of this registration.",
     "close": "Close",
     "vehicleTypes": [
-      { "value": "SEDAN", "label": "Sedan" },
-      { "value": "SUV", "label": "SUV" },
-      { "value": "INNOVA", "label": "Innova" },
-      { "value": "TEMPO", "label": "Tempo Traveller" },
-      { "value": "BIKE", "label": "Bike" }
+      {
+        "value": "SEDAN",
+        "label": "Sedan"
+      },
+      {
+        "value": "SUV",
+        "label": "SUV"
+      },
+      {
+        "value": "INNOVA",
+        "label": "Innova"
+      },
+      {
+        "value": "TEMPO",
+        "label": "Tempo Traveller"
+      },
+      {
+        "value": "BIKE",
+        "label": "Bike"
+      }
     ],
     "documents": [
       "Driving License",
@@ -745,11 +770,26 @@
     "confirmDeclarationSubmit": "I confirm this declaration and authorize submission of this registration.",
     "close": "Close",
     "vehicleTypes": [
-      { "value": "SEDAN", "label": "Sedan" },
-      { "value": "SUV", "label": "SUV" },
-      { "value": "INNOVA", "label": "Innova" },
-      { "value": "TEMPO", "label": "Tempo Traveller" },
-      { "value": "BIKE", "label": "Bike" }
+      {
+        "value": "SEDAN",
+        "label": "Sedan"
+      },
+      {
+        "value": "SUV",
+        "label": "SUV"
+      },
+      {
+        "value": "INNOVA",
+        "label": "Innova"
+      },
+      {
+        "value": "TEMPO",
+        "label": "Tempo Traveller"
+      },
+      {
+        "value": "BIKE",
+        "label": "Bike"
+      }
     ],
     "documents": [
       "Business registration / GST certificate (if applicable)",
@@ -940,13 +980,34 @@
     "confirmDeclaration": "I confirm this declaration.",
     "confirmDeclarationSubmit": "I confirm this declaration and authorize submission of this registration.",
     "amenities": [
-      { "value": "Swimming Pool", "label": "Swimming Pool" },
-      { "value": "Restaurant", "label": "Restaurant" },
-      { "value": "Safe Parking", "label": "Safe Parking" },
-      { "value": "Free Wi-Fi", "label": "Free Wi-Fi" },
-      { "value": "24-Hour Hot Water", "label": "24-Hour Hot Water" },
-      { "value": "Generator/Inverter Backup", "label": "Generator/Inverter Backup" },
-      { "value": "Elevator/Lift", "label": "Elevator/Lift" }
+      {
+        "value": "Swimming Pool",
+        "label": "Swimming Pool"
+      },
+      {
+        "value": "Restaurant",
+        "label": "Restaurant"
+      },
+      {
+        "value": "Safe Parking",
+        "label": "Safe Parking"
+      },
+      {
+        "value": "Free Wi-Fi",
+        "label": "Free Wi-Fi"
+      },
+      {
+        "value": "24-Hour Hot Water",
+        "label": "24-Hour Hot Water"
+      },
+      {
+        "value": "Generator/Inverter Backup",
+        "label": "Generator/Inverter Backup"
+      },
+      {
+        "value": "Elevator/Lift",
+        "label": "Elevator/Lift"
+      }
     ]
   },
   "homestayRegistration": {
@@ -1225,16 +1286,34 @@
     "chartGuideBike": "Guide + bike",
     "tourLocationLabel": "Tour location",
     "packages": {
-      "fourHour": { "name": "4-hour package", "duration": "4 hours" },
-      "eightHour": { "name": "8-hour package", "duration": "8 hours" }
+      "fourHour": {
+        "name": "4-hour package",
+        "duration": "4 hours"
+      },
+      "eightHour": {
+        "name": "8-hour package",
+        "duration": "8 hours"
+      }
     },
     "tours": {
-      "mahabaleshwar1": { "name": "Tour 1 — Mahabaleshwar Darshan" },
-      "mahabaleshwar2": { "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point)" },
-      "pratapgad": { "name": "Tour 3 — Pratapgad Darshan" },
-      "panchgani": { "name": "Tour 4 — Panchgani Darshan" },
-      "panchganiWai": { "name": "Tour 5 — Panchgani / Wai Darshan" },
-      "tapola": { "name": "Tour 6 — Tapola Darshan" }
+      "mahabaleshwar1": {
+        "name": "Tour 1 — Mahabaleshwar Darshan"
+      },
+      "mahabaleshwar2": {
+        "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point)"
+      },
+      "pratapgad": {
+        "name": "Tour 3 — Pratapgad Darshan"
+      },
+      "panchgani": {
+        "name": "Tour 4 — Panchgani Darshan"
+      },
+      "panchganiWai": {
+        "name": "Tour 5 — Panchgani / Wai Darshan"
+      },
+      "tapola": {
+        "name": "Tour 6 — Tapola Darshan"
+      }
     },
     "bikeAddon": "Bike add-on",
     "bikeAddonHint": "Add bike service (+{{price}})",
@@ -1304,16 +1383,46 @@
       }
     ],
     "tourSpots": [
-      { "value": "Wilson Point", "label": "Wilson Point" },
-      { "value": "Venna Lake", "label": "Venna Lake" },
-      { "value": "Mapro Garden", "label": "Mapro Garden" },
-      { "value": "Pratapgad Fort", "label": "Pratapgad Fort" },
-      { "value": "Table Land", "label": "Table Land" },
-      { "value": "Panchgani", "label": "Panchgani" },
-      { "value": "Old Mahabaleshwar", "label": "Old Mahabaleshwar" },
-      { "value": "Arthur Seat", "label": "Arthur Seat" },
-      { "value": "Lingmala Waterfall", "label": "Lingmala Waterfall" },
-      { "value": "Strawberry Farms", "label": "Strawberry Farms" }
+      {
+        "value": "Wilson Point",
+        "label": "Wilson Point"
+      },
+      {
+        "value": "Venna Lake",
+        "label": "Venna Lake"
+      },
+      {
+        "value": "Mapro Garden",
+        "label": "Mapro Garden"
+      },
+      {
+        "value": "Pratapgad Fort",
+        "label": "Pratapgad Fort"
+      },
+      {
+        "value": "Table Land",
+        "label": "Table Land"
+      },
+      {
+        "value": "Panchgani",
+        "label": "Panchgani"
+      },
+      {
+        "value": "Old Mahabaleshwar",
+        "label": "Old Mahabaleshwar"
+      },
+      {
+        "value": "Arthur Seat",
+        "label": "Arthur Seat"
+      },
+      {
+        "value": "Lingmala Waterfall",
+        "label": "Lingmala Waterfall"
+      },
+      {
+        "value": "Strawberry Farms",
+        "label": "Strawberry Farms"
+      }
     ],
     "validation": {
       "tourDate": "Tour date is required",
@@ -1347,10 +1456,22 @@
     "separateCharges": "Separate quote",
     "extraChargesTitle": "Extra charges (as applicable)",
     "packages": {
-      "local4hr": { "name": "Local 4 hours", "details": "Local city travel" },
-      "local8hr": { "name": "Local 8 hours", "details": "Local city travel" },
-      "outstation12hr": { "name": "Outstation 12 hours", "details": "Round trip" },
-      "outstationOneway": { "name": "Outstation drop / one-way", "details": "Per location — quoted separately" }
+      "local4hr": {
+        "name": "Local 4 hours",
+        "details": "Local city travel"
+      },
+      "local8hr": {
+        "name": "Local 8 hours",
+        "details": "Local city travel"
+      },
+      "outstation12hr": {
+        "name": "Outstation 12 hours",
+        "details": "Round trip"
+      },
+      "outstationOneway": {
+        "name": "Outstation drop / one-way",
+        "details": "Per location — quoted separately"
+      }
     },
     "extraCharges": {
       "overtime": "Overtime",
@@ -1425,18 +1546,54 @@
       }
     ],
     "tripDestinations": [
-      { "value": "Wilson Point", "label": "Wilson Point" },
-      { "value": "Venna Lake", "label": "Venna Lake" },
-      { "value": "Mapro Garden", "label": "Mapro Garden" },
-      { "value": "Pratapgad Fort", "label": "Pratapgad Fort" },
-      { "value": "Table Land", "label": "Table Land" },
-      { "value": "Panchgani", "label": "Panchgani" },
-      { "value": "Old Mahabaleshwar", "label": "Old Mahabaleshwar" },
-      { "value": "Arthur Seat", "label": "Arthur Seat" },
-      { "value": "Lingmala Waterfall", "label": "Lingmala Waterfall" },
-      { "value": "Strawberry Farms", "label": "Strawberry Farms" },
-      { "value": "Mahabaleshwar Market", "label": "Mahabaleshwar Market" },
-      { "value": "Pune Airport Transfer", "label": "Pune Airport Transfer" }
+      {
+        "value": "Wilson Point",
+        "label": "Wilson Point"
+      },
+      {
+        "value": "Venna Lake",
+        "label": "Venna Lake"
+      },
+      {
+        "value": "Mapro Garden",
+        "label": "Mapro Garden"
+      },
+      {
+        "value": "Pratapgad Fort",
+        "label": "Pratapgad Fort"
+      },
+      {
+        "value": "Table Land",
+        "label": "Table Land"
+      },
+      {
+        "value": "Panchgani",
+        "label": "Panchgani"
+      },
+      {
+        "value": "Old Mahabaleshwar",
+        "label": "Old Mahabaleshwar"
+      },
+      {
+        "value": "Arthur Seat",
+        "label": "Arthur Seat"
+      },
+      {
+        "value": "Lingmala Waterfall",
+        "label": "Lingmala Waterfall"
+      },
+      {
+        "value": "Strawberry Farms",
+        "label": "Strawberry Farms"
+      },
+      {
+        "value": "Mahabaleshwar Market",
+        "label": "Mahabaleshwar Market"
+      },
+      {
+        "value": "Pune Airport Transfer",
+        "label": "Pune Airport Transfer"
+      }
     ],
     "validation": {
       "tripDate": "Trip date is required",
@@ -1507,26 +1664,66 @@
       }
     },
     "routes": {
-      "local5kmDrop": { "name": "Local up to 5 km — Drop" },
-      "local5kmReturn": { "name": "Local up to 5 km — Return" },
-      "maproDrop": { "name": "Mapro Garden — Drop" },
-      "maproReturn": { "name": "Mapro Garden — Return" },
-      "panchganiWaiDrop": { "name": "Panchgani / Wai — Drop" },
-      "panchganiWaiReturn": { "name": "Panchgani / Wai — Return" },
-      "sataraDrop": { "name": "Satara bus stand / railway — Drop" },
-      "sataraReturn": { "name": "Satara bus stand / railway — Return" },
-      "puneDrop": { "name": "Pune railway / airport — Drop" },
-      "puneReturn": { "name": "Pune railway / airport — Return" },
-      "mumbaiDrop": { "name": "Mumbai (Dadar / W.T. / airport) — Drop" },
-      "mumbaiReturn": { "name": "Mumbai (Dadar / W.T. / airport) — Return" },
-      "poladpurDrop": { "name": "Poladpur / Mahad — Drop" },
-      "poladpurReturn": { "name": "Poladpur / Mahad — Return" },
-      "raigad": { "name": "Raigad Fort — Return" },
-      "khedDrop": { "name": "Khed / Chiplun — Drop" },
-      "khedReturn": { "name": "Khed / Chiplun — Return" },
-      "alibag": { "name": "Alibag" },
-      "murud": { "name": "Murud" },
-      "ganpatipule": { "name": "Ganpatipule" }
+      "local5kmDrop": {
+        "name": "Local up to 5 km — Drop"
+      },
+      "local5kmReturn": {
+        "name": "Local up to 5 km — Return"
+      },
+      "maproDrop": {
+        "name": "Mapro Garden — Drop"
+      },
+      "maproReturn": {
+        "name": "Mapro Garden — Return"
+      },
+      "panchganiWaiDrop": {
+        "name": "Panchgani / Wai — Drop"
+      },
+      "panchganiWaiReturn": {
+        "name": "Panchgani / Wai — Return"
+      },
+      "sataraDrop": {
+        "name": "Satara bus stand / railway — Drop"
+      },
+      "sataraReturn": {
+        "name": "Satara bus stand / railway — Return"
+      },
+      "puneDrop": {
+        "name": "Pune railway / airport — Drop"
+      },
+      "puneReturn": {
+        "name": "Pune railway / airport — Return"
+      },
+      "mumbaiDrop": {
+        "name": "Mumbai (Dadar / W.T. / airport) — Drop"
+      },
+      "mumbaiReturn": {
+        "name": "Mumbai (Dadar / W.T. / airport) — Return"
+      },
+      "poladpurDrop": {
+        "name": "Poladpur / Mahad — Drop"
+      },
+      "poladpurReturn": {
+        "name": "Poladpur / Mahad — Return"
+      },
+      "raigad": {
+        "name": "Raigad Fort — Return"
+      },
+      "khedDrop": {
+        "name": "Khed / Chiplun — Drop"
+      },
+      "khedReturn": {
+        "name": "Khed / Chiplun — Return"
+      },
+      "alibag": {
+        "name": "Alibag"
+      },
+      "murud": {
+        "name": "Murud"
+      },
+      "ganpatipule": {
+        "name": "Ganpatipule"
+      }
     },
     "hours": "Hours",
     "passengerCount": "Number of passengers",
@@ -1597,20 +1794,62 @@
       }
     ],
     "tripDestinations": [
-      { "value": "Wilson Point", "label": "Wilson Point" },
-      { "value": "Venna Lake", "label": "Venna Lake" },
-      { "value": "Mapro Garden", "label": "Mapro Garden" },
-      { "value": "Pratapgad Fort", "label": "Pratapgad Fort" },
-      { "value": "Table Land", "label": "Table Land" },
-      { "value": "Panchgani", "label": "Panchgani" },
-      { "value": "Old Mahabaleshwar", "label": "Old Mahabaleshwar" },
-      { "value": "Arthur Seat", "label": "Arthur Seat" },
-      { "value": "Lingmala Waterfall", "label": "Lingmala Waterfall" },
-      { "value": "Strawberry Farms", "label": "Strawberry Farms" },
-      { "value": "Mahabaleshwar Market", "label": "Mahabaleshwar Market" },
-      { "value": "Pune Airport Transfer", "label": "Pune Airport Transfer" },
-      { "value": "Mumbai Transfer", "label": "Mumbai Transfer" },
-      { "value": "Pune Transfer", "label": "Pune Transfer" }
+      {
+        "value": "Wilson Point",
+        "label": "Wilson Point"
+      },
+      {
+        "value": "Venna Lake",
+        "label": "Venna Lake"
+      },
+      {
+        "value": "Mapro Garden",
+        "label": "Mapro Garden"
+      },
+      {
+        "value": "Pratapgad Fort",
+        "label": "Pratapgad Fort"
+      },
+      {
+        "value": "Table Land",
+        "label": "Table Land"
+      },
+      {
+        "value": "Panchgani",
+        "label": "Panchgani"
+      },
+      {
+        "value": "Old Mahabaleshwar",
+        "label": "Old Mahabaleshwar"
+      },
+      {
+        "value": "Arthur Seat",
+        "label": "Arthur Seat"
+      },
+      {
+        "value": "Lingmala Waterfall",
+        "label": "Lingmala Waterfall"
+      },
+      {
+        "value": "Strawberry Farms",
+        "label": "Strawberry Farms"
+      },
+      {
+        "value": "Mahabaleshwar Market",
+        "label": "Mahabaleshwar Market"
+      },
+      {
+        "value": "Pune Airport Transfer",
+        "label": "Pune Airport Transfer"
+      },
+      {
+        "value": "Mumbai Transfer",
+        "label": "Mumbai Transfer"
+      },
+      {
+        "value": "Pune Transfer",
+        "label": "Pune Transfer"
+      }
     ],
     "validation": {
       "tripDate": "Trip date is required",
@@ -1677,11 +1916,26 @@
     "chartDetails": "Details",
     "chartRate": "Rate",
     "packages": {
-      "sightseeing": { "name": "Sightseeing tour", "details": "Major points sightseeing" },
-      "pointToPoint": { "name": "Point-to-point ride", "details": "From one location to another" },
-      "jungleTrail": { "name": "Jungle trail / trek", "details": "Scenic jungle trail" },
-      "sunsetSunrise": { "name": "Sunset / sunrise ride", "details": "Sunrise or sunset point ride" },
-      "kids": { "name": "Kids safe ride", "details": "Supervised kids ride" }
+      "sightseeing": {
+        "name": "Sightseeing tour",
+        "details": "Major points sightseeing"
+      },
+      "pointToPoint": {
+        "name": "Point-to-point ride",
+        "details": "From one location to another"
+      },
+      "jungleTrail": {
+        "name": "Jungle trail / trek",
+        "details": "Scenic jungle trail"
+      },
+      "sunsetSunrise": {
+        "name": "Sunset / sunrise ride",
+        "details": "Sunrise or sunset point ride"
+      },
+      "kids": {
+        "name": "Kids safe ride",
+        "details": "Supervised kids ride"
+      }
     },
     "openRouteStandard": "Standard ride (30 min)",
     "openRouteStandardDesc": "Scenic loop — final route assigned by our team",
@@ -1931,6 +2185,71 @@
       "coTravellers": "Co-passengers",
       "paymentMode": "Payment mode",
       "includesGst": "Includes GST {{amount}}"
-    }
+    },
+    "phoneHidden": "Phone visible after you accept"
+  },
+  "canvasser": {
+    "title": "Canvasser",
+    "managementTitle": "Canvasser Management",
+    "formTitle": "Canvasser Job Application",
+    "subtitle": "Fill the canvasser application form accurately",
+    "editTitle": "Edit Canvasser",
+    "managementSubtitle": "View, edit, activate or deactivate canvassers",
+    "createCta": "Create canvasser",
+    "manageCta": "Canvasser management",
+    "intro": "Thank you for applying for the Canvasser position. Please fill in the details accurately below.",
+    "personalDetails": "Personal Details",
+    "fullName": "Full Name",
+    "dateOfBirth": "Date of Birth",
+    "mobile": "Mobile / WhatsApp",
+    "currentAddress": "Current Address",
+    "education": "Educational Qualification",
+    "experienceSkills": "Experience & Skills",
+    "totalExperience": "Total Work Experience",
+    "languagesKnown": "Languages Known",
+    "otherDetails": "Other Details",
+    "ownVehicle": "Own Vehicle (Bike)",
+    "drivingLicense": "Driving License",
+    "yes": "Yes",
+    "no": "No",
+    "joiningDate": "Joining Date",
+    "termsTitle": "Terms & Conditions",
+    "termsAccept": "I have read and accept all the terms and conditions above.",
+    "declarationTitle": "Declaration",
+    "declarationText": "I have read all the above terms and conditions and they are acceptable to me. All information provided by me is true.",
+    "declarationAccept": "I agree to the declaration above.",
+    "declarationDate": "Date",
+    "notes": "Notes",
+    "submit": "Create canvasser",
+    "save": "Save changes",
+    "created": "Canvasser created",
+    "updated": "Canvasser updated",
+    "activated": "Canvasser activated",
+    "deactivated": "Canvasser deactivated",
+    "loadFailed": "Failed to load canvassers",
+    "saveFailed": "Save failed",
+    "empty": "No canvassers yet.",
+    "colName": "Name",
+    "colMobile": "Mobile",
+    "colJoining": "Joining date",
+    "colVehicle": "Bike",
+    "colLicense": "License",
+    "colStatus": "Status",
+    "colActions": "Actions",
+    "edit": "Edit",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "terms": [
+      "Initial Target (Free Registration): Mandatory to register at least 5 hotels and 5 resorts before joining the company.",
+      "Booking & Commission: 50-50% equal sharing of commission for bookings given by S.M. Enterprises.",
+      "Room Showing Responsibility: Canvasser is fully responsible for personally showing rooms to customers.",
+      "Commission Sharing: Mandatory to share commission with the company after the customer finalizes the booking.",
+      "Punctuality & Discipline: It is mandatory to be present on time and fulfill all responsibilities honestly and with discipline.",
+      "Professional Conduct with Customers: No rude behavior, misconduct, or misleading communication with customers shall be tolerated. Protecting the company image is everyones duty.",
+      "Confidentiality & Data Privacy: All data regarding hotels, resorts, customers, and commission must remain strictly confidential and must not be shared with anyone else.",
+      "Strict Anti-Intoxication Rule: Consuming alcohol, gutkha, tobacco, or any intoxicants during duty hours or while dealing with customers is strictly prohibited. Violation may lead to immediate termination.",
+      "Transparency & Truth: No false information shall be provided; all details must be real and true. False information will lead to action."
+    ],
+    "readFullTerms": "Read full Terms & Conditions"
   }
 }

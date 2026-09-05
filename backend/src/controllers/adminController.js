@@ -220,6 +220,19 @@ export const deleteBlog = async (req, res) => {
 export const getCmsFaqs = async (req, res) => success(res, await FAQ.find().sort('order'));
 export const createFaq = async (req, res) => success(res, await FAQ.create(req.body), 'Created', 201);
 
+/** One-time / ops: remove duplicate guide, taxi/driver, horse listings (keep 1 per vendor). */
+export const cleanupDuplicateServiceListings = async (req, res) => {
+  try {
+    const { cleanupDuplicateServiceListings: runCleanup } = await import(
+      '../utils/cleanupDuplicateServiceListings.js'
+    );
+    const result = await runCleanup();
+    return success(res, result, `Removed ${result.totalRemoved} duplicate listing(s)`);
+  } catch (err) {
+    return error(res, err.message || 'Cleanup failed', 500);
+  }
+};
+
 export const getPublicBanners = async (req, res) => {
   const banners = await Banner.find({ isActive: true }).sort('order');
   return success(res, banners);

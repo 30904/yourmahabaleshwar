@@ -1,7 +1,8 @@
 import { getIo, tenantRoom } from '../socket/index.js';
+import { redactCustomerContactForOpenBooking } from '../utils/redactCustomerContact.js';
 
 function serializeOpenBooking(booking) {
-  const doc = booking?.toObject ? booking.toObject() : booking;
+  const doc = redactCustomerContactForOpenBooking(booking);
   return {
     _id: String(doc._id),
     bookingNumber: doc.bookingNumber,
@@ -24,7 +25,7 @@ function serializeOpenBooking(booking) {
     createdAt: doc.createdAt,
     customer:
       doc.customer && typeof doc.customer === 'object'
-        ? { name: doc.customer.name, phone: doc.customer.phone }
+        ? { name: doc.customer.name, email: doc.customer.email }
         : doc.customer,
   };
 }

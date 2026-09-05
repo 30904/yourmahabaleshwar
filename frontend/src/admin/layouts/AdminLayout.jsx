@@ -20,6 +20,8 @@ const breadcrumbMap = {
   '/admin/cms': ['Admin', 'CMS'],
   '/admin/staff': ['Admin', 'Staff'],
   '/admin/staff-management': ['Admin', 'Staff Management'],
+  '/admin/canvasser': ['Admin', 'Canvasser'],
+  '/admin/canvasser-management': ['Admin', 'Canvasser Management'],
   '/admin/settings': ['Admin', 'Settings'],
   '/admin/settings/service-monetization': ['Admin', 'Settings', 'Service subscriptions'],
   '/admin/customers/reviews': ['Admin', 'Reviews'],

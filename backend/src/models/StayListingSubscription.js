@@ -22,6 +22,8 @@ const stayListingSubscriptionSchema = new mongoose.Schema(
     renewalPrice: { type: Number },
     paymentRef: { type: String },
     notes: { type: String },
+    invoiceNumber: { type: String },
+    invoiceUrl: { type: String },
   },
   { timestamps: true }
 );

@@ -241,6 +241,14 @@
     "listingType": "लिस्टिंग प्रकार",
     "listingCreatedApproved": "लिस्टिंग तयार झाली आणि मंजूर झाली — ती लगेच लाइव्ह आहे."
   },
+  "subscriptionInvoices": {
+    "title": "सबस्क्रिप्शन इनव्हॉइस",
+    "subtitle": "पॉइंट्स, अनलिमिटेड प्लॅन आणि लिस्टिंग रिन्यूअलसाठी Your Mahabaleshwar कडून जारी केलेले इनव्हॉइस.",
+    "empty": "अद्याप कोणतेही सबस्क्रिप्शन इनव्हॉइस नाहीत.",
+    "loadFailed": "इनव्हॉइस लोड करता आले नाहीत",
+    "downloadFailed": "इनव्हॉइस डाउनलोड करता आले नाही",
+    "download": "डाउनलोड"
+  },
   "staySubscription": {
     "nav": "माझे सबस्क्रिप्शन",
     "title": "माझे सबस्क्रिप्शन",
@@ -446,7 +454,9 @@
     "driverFormHint": "ड्रायव्हर पार्टनर नोंदणी फॉर्म पूर्ण करा. प्रशासक मंजुरी मिळेपर्यंत तुमची यादी प्रलंबित राहील.",
     "driverOnboardingWelcome": "स्वागत आहे. तुमची ड्रायव्हर प्रोफाइल सबमिट करण्यासाठी हा नोंदणी फॉर्म पूर्ण करा. KYC पृष्ठावरून कधीही कागदपत्रे अपलोड करू शकता.",
     "horseFormHint": "घोड्याची सैर नोंदणी फॉर्म पूर्ण करा. प्रशासक मंजुरी मिळेपर्यंत तुमची यादी प्रलंबित राहील.",
-    "horseOnboardingWelcome": "स्वागत आहे. तुमची घोड्याची सैर यादी सबमिट करण्यासाठी हा नोंदणी फॉर्म पूर्ण करा. KYC पृष्ठावरून कधीही कागदपत्रे अपलोड करू शकता."
+    "horseOnboardingWelcome": "स्वागत आहे. तुमची घोड्याची सैर यादी सबमिट करण्यासाठी हा नोंदणी फॉर्म पूर्ण करा. KYC पृष्ठावरून कधीही कागदपत्रे अपलोड करू शकता.",
+    "singleListingOnly": "तुम्ही फक्त एकच लिस्टिंग तयार करू शकता. विद्यमान लिस्टिंग संपादित करा.",
+    "singleListingHint": "तुम्हाला फक्त एक लिस्टिंग ठेवता येते. अपडेटसाठी संपादन वापरा."
   },
   "guideRegistration": {
     "section1": "१. वैयक्तिक माहिती",
@@ -625,11 +635,26 @@
     "confirmDeclarationSubmit": "मी ही घोषणा पुष्टी करतो/करते आणि या नोंदणीची सबमिशन अधिकृत करतो/करते.",
     "close": "बंद करा",
     "vehicleTypes": [
-      { "value": "SEDAN", "label": "सेडान" },
-      { "value": "SUV", "label": "SUV" },
-      { "value": "INNOVA", "label": "इनोव्हा" },
-      { "value": "TEMPO", "label": "टेम्पो ट्रॅव्हलर" },
-      { "value": "BIKE", "label": "बाईक" }
+      {
+        "value": "SEDAN",
+        "label": "सेडान"
+      },
+      {
+        "value": "SUV",
+        "label": "SUV"
+      },
+      {
+        "value": "INNOVA",
+        "label": "इनोव्हा"
+      },
+      {
+        "value": "TEMPO",
+        "label": "टेम्पो ट्रॅव्हलर"
+      },
+      {
+        "value": "BIKE",
+        "label": "बाईक"
+      }
     ],
     "documents": [
       "ड्रायव्हिंग लायसन्स",
@@ -745,11 +770,26 @@
     "confirmDeclarationSubmit": "मी ही घोषणा पुष्टी करतो/करते आणि या नोंदणीची सबमिशन अधिकृत करतो/करते.",
     "close": "बंद करा",
     "vehicleTypes": [
-      { "value": "SEDAN", "label": "सेडान" },
-      { "value": "SUV", "label": "SUV" },
-      { "value": "INNOVA", "label": "इनोव्हा" },
-      { "value": "TEMPO", "label": "टेम्पो ट्रॅव्हलर" },
-      { "value": "BIKE", "label": "बाईक" }
+      {
+        "value": "SEDAN",
+        "label": "सेडान"
+      },
+      {
+        "value": "SUV",
+        "label": "SUV"
+      },
+      {
+        "value": "INNOVA",
+        "label": "इनोव्हा"
+      },
+      {
+        "value": "TEMPO",
+        "label": "टेम्पो ट्रॅव्हलर"
+      },
+      {
+        "value": "BIKE",
+        "label": "बाईक"
+      }
     ],
     "documents": [
       "व्यवसाय नोंदणी / GST प्रमाणपत्र (लागू असल्यास)",
@@ -940,13 +980,34 @@
     "confirmDeclaration": "मी ही घोषणा पुष्टी करतो/करते.",
     "confirmDeclarationSubmit": "मी ही घोषणा पुष्टी करतो/करते आणि या नोंदणीची सबमिशन अधिकृत करतो/करते.",
     "amenities": [
-      { "value": "Swimming Pool", "label": "स्विमिंग पूल" },
-      { "value": "Restaurant", "label": "रेस्टॉरंट" },
-      { "value": "Safe Parking", "label": "सुरक्षित पार्किंग" },
-      { "value": "Free Wi-Fi", "label": "मोफत Wi-Fi" },
-      { "value": "24-Hour Hot Water", "label": "२४ तास गरम पाणी" },
-      { "value": "Generator/Inverter Backup", "label": "जनरेटर/इन्व्हर्टर बॅकअप" },
-      { "value": "Elevator/Lift", "label": "लिफ्ट" }
+      {
+        "value": "Swimming Pool",
+        "label": "स्विमिंग पूल"
+      },
+      {
+        "value": "Restaurant",
+        "label": "रेस्टॉरंट"
+      },
+      {
+        "value": "Safe Parking",
+        "label": "सुरक्षित पार्किंग"
+      },
+      {
+        "value": "Free Wi-Fi",
+        "label": "मोफत Wi-Fi"
+      },
+      {
+        "value": "24-Hour Hot Water",
+        "label": "२४ तास गरम पाणी"
+      },
+      {
+        "value": "Generator/Inverter Backup",
+        "label": "जनरेटर/इन्व्हर्टर बॅकअप"
+      },
+      {
+        "value": "Elevator/Lift",
+        "label": "लिफ्ट"
+      }
     ]
   },
   "homestayRegistration": {
@@ -1225,16 +1286,34 @@
     "chartGuideBike": "गाईड + बाईक",
     "tourLocationLabel": "टूर ठिकाण",
     "packages": {
-      "fourHour": { "name": "४-तास पॅकेज", "duration": "४ तास" },
-      "eightHour": { "name": "८-तास पॅकेज", "duration": "८ तास" }
+      "fourHour": {
+        "name": "४-तास पॅकेज",
+        "duration": "४ तास"
+      },
+      "eightHour": {
+        "name": "८-तास पॅकेज",
+        "duration": "८ तास"
+      }
     },
     "tours": {
-      "mahabaleshwar1": { "name": "टूर १ — महाबळेश्वर दर्शन" },
-      "mahabaleshwar2": { "name": "टूर २ — महाबळेश्वर दर्शन (विल्सन पॉईंट)" },
-      "pratapgad": { "name": "टूर ३ — प्रतापगड दर्शन" },
-      "panchgani": { "name": "टूर ४ — पाचगणी दर्शन" },
-      "panchganiWai": { "name": "टूर ५ — पाचगणी / वाई दर्शन" },
-      "tapola": { "name": "टूर ६ — तापोळा दर्शन" }
+      "mahabaleshwar1": {
+        "name": "टूर १ — महाबळेश्वर दर्शन"
+      },
+      "mahabaleshwar2": {
+        "name": "टूर २ — महाबळेश्वर दर्शन (विल्सन पॉईंट)"
+      },
+      "pratapgad": {
+        "name": "टूर ३ — प्रतापगड दर्शन"
+      },
+      "panchgani": {
+        "name": "टूर ४ — पाचगणी दर्शन"
+      },
+      "panchganiWai": {
+        "name": "टूर ५ — पाचगणी / वाई दर्शन"
+      },
+      "tapola": {
+        "name": "टूर ६ — तापोळा दर्शन"
+      }
     },
     "bikeAddon": "बाईक अॅड-ऑन",
     "bikeAddonHint": "बाईक सेवा जोडा (+{{price}})",
@@ -1304,16 +1383,46 @@
       }
     ],
     "tourSpots": [
-      { "value": "Wilson Point", "label": "विल्सन पॉइंट" },
-      { "value": "Venna Lake", "label": "वेना लेक" },
-      { "value": "Mapro Garden", "label": "मॅप्रो गार्डन" },
-      { "value": "Pratapgad Fort", "label": "प्रतापगड किल्ला" },
-      { "value": "Table Land", "label": "टेबल लँड" },
-      { "value": "Panchgani", "label": "पंचगनी" },
-      { "value": "Old Mahabaleshwar", "label": "जुने महाबळेश्वर" },
-      { "value": "Arthur Seat", "label": "आर्थर सीट" },
-      { "value": "Lingmala Waterfall", "label": "लिंगमाळा धबधबा" },
-      { "value": "Strawberry Farms", "label": "स्ट्रॉबेरी शेत" }
+      {
+        "value": "Wilson Point",
+        "label": "विल्सन पॉइंट"
+      },
+      {
+        "value": "Venna Lake",
+        "label": "वेना लेक"
+      },
+      {
+        "value": "Mapro Garden",
+        "label": "मॅप्रो गार्डन"
+      },
+      {
+        "value": "Pratapgad Fort",
+        "label": "प्रतापगड किल्ला"
+      },
+      {
+        "value": "Table Land",
+        "label": "टेबल लँड"
+      },
+      {
+        "value": "Panchgani",
+        "label": "पंचगनी"
+      },
+      {
+        "value": "Old Mahabaleshwar",
+        "label": "जुने महाबळेश्वर"
+      },
+      {
+        "value": "Arthur Seat",
+        "label": "आर्थर सीट"
+      },
+      {
+        "value": "Lingmala Waterfall",
+        "label": "लिंगमाळा धबधबा"
+      },
+      {
+        "value": "Strawberry Farms",
+        "label": "स्ट्रॉबेरी शेत"
+      }
     ],
     "validation": {
       "tourDate": "टूर तारीख आवश्यक आहे",
@@ -1347,10 +1456,22 @@
     "separateCharges": "स्वतंत्र दर",
     "extraChargesTitle": "अतिरिक्त शुल्क (लागू असल्यास)",
     "packages": {
-      "local4hr": { "name": "लोकल ४ तास", "details": "स्थानिक शहर प्रवास" },
-      "local8hr": { "name": "लोकल ८ तास", "details": "स्थानिक शहर प्रवास" },
-      "outstation12hr": { "name": "आऊटस्टेशन १२ तास", "details": "राऊंड ट्रिप" },
-      "outstationOneway": { "name": "आऊटस्टेशन ड्रॉप / वन-वे", "details": "ठिकाणानुसार — स्वतंत्र दर" }
+      "local4hr": {
+        "name": "लोकल ४ तास",
+        "details": "स्थानिक शहर प्रवास"
+      },
+      "local8hr": {
+        "name": "लोकल ८ तास",
+        "details": "स्थानिक शहर प्रवास"
+      },
+      "outstation12hr": {
+        "name": "आऊटस्टेशन १२ तास",
+        "details": "राऊंड ट्रिप"
+      },
+      "outstationOneway": {
+        "name": "आऊटस्टेशन ड्रॉप / वन-वे",
+        "details": "ठिकाणानुसार — स्वतंत्र दर"
+      }
     },
     "extraCharges": {
       "overtime": "ओव्हरटाईम",
@@ -1425,18 +1546,54 @@
       }
     ],
     "tripDestinations": [
-      { "value": "Wilson Point", "label": "विल्सन पॉइंट" },
-      { "value": "Venna Lake", "label": "वेना लेक" },
-      { "value": "Mapro Garden", "label": "मॅप्रो गार्डन" },
-      { "value": "Pratapgad Fort", "label": "प्रतापगड किल्ला" },
-      { "value": "Table Land", "label": "टेबल लँड" },
-      { "value": "Panchgani", "label": "पंचगनी" },
-      { "value": "Old Mahabaleshwar", "label": "जुने महाबळेश्वर" },
-      { "value": "Arthur Seat", "label": "आर्थर सीट" },
-      { "value": "Lingmala Waterfall", "label": "लिंगमाळा धबधबा" },
-      { "value": "Strawberry Farms", "label": "स्ट्रॉबेरी शेत" },
-      { "value": "Mahabaleshwar Market", "label": "महाबळेश्वर बाजार" },
-      { "value": "Pune Airport Transfer", "label": "पुणे विमानतळ ट्रान्सफर" }
+      {
+        "value": "Wilson Point",
+        "label": "विल्सन पॉइंट"
+      },
+      {
+        "value": "Venna Lake",
+        "label": "वेना लेक"
+      },
+      {
+        "value": "Mapro Garden",
+        "label": "मॅप्रो गार्डन"
+      },
+      {
+        "value": "Pratapgad Fort",
+        "label": "प्रतापगड किल्ला"
+      },
+      {
+        "value": "Table Land",
+        "label": "टेबल लँड"
+      },
+      {
+        "value": "Panchgani",
+        "label": "पंचगनी"
+      },
+      {
+        "value": "Old Mahabaleshwar",
+        "label": "जुने महाबळेश्वर"
+      },
+      {
+        "value": "Arthur Seat",
+        "label": "आर्थर सीट"
+      },
+      {
+        "value": "Lingmala Waterfall",
+        "label": "लिंगमाळा धबधबा"
+      },
+      {
+        "value": "Strawberry Farms",
+        "label": "स्ट्रॉबेरी शेत"
+      },
+      {
+        "value": "Mahabaleshwar Market",
+        "label": "महाबळेश्वर बाजार"
+      },
+      {
+        "value": "Pune Airport Transfer",
+        "label": "पुणे विमानतळ ट्रान्सफर"
+      }
     ],
     "validation": {
       "tripDate": "प्रवास तारीख आवश्यक आहे",
@@ -1481,34 +1638,92 @@
     "selectedFareLabel": "निवडलेल्या मार्गाचे भाडे",
     "tollExtra": "(+ टोल अतिरिक्त)",
     "tours": {
-      "mahabaleshwar1": { "name": "टूर १ — महाबळेश्वर दर्शन", "duration": "३.३० तास" },
-      "mahabaleshwar2": { "name": "टूर २ — महाबळेश्वर दर्शन (विल्सन पॉईंट)", "duration": "३.३० तास" },
-      "pratapgad": { "name": "टूर ३ — प्रतापगड दर्शन", "duration": "३.३० तास" },
-      "panchgani": { "name": "टूर ४ — पाचगणी दर्शन", "duration": "३.०० तास" },
-      "panchganiWai": { "name": "टूर ५ — पाचगणी / वाई दर्शन", "duration": "६.०० तास" },
-      "tapola": { "name": "टूर ६ — तापोळा दर्शन", "duration": "३.३० तास" }
+      "mahabaleshwar1": {
+        "name": "टूर १ — महाबळेश्वर दर्शन",
+        "duration": "३.३० तास"
+      },
+      "mahabaleshwar2": {
+        "name": "टूर २ — महाबळेश्वर दर्शन (विल्सन पॉईंट)",
+        "duration": "३.३० तास"
+      },
+      "pratapgad": {
+        "name": "टूर ३ — प्रतापगड दर्शन",
+        "duration": "३.३० तास"
+      },
+      "panchgani": {
+        "name": "टूर ४ — पाचगणी दर्शन",
+        "duration": "३.०० तास"
+      },
+      "panchganiWai": {
+        "name": "टूर ५ — पाचगणी / वाई दर्शन",
+        "duration": "६.०० तास"
+      },
+      "tapola": {
+        "name": "टूर ६ — तापोळा दर्शन",
+        "duration": "३.३० तास"
+      }
     },
     "routes": {
-      "local5kmDrop": { "name": "लोकल ५ किमी पर्यंत — ड्रॉप" },
-      "local5kmReturn": { "name": "लोकल ५ किमी पर्यंत — रिटर्न" },
-      "maproDrop": { "name": "माप्रो गार्डन — ड्रॉप" },
-      "maproReturn": { "name": "माप्रो गार्डन — रिटर्न" },
-      "panchganiWaiDrop": { "name": "पाचगणी / वाई — ड्रॉप" },
-      "panchganiWaiReturn": { "name": "पाचगणी / वाई — रिटर्न" },
-      "sataraDrop": { "name": "सातारा बस स्टँड / रेल्वे — ड्रॉप" },
-      "sataraReturn": { "name": "सातारा बस स्टँड / रेल्वे — रिटर्न" },
-      "puneDrop": { "name": "पुणे रेल्वे / एअरपोर्ट — ड्रॉप" },
-      "puneReturn": { "name": "पुणे रेल्वे / एअरपोर्ट — रिटर्न" },
-      "mumbaiDrop": { "name": "मुंबई (दादर / W.T. / एअरपोर्ट) — ड्रॉप" },
-      "mumbaiReturn": { "name": "मुंबई (दादर / W.T. / एअरपोर्ट) — रिटर्न" },
-      "poladpurDrop": { "name": "पोलादपूर / महाड — ड्रॉप" },
-      "poladpurReturn": { "name": "पोलादपूर / महाड — रिटर्न" },
-      "raigad": { "name": "रायगड किल्ला — रिटर्न" },
-      "khedDrop": { "name": "खेड / चिपळूण — ड्रॉप" },
-      "khedReturn": { "name": "खेड / चिपळूण — रिटर्न" },
-      "alibag": { "name": "अलिबाग" },
-      "murud": { "name": "मुरुड" },
-      "ganpatipule": { "name": "गणपतीपुळे" }
+      "local5kmDrop": {
+        "name": "लोकल ५ किमी पर्यंत — ड्रॉप"
+      },
+      "local5kmReturn": {
+        "name": "लोकल ५ किमी पर्यंत — रिटर्न"
+      },
+      "maproDrop": {
+        "name": "माप्रो गार्डन — ड्रॉप"
+      },
+      "maproReturn": {
+        "name": "माप्रो गार्डन — रिटर्न"
+      },
+      "panchganiWaiDrop": {
+        "name": "पाचगणी / वाई — ड्रॉप"
+      },
+      "panchganiWaiReturn": {
+        "name": "पाचगणी / वाई — रिटर्न"
+      },
+      "sataraDrop": {
+        "name": "सातारा बस स्टँड / रेल्वे — ड्रॉप"
+      },
+      "sataraReturn": {
+        "name": "सातारा बस स्टँड / रेल्वे — रिटर्न"
+      },
+      "puneDrop": {
+        "name": "पुणे रेल्वे / एअरपोर्ट — ड्रॉप"
+      },
+      "puneReturn": {
+        "name": "पुणे रेल्वे / एअरपोर्ट — रिटर्न"
+      },
+      "mumbaiDrop": {
+        "name": "मुंबई (दादर / W.T. / एअरपोर्ट) — ड्रॉप"
+      },
+      "mumbaiReturn": {
+        "name": "मुंबई (दादर / W.T. / एअरपोर्ट) — रिटर्न"
+      },
+      "poladpurDrop": {
+        "name": "पोलादपूर / महाड — ड्रॉप"
+      },
+      "poladpurReturn": {
+        "name": "पोलादपूर / महाड — रिटर्न"
+      },
+      "raigad": {
+        "name": "रायगड किल्ला — रिटर्न"
+      },
+      "khedDrop": {
+        "name": "खेड / चिपळूण — ड्रॉप"
+      },
+      "khedReturn": {
+        "name": "खेड / चिपळूण — रिटर्न"
+      },
+      "alibag": {
+        "name": "अलिबाग"
+      },
+      "murud": {
+        "name": "मुरुड"
+      },
+      "ganpatipule": {
+        "name": "गणपतीपुळे"
+      }
     },
     "hours": "तास",
     "passengerCount": "प्रवाशांची संख्या",
@@ -1579,20 +1794,62 @@
       }
     ],
     "tripDestinations": [
-      { "value": "Wilson Point", "label": "विल्सन पॉइंट" },
-      { "value": "Venna Lake", "label": "वेना लेक" },
-      { "value": "Mapro Garden", "label": "मॅप्रो गार्डन" },
-      { "value": "Pratapgad Fort", "label": "प्रतापगड किल्ला" },
-      { "value": "Table Land", "label": "टेबल लँड" },
-      { "value": "Panchgani", "label": "पंचगनी" },
-      { "value": "Old Mahabaleshwar", "label": "जुने महाबळेश्वर" },
-      { "value": "Arthur Seat", "label": "आर्थर सीट" },
-      { "value": "Lingmala Waterfall", "label": "लिंगमाळा धबधबा" },
-      { "value": "Strawberry Farms", "label": "स्ट्रॉबेरी शेत" },
-      { "value": "Mahabaleshwar Market", "label": "महाबळेश्वर बाजार" },
-      { "value": "Pune Airport Transfer", "label": "पुणे विमानतळ ट्रान्सफर" },
-      { "value": "Mumbai Transfer", "label": "मुंबई ट्रान्सफर" },
-      { "value": "Pune Transfer", "label": "पुणे ट्रान्सफर" }
+      {
+        "value": "Wilson Point",
+        "label": "विल्सन पॉइंट"
+      },
+      {
+        "value": "Venna Lake",
+        "label": "वेना लेक"
+      },
+      {
+        "value": "Mapro Garden",
+        "label": "मॅप्रो गार्डन"
+      },
+      {
+        "value": "Pratapgad Fort",
+        "label": "प्रतापगड किल्ला"
+      },
+      {
+        "value": "Table Land",
+        "label": "टेबल लँड"
+      },
+      {
+        "value": "Panchgani",
+        "label": "पंचगनी"
+      },
+      {
+        "value": "Old Mahabaleshwar",
+        "label": "जुने महाबळेश्वर"
+      },
+      {
+        "value": "Arthur Seat",
+        "label": "आर्थर सीट"
+      },
+      {
+        "value": "Lingmala Waterfall",
+        "label": "लिंगमाळा धबधबा"
+      },
+      {
+        "value": "Strawberry Farms",
+        "label": "स्ट्रॉबेरी शेत"
+      },
+      {
+        "value": "Mahabaleshwar Market",
+        "label": "महाबळेश्वर बाजार"
+      },
+      {
+        "value": "Pune Airport Transfer",
+        "label": "पुणे विमानतळ ट्रान्सफर"
+      },
+      {
+        "value": "Mumbai Transfer",
+        "label": "मुंबई ट्रान्सफर"
+      },
+      {
+        "value": "Pune Transfer",
+        "label": "पुणे ट्रान्सफर"
+      }
     ],
     "validation": {
       "tripDate": "प्रवास तारीख आवश्यक आहे",
@@ -1655,11 +1912,26 @@
     "chartDetails": "तपशील",
     "chartRate": "दर",
     "packages": {
-      "sightseeing": { "name": "साईटसीईंग टूर", "details": "प्रमुख ठिकाणे दर्शन" },
-      "pointToPoint": { "name": "पॉईंट टू पॉईंट", "details": "एका ठिकाणाहून दुसऱ्या ठिकाणापर्यंत" },
-      "jungleTrail": { "name": "जंगल ट्रेल / ट्रेक", "details": "निसर्गरम्य जंगल मार्ग" },
-      "sunsetSunrise": { "name": "सनसेट / सनराईज", "details": "सूर्योदय किंवा सूर्यास्त सवारी" },
-      "kids": { "name": "लहान मुलांची सवारी", "details": "मार्गदर्शित सुरक्षित सवारी" }
+      "sightseeing": {
+        "name": "साईटसीईंग टूर",
+        "details": "प्रमुख ठिकाणे दर्शन"
+      },
+      "pointToPoint": {
+        "name": "पॉईंट टू पॉईंट",
+        "details": "एका ठिकाणाहून दुसऱ्या ठिकाणापर्यंत"
+      },
+      "jungleTrail": {
+        "name": "जंगल ट्रेल / ट्रेक",
+        "details": "निसर्गरम्य जंगल मार्ग"
+      },
+      "sunsetSunrise": {
+        "name": "सनसेट / सनराईज",
+        "details": "सूर्योदय किंवा सूर्यास्त सवारी"
+      },
+      "kids": {
+        "name": "लहान मुलांची सवारी",
+        "details": "मार्गदर्शित सुरक्षित सवारी"
+      }
     },
     "openRouteStandard": "मानक सवारी (३० मि)",
     "openRouteStandardDesc": "Scenic loop — अंतिम मार्ग आमची टीम नियुक्त करेल",
@@ -1909,6 +2181,71 @@
       "coTravellers": "सहप्रवासी",
       "paymentMode": "पेमेंट पद्धत",
       "includesGst": "GST {{amount}} समाविष्ट"
-    }
+    },
+    "phoneHidden": "स्वीकारल्यानंतर फोन दिसेल"
+  },
+  "canvasser": {
+    "title": "कॅनव्हरसर",
+    "managementTitle": "कॅनव्हरसर व्यवस्थापन",
+    "formTitle": "कॅनव्हरसर पदासाठी जॉब अर्ज",
+    "subtitle": "कॅनव्हरसर अर्ज फॉर्म अचूकपणे भरा",
+    "editTitle": "कॅनव्हरसर संपादित करा",
+    "managementSubtitle": "कॅनव्हरसर पहा, संपादित करा, सक्रिय किंवा निष्क्रिय करा",
+    "createCta": "कॅनव्हरसर तयार करा",
+    "manageCta": "कॅनव्हरसर व्यवस्थापन",
+    "intro": "आमच्या कंपनीत कॅनव्हरसर पदासाठी अर्ज करण्याबद्दल धन्यवाद. कृपया खालील माहिती अचूकपणे भरावी.",
+    "personalDetails": "अर्जदाराची वैयक्तिक माहिती",
+    "fullName": "पूर्ण नाव",
+    "dateOfBirth": "जन्म तारीख",
+    "mobile": "मोबाईल / व्हॉट्सॲप नंबर",
+    "currentAddress": "सध्याचा पत्ता",
+    "education": "शैक्षणिक पात्रता",
+    "experienceSkills": "अनुभव आणि कौशल्ये",
+    "totalExperience": "एकूण कामाचा अनुभव",
+    "languagesKnown": "कोणती भाषा बोलता येते",
+    "otherDetails": "इतर माहिती",
+    "ownVehicle": "स्वतःचे वाहन (बाईक) आहे का?",
+    "drivingLicense": "ड्रायव्हिंग लायसन्स आहे का?",
+    "yes": "होय",
+    "no": "नाही",
+    "joiningDate": "काम सुरू करण्याची तारीख",
+    "termsTitle": "नियम व अटी",
+    "termsAccept": "मी वरील सर्व नियम व अटी वाचल्या असून त्या मला मान्य आहेत.",
+    "declarationTitle": "घोषणा",
+    "declarationText": "मी वरील सर्व नियम व अटी वाचल्या असून त्या मला मान्य आहेत. तसेच माझ्याकडील सर्व माहिती सत्य आहे.",
+    "declarationAccept": "मी वरील घोषणेशी सहमत आहे.",
+    "declarationDate": "दिनांक",
+    "notes": "नोंदी",
+    "submit": "कॅनव्हरसर तयार करा",
+    "save": "बदल जतन करा",
+    "created": "कॅनव्हरसर तयार झाला",
+    "updated": "कॅनव्हरसर अपडेट झाला",
+    "activated": "कॅनव्हरसर सक्रिय केला",
+    "deactivated": "कॅनव्हरसर निष्क्रिय केला",
+    "loadFailed": "कॅनव्हरसर लोड करणे अयशस्वी",
+    "saveFailed": "जतन अयशस्वी",
+    "empty": "अद्याप कॅनव्हरसर नाहीत.",
+    "colName": "नाव",
+    "colMobile": "मोबाईल",
+    "colJoining": "जॉइनिंग तारीख",
+    "colVehicle": "बाईक",
+    "colLicense": "लायसन्स",
+    "colStatus": "स्थिती",
+    "colActions": "क्रिया",
+    "edit": "संपादित करा",
+    "activate": "सक्रिय करा",
+    "deactivate": "निष्क्रिय करा",
+    "terms": [
+      "प्रारंभिक टार्गेट (फ्री रजिस्ट्रेशन): कंपनीमध्ये जॉईनिंग करण्यापूर्वी प्रत्येक कॅनव्हरसरने किमान ५ हॉटेल आणि ५ रिसॉर्ट्सचे रजिस्ट्रेशन करणे बंधनकारक आहे.",
+      "बुकिंग आणि कमिशन वाटप: एस.एम. इंटरप्रायजेसद्वारे दिलेल्या बुकिंगच्या कमिशनचे ५०%-५०% समप्रमाणात वाटप केले जाईल.",
+      "रूम दाखवण्याची जबाबदारी: कस्टमरला रूम प्रत्यक्ष दाखवण्याची संपूर्ण जबाबदारी कॅनव्हरसरची राहील.",
+      "कमिशन शेअरिंग: रूम दाखवल्यानंतर कस्टमरने बुकिंग फायनल केल्यावर मिळणारे कमिशन नियमानुसार कंपनीसोबत शेअर करणे अनिवार्य आहे.",
+      "वेळेचे व शिस्तीचे पालन: कंपनीने किंवा ग्राहकाने दिलेल्या वेळेवर हजर राहणे आणि दिलेल्या सर्व जबाबदाऱ्या प्रामाणिकपणे व शिस्तीने पार पाडणे बंधनकारक राहील.",
+      "ग्राहकांशी योग्य वर्तन: ग्राहकांशी बोलताना किंवा व्यवहार करताना कोणतीही अरेरावी, गैरवर्तन किंवा दिशाभूल केली जाणार नाही. कंपनीची प्रतिमा राखणे प्रत्येकाचे कर्तव्य असेल.",
+      "गोपनीयता: कंपनीचे हॉटेल, रिसॉर्ट्स, ग्राहक आणि कमिशनशी संबंधित सर्व माहिती गोपनीय ठेवली जाईल. ही माहिती परस्पर अन्य कोणालाही शेअर करण्यास सक्त मनाई आहे.",
+      "नशाबंदी व व्यसनमुक्ती नियम: कामाच्या वेळेत किंवा ड्युटीवर असताना दारू, गुटखा, तंबाखू किंवा कोणत्याही प्रकारचे व्यसन करून ग्राहकांसमोर येण्यास सक्त मनाई आहे. असे आढळल्यास तात्काळ नोकरीवरून काढून टाकले जाईल.",
+      "पारदर्शकता आणि सत्यता: कामाबाबत कोणतीही खोटी माहिती दिली जाणार नाही; सर्व तपशील पूर्णपणे खरे व वास्तविक सांगितले पाहिजेत. खोटी माहिती आढळल्यास कारवाई केली जाईल."
+    ],
+    "readFullTerms": "पूर्ण नियम व अटी वाचा"
   }
 }

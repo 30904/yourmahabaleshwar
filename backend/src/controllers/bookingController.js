@@ -23,6 +23,7 @@ import {
 } from '../services/serviceMonetizationService.js';
 import { serviceTenantForRole } from '../constants/serviceMonetization.js';
 import { emitOpenBookingCreated, emitOpenBookingRemoved } from '../services/openBookingSocket.js';
+import { redactOpenBookingList } from '../utils/redactCustomerContact.js';
 import { taxiRoutePrice } from '../constants/taxiClientRateChart.js';
 import { guideOpenPrice, normalizeGuidePackageId } from '../constants/guideClientRateChart.js';
 import { driverPackagePrice } from '../constants/driverClientRateChart.js';
@@ -904,11 +905,11 @@ export const getOpenServiceBookings = async (req, res) => {
     assignmentStatus: 'UNASSIGNED',
     status: BOOKING_STATUS.PENDING,
   })
-    .populate('customer', 'name phone email')
+    .populate('customer', 'name email')
     .sort('-createdAt')
     .limit(50);
 
-  return success(res, bookings);
+  return success(res, redactOpenBookingList(bookings));
 };
 
 export const acceptOpenServiceBooking = async (req, res) => {
@@ -974,6 +975,7 @@ export const acceptOpenServiceBooking = async (req, res) => {
 
   emitOpenBookingRemoved(claimed);
 
+  await claimed.populate('customer', 'name phone email');
   return success(res, claimed, 'Booking accepted');
 };
 

@@ -21,6 +21,8 @@ import BackupsPage from '../pages/system/BackupsPage';
 import DomainToolsPage from '../pages/system/DomainToolsPage';
 import StaffCreatePage from '../pages/system/StaffCreatePage';
 import StaffManagementPage from '../pages/system/StaffManagementPage';
+import CanvasserCreatePage from '../pages/system/CanvasserCreatePage';
+import CanvasserManagementPage from '../pages/system/CanvasserManagementPage';
 import AdminSuperRoute from '../components/AdminSuperRoute';
 import CmsHubPage from '../pages/cms/CmsHubPage';
 import BlogsPage from '../pages/cms/BlogsPage';
@@ -104,6 +106,8 @@ const adminRouteConfig = [
   { path: 'domain-tools', element: <AdminSuperRoute><DomainToolsPage /></AdminSuperRoute> },
   { path: 'staff', element: <AdminSuperRoute><StaffCreatePage /></AdminSuperRoute> },
   { path: 'staff-management', element: <AdminSuperRoute><StaffManagementPage /></AdminSuperRoute> },
+  { path: 'canvasser', element: <CanvasserCreatePage /> },
+  { path: 'canvasser-management', element: <CanvasserManagementPage /> },
   { path: 'notifications', element: <CampaignsPage /> },
   { path: '*', element: <Navigate to="/admin" replace /> },
 ];

@@ -30,12 +30,12 @@ export const payForStaySubscriptionRenewal = async (listingType, listingId, user
   const ok = await loadRazorpayScript();
 
   if (!ok || order?.mock || keyId === 'mock_key') {
-    await confirmStaySubscriptionRenewal(listingType, listingId, {
+    const confirmed = await confirmStaySubscriptionRenewal(listingType, listingId, {
       razorpayPaymentId: `pay_mock_${Date.now()}`,
       razorpayOrderId: order.id,
       razorpaySignature: `mock_sig_${Date.now()}`,
     });
-    return { mock: true };
+    return { mock: true, subscription: confirmed };
   }
 
   return new Promise((resolve, reject) => {
@@ -53,12 +53,12 @@ export const payForStaySubscriptionRenewal = async (listingType, listingId, user
       },
       handler: async (response) => {
         try {
-          await confirmStaySubscriptionRenewal(listingType, listingId, {
+          const confirmed = await confirmStaySubscriptionRenewal(listingType, listingId, {
             razorpayPaymentId: response.razorpay_payment_id,
             razorpayOrderId: response.razorpay_order_id,
             razorpaySignature: response.razorpay_signature,
           });
-          resolve(response);
+          resolve({ ...response, subscription: confirmed });
         } catch (err) {
           reject(err);
         }

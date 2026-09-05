@@ -13,11 +13,25 @@ import {
   payForServicePoints,
   payForServiceUnlimited,
 } from '../../services/serviceMonetizationApi';
+import { downloadSubscriptionInvoice } from '../../services/subscriptionInvoicesApi';
 import { formatCurrency } from '../../utils/format';
+import VendorSubscriptionInvoices from './VendorSubscriptionInvoices';
 
 function formatDate(value) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+async function maybeDownloadInvoice(result) {
+  const invoiceId = result?.invoiceId;
+  const invoiceNumber = result?.invoiceNumber;
+  if (invoiceId && invoiceNumber) {
+    try {
+      await downloadSubscriptionInvoice(invoiceId, invoiceNumber);
+    } catch {
+      /* list still has download */
+    }
+  }
 }
 
 export default function VendorServiceSubscription() {
@@ -27,6 +41,7 @@ export default function VendorServiceSubscription() {
   const [loading, setLoading] = useState(true);
   const [rechargeAmount, setRechargeAmount] = useState('500');
   const [busy, setBusy] = useState('');
+  const [invoiceRefresh, setInvoiceRefresh] = useState(0);
 
   const load = () => {
     setLoading(true);
@@ -48,8 +63,10 @@ export default function VendorServiceSubscription() {
     }
     setBusy('points');
     try {
-      await payForServicePoints(amount, user);
+      const result = await payForServicePoints(amount, user);
       toast.success(t('serviceSubscription.pointsRecharged'));
+      await maybeDownloadInvoice(result);
+      setInvoiceRefresh((n) => n + 1);
       load();
     } catch (e) {
       toast.error(e.response?.data?.message || e.message || t('serviceSubscription.rechargeFailed'));
@@ -61,8 +78,10 @@ export default function VendorServiceSubscription() {
   const buyUnlimited = async () => {
     setBusy('unlimited');
     try {
-      await payForServiceUnlimited(user);
+      const result = await payForServiceUnlimited(user);
       toast.success(t('serviceSubscription.unlimitedActivated'));
+      await maybeDownloadInvoice(result);
+      setInvoiceRefresh((n) => n + 1);
       load();
     } catch (e) {
       toast.error(e.response?.data?.message || e.message || t('serviceSubscription.rechargeFailed'));
@@ -174,6 +193,8 @@ export default function VendorServiceSubscription() {
           {busy === 'unlimited' ? t('common.loading') : t('serviceSubscription.buyUnlimited')}
         </Button>
       </Card>
+
+      <VendorSubscriptionInvoices refreshKey={invoiceRefresh} />
     </div>
   );
 }

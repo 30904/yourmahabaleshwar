@@ -16,6 +16,8 @@ const walletTransactionSchema = new mongoose.Schema(
     payout: { type: mongoose.Schema.Types.ObjectId, ref: 'Payout' },
     description: { type: String },
     metadata: { type: mongoose.Schema.Types.Mixed },
+    invoiceNumber: { type: String },
+    invoiceUrl: { type: String },
   },
   { timestamps: true }
 );

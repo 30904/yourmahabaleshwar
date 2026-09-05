@@ -16,7 +16,9 @@ import {
   adminListingListPath,
   createVendorListing,
   fetchMyVendorListing,
+  fetchMyVendorListings,
   updateVendorListing,
+  isSingleListingVendorRole,
 } from '../../services/vendorListingsApi';
 import {
   AMENITY_OPTIONS,
@@ -67,6 +69,24 @@ export default function VendorListingForm({ adminMode = false } = {}) {
     if (isEdit) return;
     setForm(defaultsFor(vertical));
   }, [isEdit, vertical]);
+
+  useEffect(() => {
+    if (adminMode || isEdit || !user?.role || !isSingleListingVendorRole(user.role)) return;
+    fetchMyVendorListings(user.role)
+      .then((rows) => {
+        if (rows?.length) {
+          toast.error(t('vendor.singleListingOnly'));
+          const first = rows[0];
+          navigate(
+            first?.id && first?.vertical
+              ? `/dashboard/vendor/listings/${first.vertical}/${first.id}/edit`
+              : VENDOR_LISTINGS_PATH,
+            { replace: true }
+          );
+        }
+      })
+      .catch(() => {});
+  }, [adminMode, isEdit, user?.role, navigate, t]);
 
   useEffect(() => {
     if (!isEdit || !vertical || !id) return;

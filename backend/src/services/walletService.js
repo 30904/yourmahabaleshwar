@@ -3,6 +3,7 @@ import WalletTransaction from '../models/WalletTransaction.js';
 import VendorSubscription from '../models/VendorSubscription.js';
 import PlatformSettings from '../models/PlatformSettings.js';
 import { createNotification } from './notificationService.js';
+import { issueSubscriptionInvoice } from './subscriptionInvoiceService.js';
 
 export const getPlatformMonetization = async () => {
   const settings = await PlatformSettings.findOne({ key: 'default' });
@@ -128,7 +129,7 @@ export const rechargePoints = async ({ vendorId, points, amountPaid = 0, payment
   if (!vendor) throw new Error('Vendor not found');
   vendor.pointBalance = (vendor.pointBalance || 0) + points;
   await vendor.save();
-  return WalletTransaction.create({
+  const tx = await WalletTransaction.create({
     vendor: vendorId,
     type: 'POINTS_PURCHASE',
     points,
@@ -138,4 +139,28 @@ export const rechargePoints = async ({ vendorId, points, amountPaid = 0, payment
     description: `Purchased ${points} points`,
     metadata: { paymentRef },
   });
+
+  if (Number(amountPaid) > 0) {
+    try {
+      const invoice = await issueSubscriptionInvoice({
+        vendorId,
+        kind: 'POINTS_RECHARGE',
+        title: 'Points purchase',
+        description: `${points} points recharged`,
+        amount: amountPaid,
+        paymentRef,
+        metadata: { points },
+        walletTransactionId: tx._id,
+      });
+      if (invoice) {
+        tx.invoiceNumber = invoice.invoiceNumber;
+        tx.invoiceUrl = invoice.invoiceUrl;
+        await tx.save();
+      }
+    } catch {
+      /* invoice non-blocking */
+    }
+  }
+
+  return tx;
 };

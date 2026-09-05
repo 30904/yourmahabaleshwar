@@ -42,6 +42,8 @@ import {
   Megaphone,
   Trees,
   ShoppingBag,
+  ClipboardList,
+  UserPlus,
 } from 'lucide-react';
 import { HOMESTAY_VILLA } from '../../constants/homestayVillaLabels';
 import { canManageStaff, canSeeFinance } from '../../utils/adminAccess';
@@ -195,6 +197,8 @@ export const adminNavGroups = [
       { to: '/admin/domain-tools', label: 'Domain Tools', icon: Tags, superAdminOnly: true },
       { to: '/admin/staff', label: 'Staff', icon: UserCog, superAdminOnly: true },
       { to: '/admin/staff-management', label: 'Staff Management', icon: Users, superAdminOnly: true },
+      { to: '/admin/canvasser', label: 'Canvasser', icon: UserPlus },
+      { to: '/admin/canvasser-management', label: 'Canvasser Management', icon: ClipboardList },
       { to: '/admin/notifications', label: 'Notifications', icon: Bell },
     ],
   },
