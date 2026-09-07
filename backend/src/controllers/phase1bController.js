@@ -279,13 +279,14 @@ export const createAdvertisement = async (req, res) => {
     listingId,
     banner: bannerId,
     title: title || pkg.name,
+    placement: pkg.placement,
     status: 'ACTIVE',
     startDate,
     endDate,
     amountPaid: amountPaid || pkg.price,
   });
 
-  if (pkg.placement === 'FEATURED' && listingId) {
+  if ((pkg.placement === 'FEATURED' || pkg.placement === 'HOMEPAGE_HERO') && listingId) {
     const Model =
       listingType === 'TENT'
         ? Tent
@@ -575,6 +576,14 @@ export const seedPhase1bDefaults = async (req, res) => {
   const adPkgs = [
     { name: 'Featured 7 days', code: 'FEAT7', price: 1499, durationDays: 7, placement: 'FEATURED' },
     { name: 'Homepage Banner 7 days', code: 'BANNER7', price: 2999, durationDays: 7, placement: 'HOMEPAGE_BANNER' },
+    {
+      name: 'Homepage Spotlight 7 days',
+      code: 'HERO7',
+      description: 'Show your listing in the homepage hero (up to 3 sponsored listings).',
+      price: 2499,
+      durationDays: 7,
+      placement: 'HOMEPAGE_HERO',
+    },
     { name: 'Search Priority 14 days', code: 'SEARCH14', price: 1999, durationDays: 14, placement: 'SEARCH_PRIORITY' },
   ];
   for (const p of adPkgs) {

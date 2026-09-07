@@ -13,6 +13,7 @@ import routes from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { startScheduledJobs } from './jobs/scheduler.js';
 import { initSocket } from './socket/index.js';
+import { ensureHomepageHeroPackageSeeded } from './services/homepageAdsService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +26,7 @@ if (env.trustProxy) {
 
 connectDB();
 startScheduledJobs();
+ensureHomepageHeroPackageSeeded().catch(() => {});
 
 app.use(
   helmet({

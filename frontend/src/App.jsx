@@ -54,6 +54,8 @@ import VendorAvailability from './dashboards/vendor/VendorAvailability';
 import VendorReviews from './dashboards/vendor/VendorReviews';
 import VendorWallet from './dashboards/vendor/VendorWallet';
 import VendorMySubscription from './dashboards/vendor/VendorMySubscription';
+import VendorAdvertisements from './dashboards/vendor/VendorAdvertisements';
+import TentDetailPage from './pages/public/TentDetailPage';
 
 import AdminOverview from './dashboards/admin/AdminOverview';
 import AdminBookings from './dashboards/admin/AdminBookings';
@@ -104,7 +106,7 @@ export default function App() {
         <Route path="homestays/:slug" element={<HomestayDetailPage />} />
         <Route path="tents" element={<TentsPage />} />
         <Route path="tents/book" element={<TentBookingPage />} />
-        <Route path="tents/:slug" element={<Navigate to="/tents/book" replace />} />
+        <Route path="tents/:slug" element={<TentDetailPage />} />
         <Route path="guides" element={<GuidesPage />} />
         <Route path="guides/book" element={<GuideBookingPage />} />
         <Route path="guides/:slug" element={<Navigate to="/guides/book" replace />} />
@@ -178,6 +180,7 @@ export default function App() {
         <Route path="reviews" element={<VendorReviews />} />
         <Route path="wallet" element={<VendorWallet />} />
         <Route path="subscription" element={<VendorMySubscription />} />
+        <Route path="advertisements" element={<VendorAdvertisements />} />
         <Route path="kyc" element={<VendorKYC />} />
       </Route>
 

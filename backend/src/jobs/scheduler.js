@@ -28,10 +28,16 @@ const expireSubscriptions = async () => {
 };
 
 const expireAds = async () => {
-  await Advertisement.updateMany(
-    { status: 'ACTIVE', endDate: { $lte: new Date() } },
-    { status: 'EXPIRED' }
-  );
+  const now = new Date();
+  const expiring = await Advertisement.find({
+    status: 'ACTIVE',
+    endDate: { $lte: now },
+  });
+
+  for (const ad of expiring) {
+    ad.status = 'EXPIRED';
+    await ad.save();
+  }
 };
 
 export const startScheduledJobs = () => {

@@ -87,7 +87,7 @@ export default function SearchPage() {
           <h2 className="text-lg font-bold text-slate-900">{t('serviceBooking.bookExperiences')}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <Link to="/guides/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.guideTitle')}</Link>
-            <Link to="/tents/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.tentTitle')}</Link>
+            <Link to="/tents" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('nav.tents')}</Link>
             <Link to="/taxi/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.taxiTitle')}</Link>
             <Link to="/drivers/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.driverTitle')}</Link>
             <Link to="/horses/book" className="card p-4 text-center font-semibold text-primary hover:shadow-elevated">{t('serviceBooking.horseTitle')}</Link>

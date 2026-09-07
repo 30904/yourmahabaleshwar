@@ -19,6 +19,7 @@ import miscRoutes from './miscRoutes.js';
 import staySubscriptionRoutes from './staySubscriptionRoutes.js';
 import serviceMonetizationRoutes from './serviceMonetizationRoutes.js';
 import subscriptionInvoiceRoutes from './subscriptionInvoiceRoutes.js';
+import homepageAdsRoutes from './homepageAdsRoutes.js';
 import storageRoutes from './storageRoutes.js';
 
 const router = Router();
@@ -46,6 +47,7 @@ router.use('/search', searchRoutes);
 router.use('/stay-subscriptions', staySubscriptionRoutes);
 router.use('/service-monetization', serviceMonetizationRoutes);
 router.use('/subscription-invoices', subscriptionInvoiceRoutes);
+router.use('/ads', homepageAdsRoutes);
 router.use('/storage', storageRoutes);
 router.use('/', miscRoutes);
 

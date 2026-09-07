@@ -11,6 +11,10 @@ const advertisementSchema = new mongoose.Schema(
     listingId: { type: mongoose.Schema.Types.ObjectId },
     banner: { type: mongoose.Schema.Types.ObjectId, ref: 'Banner' },
     title: { type: String },
+    placement: {
+      type: String,
+      enum: ['FEATURED', 'SPONSORED', 'HOMEPAGE_BANNER', 'HOMEPAGE_HERO', 'SEARCH_PRIORITY'],
+    },
     status: {
       type: String,
       enum: ['PENDING', 'ACTIVE', 'EXPIRED', 'PAUSED'],
@@ -19,6 +23,7 @@ const advertisementSchema = new mongoose.Schema(
     startDate: { type: Date },
     endDate: { type: Date },
     amountPaid: { type: Number, default: 0 },
+    paymentRef: { type: String },
     impressions: { type: Number, default: 0 },
     clicks: { type: Number, default: 0 },
   },
@@ -26,5 +31,7 @@ const advertisementSchema = new mongoose.Schema(
 );
 
 advertisementSchema.index({ status: 1, endDate: 1 });
+advertisementSchema.index({ placement: 1, status: 1, endDate: 1 });
+advertisementSchema.index({ vendor: 1, createdAt: -1 });
 
 export default mongoose.model('Advertisement', advertisementSchema);

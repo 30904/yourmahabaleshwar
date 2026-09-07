@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PropertyCard from '../property/PropertyCard';
 import HomeSectionHeader from './HomeSectionHeader';
 import Skeleton from '../ui/Skeleton';
-import Button from '../ui/Button';
-import { fetchHotels } from '../../services/listingsApi';
+import { fetchHotels, fetchTents } from '../../services/listingsApi';
 import { dummyHotels, dummyResorts, dummyTents } from '../../data/dummyListings';
 
 export default function HomePropertyTabs() {
@@ -16,9 +14,32 @@ export default function HomePropertyTabs() {
 
   const tabConfig = useMemo(
     () => [
-      { id: 'hotels', labelKey: 'home.propertyTabs.topHotels', link: '/hotels', prefix: '/hotels', type: 'HOTEL', fallback: dummyHotels.slice(0, 3) },
-      { id: 'resorts', labelKey: 'home.propertyTabs.luxuryResorts', link: '/resorts', prefix: '/resorts', type: 'RESORT', fallback: dummyResorts.slice(0, 3) },
-      { id: 'tents', labelKey: 'home.propertyTabs.uniqueStays', link: '/tents/book', prefix: '/tents/book', priceKey: 'pricePerNight', fallback: dummyTents, serviceBook: true },
+      {
+        id: 'hotels',
+        labelKey: 'home.propertyTabs.topHotels',
+        link: '/hotels',
+        prefix: '/hotels',
+        type: 'HOTEL',
+        fallback: dummyHotels.slice(0, 3),
+      },
+      {
+        id: 'resorts',
+        labelKey: 'home.propertyTabs.luxuryResorts',
+        link: '/resorts',
+        prefix: '/resorts',
+        type: 'RESORT',
+        fallback: dummyResorts.slice(0, 3),
+      },
+      {
+        id: 'tents',
+        labelKey: 'home.propertyTabs.uniqueStays',
+        link: '/tents',
+        prefix: '/tents',
+        priceKey: 'pricePerNight',
+        itemType: 'TENT',
+        fallback: dummyTents.slice(0, 3),
+        fetchTents: true,
+      },
     ],
     []
   );
@@ -29,14 +50,14 @@ export default function HomePropertyTabs() {
     setLoading(true);
     const load = async () => {
       const tab = tabConfig.find((item) => item.id === active) || tabConfig[0];
-      if (tab.serviceBook) {
-        setItems([]);
-        setLoading(false);
-        return;
-      }
       try {
-        const data = await fetchHotels({ type: tab.type, limit: 3, featured: 'true' });
-        setItems(data.length ? data.slice(0, 3) : tab.fallback);
+        if (tab.fetchTents) {
+          const data = await fetchTents({ limit: 3 });
+          setItems(data.length ? data.slice(0, 3) : tab.fallback);
+        } else {
+          const data = await fetchHotels({ type: tab.type, limit: 3, featured: 'true' });
+          setItems(data.length ? data.slice(0, 3) : tab.fallback);
+        }
       } catch {
         setItems(tab.fallback);
       } finally {
@@ -68,15 +89,7 @@ export default function HomePropertyTabs() {
         ))}
       </div>
       <div className="mt-6 space-y-4">
-        {current.serviceBook ? (
-          <div className="card flex flex-col items-center gap-4 p-8 text-center">
-            <p className="text-slate-600">{t('serviceBooking.tentHubDesc')}</p>
-            <p className="text-sm text-slate-500">{t('serviceBooking.noVendorPick')}</p>
-            <Link to="/tents/book">
-              <Button>{t('serviceBooking.bookNow')}</Button>
-            </Link>
-          </div>
-        ) : loading ? (
+        {loading ? (
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-52" />)
         ) : (
           items.map((item) => (
@@ -85,6 +98,7 @@ export default function HomePropertyTabs() {
               item={item}
               linkPrefix={current.prefix}
               priceKey={current.priceKey || 'priceFrom'}
+              itemType={current.itemType}
             />
           ))
         )}

@@ -18,6 +18,7 @@ const roleRedirect = {
   TAXI_OPERATOR: '/dashboard/vendor',
   DRIVER: '/dashboard/vendor',
   HORSE_OPERATOR: '/dashboard/vendor',
+  PRODUCT_VENDOR: '/dashboard/vendor',
   CUSTOMER: '/dashboard/customer',
 };
 

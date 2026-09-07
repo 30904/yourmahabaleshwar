@@ -153,9 +153,19 @@ export const createTentBooking = async (req, res) => {
   const tent = await Tent.findById(tentId);
   if (!tent) return error(res, 'Tent not found', 404);
 
+  const lead = guestRegistration?.leadGuest || {};
+  if (guestRegistration) {
+    if (!String(lead.fullName || '').trim()) return error(res, 'Customer full name is required', 400);
+    if (!String(lead.mobile || '').trim()) return error(res, 'Mobile number is required', 400);
+    if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
+      return error(res, 'Please accept the Terms and Conditions', 400);
+    }
+  }
+
   if (rangeHasBlocked(tent.blockedDates, checkIn, checkOut)) {
     return error(res, 'Selected dates are blocked', 400);
   }
+  const qty = Number(tentQuantity) || 1;
   const conflict = await hasBookingConflict({
     type: BOOKING_TYPES.TENT,
     listingField: 'tent',
@@ -163,13 +173,68 @@ export const createTentBooking = async (req, res) => {
     checkIn,
     checkOut,
     capacity: tent.totalTents || 10,
-    quantity: tentQuantity || 1,
+    quantity: qty,
   });
   if (conflict) return error(res, 'Tents not available for selected dates', 400);
 
   const nights = getNights(checkIn, checkOut);
-  const subtotal = tent.pricePerNight * tentQuantity * nights;
+  const nightPrice = tent.pricePerNight;
+  const subtotal = nightPrice * qty * nights;
   const pricing = await calculateTotalAsync(subtotal);
+  const commissionRate =
+    tent.commissionRate != null ? tent.commissionRate / 100 : await getDefaultCommissionRate();
+
+  const adults = Number(guestRegistration?.adults ?? 1) || 1;
+  const children = Number(guestRegistration?.children ?? 0) || 0;
+
+  let registration;
+  if (guestRegistration) {
+    registration = {
+      formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
+      checkInTime: guestRegistration?.checkInTime || '14:00',
+      checkOutTime: guestRegistration?.checkOutTime || '11:00',
+      leadGuest: {
+        fullName: String(lead.fullName || '').trim(),
+        age: lead.age != null ? Number(lead.age) : undefined,
+        gender: lead.gender || '',
+        mobile: String(lead.mobile || '').trim(),
+        email: String(lead.email || '').trim(),
+        address: String(lead.address || '').trim(),
+        cityState: String(lead.cityState || '').trim(),
+        pincode: String(lead.pincode || '').trim(),
+        comingFrom: String(lead.comingFrom || '').trim(),
+        goingTo: String(lead.goingTo || '').trim(),
+        purpose: lead.purpose || '',
+      },
+      idProof: {
+        type: guestRegistration?.idProof?.type || '',
+        number: String(guestRegistration?.idProof?.number || '').trim(),
+        nationality: guestRegistration?.idProof?.nationality || 'INDIAN',
+        documentUrl: guestRegistration?.idProof?.documentUrl || undefined,
+      },
+      coTravellers: Array.isArray(guestRegistration?.coTravellers)
+        ? guestRegistration.coTravellers
+            .filter((c) => String(c?.fullName || '').trim())
+            .map((c) => ({
+              fullName: String(c.fullName).trim(),
+              age: c.age != null ? Number(c.age) : undefined,
+              gender: c.gender || '',
+              relationship: String(c.relationship || '').trim(),
+            }))
+        : [],
+      tentLabel: guestRegistration?.tentLabel || tent.name,
+      notes: guestRegistration?.notes || '',
+      totalNights: nights,
+      tariff: nightPrice,
+      advanceAmount:
+        guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
+      paymentMode: guestRegistration?.paymentMode || 'ONLINE',
+      acceptedTermsAt: guestRegistration?.acceptedTermsAt
+        ? new Date(guestRegistration.acceptedTermsAt)
+        : new Date(),
+    };
+  }
+
   const booking = await Booking.create({
     customer: req.user._id,
     vendor: tent.operator,
@@ -177,9 +242,23 @@ export const createTentBooking = async (req, res) => {
     tent: tentId,
     checkIn,
     checkOut,
-    tentQuantity,
+    tentQuantity: qty,
+    guests: { adults, children },
+    ...(registration ? { guestRegistration: registration } : {}),
     ...pricing,
+    commission: Math.round(pricing.subtotal * commissionRate),
   });
+
+  if (tent.operator) {
+    await createNotification({
+      userId: tent.operator,
+      title: 'New booking request',
+      message: `Tent booking ${booking.bookingNumber} awaiting action.`,
+      type: 'BOOKING',
+      link: '/dashboard/vendor/bookings',
+    });
+  }
+
   return success(res, booking, 'Tent booking created', 201);
 };
 
