@@ -39,7 +39,7 @@
   }
 
   .nav-bar-inner {
-    @apply mx-auto grid min-h-[72px] w-full max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 sm:min-h-[80px] sm:gap-3 sm:px-6 lg:px-8 xl:gap-3;
+    @apply mx-auto grid min-h-[80px] w-full max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 sm:min-h-[88px] sm:gap-3 sm:px-6 lg:px-8 xl:gap-3;
   }
 
   .nav-actions {

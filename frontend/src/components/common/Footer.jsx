@@ -27,7 +27,7 @@ export default function Footer() {
     {
       titleKey: 'footer.company',
       links: [
-        ['footer.about', '/about-mahabaleshwar'],
+        ['footer.about', '/about-us'],
         ['footer.blog', '/blogs'],
         ['footer.privacy', '/privacy-policy'],
         ['footer.terms', '/terms'],
