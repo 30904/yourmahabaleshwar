@@ -98,6 +98,8 @@
     "quickResorts": "Resorts",
     "quickGlamping": "Glamping",
     "quickFreeCancellation": "Free cancellation",
+    "sponsoredListings": "Sponsored stays",
+    "fromPrice": "From {{price}}",
     "categories": {
       "hotels": "Hotels",
       "hotelsCount": "450+ stays",
@@ -248,6 +250,29 @@
     "loadFailed": "Could not load invoices",
     "downloadFailed": "Could not download invoice",
     "download": "Download"
+  },
+  "vendorAds": {
+    "nav": "Advertisements",
+    "title": "Homepage advertisements",
+    "subtitle": "Promote an approved hotel, resort, homestay/villa or tent listing in the homepage spotlight (max 3 live ads).",
+    "loadFailed": "Could not load advertisement details",
+    "slotsOpen": "Homepage slots open",
+    "slotsHint": "When your payment succeeds, your listing appears on the homepage top-right and links customers straight to your booking page.",
+    "buyTitle": "Buy homepage spotlight",
+    "package": "Package",
+    "listing": "Listing to promote",
+    "chooseListing": "Select a listing",
+    "days": "days",
+    "payAndPromote": "Pay & promote",
+    "slotsFull": "All slots are full",
+    "selectPackage": "Select a package",
+    "selectListing": "Select a listing",
+    "purchaseSuccess": "Advertisement is live on the homepage",
+    "purchaseFailed": "Could not activate advertisement",
+    "noApprovedListings": "You need an approved listing before you can advertise.",
+    "historyTitle": "Your homepage ads",
+    "historyEmpty": "No homepage advertisements yet.",
+    "notAvailable": "Homepage advertisements are available for hotel, resort, homestay/villa and tent vendors."
   },
   "staySubscription": {
     "nav": "My Subscription",

@@ -9,7 +9,7 @@ const adPackageSchema = new mongoose.Schema(
     durationDays: { type: Number, default: 7 },
     placement: {
       type: String,
-      enum: ['FEATURED', 'SPONSORED', 'HOMEPAGE_BANNER', 'SEARCH_PRIORITY'],
+      enum: ['FEATURED', 'SPONSORED', 'HOMEPAGE_BANNER', 'HOMEPAGE_HERO', 'SEARCH_PRIORITY'],
       required: true,
     },
     impressionsTarget: { type: Number, default: 0 },

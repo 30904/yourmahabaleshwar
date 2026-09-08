@@ -8,6 +8,7 @@ import {
   Home,
   Languages,
   LayoutDashboard,
+  Megaphone,
   ShoppingBag,
   Star,
   Tent,
@@ -75,12 +76,21 @@ export const SERVICE_SUBSCRIPTION_ROLES = [
   ROLES.HORSE_OPERATOR,
 ];
 
+export const HOMEPAGE_AD_VENDOR_ROLES = [
+  ROLES.HOTEL_VENDOR,
+  ROLES.HOMESTAY_VENDOR,
+  ROLES.TENT_OPERATOR,
+];
+
 export function vendorCanAccessPath(role, pathname) {
   if (String(pathname || '').startsWith('/dashboard/vendor/subscription')) {
     return STAY_SUBSCRIPTION_ROLES.includes(role) || SERVICE_SUBSCRIPTION_ROLES.includes(role);
   }
   if (String(pathname || '').startsWith('/dashboard/vendor/availability')) {
     return roleHasAvailability(role);
+  }
+  if (String(pathname || '').startsWith('/dashboard/vendor/advertisements')) {
+    return HOMEPAGE_AD_VENDOR_ROLES.includes(role);
   }
   return true;
 }
@@ -111,6 +121,13 @@ export function getVendorNav(role, t) {
         ? t('serviceSubscription.title')
         : t('staySubscription.nav'),
       icon: CreditCard,
+    });
+  }
+  if (HOMEPAGE_AD_VENDOR_ROLES.includes(role)) {
+    items.push({
+      to: '/dashboard/vendor/advertisements',
+      label: t('vendorAds.nav'),
+      icon: Megaphone,
     });
   }
   items.push(
