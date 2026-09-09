@@ -367,6 +367,8 @@ const crudGetMine = (Model, ownerField) => async (req, res) => {
 export const createHomestay = async (req, res) => {
   req.body = stampPendingIfVendor(req, req.body);
   try {
+    const blocked = await denyIfSingleListingExceeded(req, Homestay, 'vendor');
+    if (blocked) return error(res, blocked.message, blocked.status);
     const data = stampOwnerOnCreate(req, { ...req.body }, 'vendor');
     if (!data.slug && data.name) data.slug = slugify(data.name);
     const doc = await Homestay.create(data);
@@ -392,7 +394,7 @@ export const getMyHorse = crudGetMine(Horse, 'operator');
 
 export const createTent = async (req, res) => {
   req.body = stampPendingIfVendor(req, req.body);
-  return crudCreate(Tent, 'operator')(req, res);
+  return crudCreate(Tent, 'operator', { enforceSingleListing: true })(req, res);
 };
 export const updateTent = crudUpdate(Tent, 'operator', { requireApproved: true });
 export const deleteTent = crudDelete(Tent, 'operator');

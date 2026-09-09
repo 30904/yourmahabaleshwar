@@ -2,8 +2,11 @@ import { ROLES } from '../constants/roles.js';
 
 export const isListingAdmin = (user) => user?.role === ROLES.SUPER_ADMIN;
 
-/** Guide, taxi, driver, horse vendors may own only one listing each. */
+/** Stay and service vendors may own only one listing each. Admin can still create multiple. */
 export const SINGLE_LISTING_VENDOR_ROLES = [
+  ROLES.HOTEL_VENDOR,
+  ROLES.HOMESTAY_VENDOR,
+  ROLES.TENT_OPERATOR,
   ROLES.GUIDE,
   ROLES.TAXI_OPERATOR,
   ROLES.DRIVER,

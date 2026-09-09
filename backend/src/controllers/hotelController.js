@@ -4,7 +4,7 @@ import { ROLES } from '../constants/roles.js';
 import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices, enrichHotel } from '../utils/listingEnrich.js';
 import { mapHotelMine } from '../utils/vendorMineListings.js';
-import { denyIfNotOwner, stampOwnerOnCreate, stripOwnerOnUpdate } from '../utils/vendorListingAccess.js';
+import { denyIfNotOwner, denyIfSingleListingExceeded, stampOwnerOnCreate, stripOwnerOnUpdate } from '../utils/vendorListingAccess.js';
 import { APPROVAL_STATUS, denyIfVendorCannotEdit, stampPendingIfVendor } from '../utils/listingApproval.js';
 import { maybeStartSubscriptionAfterCreate, publicStaySubscriptionFilter } from '../services/stayListingSubscriptionService.js';
 
@@ -93,6 +93,8 @@ export const getHotelBySlug = async (req, res) => {
 
 export const createHotel = async (req, res) => {
   if (!req.body?.name) return error(res, 'Name is required', 400);
+  const blocked = await denyIfSingleListingExceeded(req, Hotel, 'vendor');
+  if (blocked) return error(res, blocked.message, blocked.status);
   const { rooms, rest } = splitStayBody(req.body);
   const slug = `${String(rest.name).toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Date.now().toString(36)}`;
   try {
