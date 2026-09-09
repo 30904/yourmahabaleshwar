@@ -364,6 +364,21 @@ export default function VendorListingForm({ adminMode = false } = {}) {
 
           {vertical === 'TENT' && (
             <>
+              <Input
+                label={t('stayRegistration.managerName')}
+                value={form.managerName || ''}
+                onChange={(e) => setField('managerName', e.target.value)}
+              />
+              <Input
+                label={t('stayRegistration.managerNumber')}
+                value={form.managerNumber || ''}
+                onChange={(e) => setField('managerNumber', e.target.value)}
+              />
+              <Input
+                label={t('stayRegistration.extraMobileNumber')}
+                value={form.extraMobileNumber || ''}
+                onChange={(e) => setField('extraMobileNumber', e.target.value)}
+              />
               <Input label={t('vendor.location')} value={form.location} onChange={(e) => setField('location', e.target.value)} />
               <Input label={t('vendor.pricePerNight')} type="number" min="1" value={form.pricePerNight} onChange={(e) => setField('pricePerNight', e.target.value)} />
               <Input label={t('vendor.capacity')} type="number" min="1" value={form.capacity} onChange={(e) => setField('capacity', e.target.value)} />

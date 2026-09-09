@@ -30,6 +30,9 @@ const hotelSchema = new mongoose.Schema(
     description: { type: String },
     shortDescription: { type: String },
     ownerName: { type: String },
+    managerName: { type: String },
+    managerNumber: { type: String },
+    extraMobileNumber: { type: String },
     address: {
       line1: String,
       line2: String,

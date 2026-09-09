@@ -77,6 +77,21 @@ export default function HotelResortRegistrationFields({ form, setField, toggleAm
             onChange={(e) => setField('ownerName', e.target.value)}
             required
           />
+          <Input
+            label={t('stayRegistration.managerName')}
+            value={form.managerName}
+            onChange={(e) => setField('managerName', e.target.value)}
+          />
+          <Input
+            label={t('stayRegistration.managerNumber')}
+            value={form.managerNumber}
+            onChange={(e) => setField('managerNumber', e.target.value)}
+          />
+          <Input
+            label={t('stayRegistration.extraMobileNumber')}
+            value={form.extraMobileNumber}
+            onChange={(e) => setField('extraMobileNumber', e.target.value)}
+          />
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('hotelRegistration.propertyType')}</label>
             <select className="input-field" value={form.type} onChange={(e) => setField('type', e.target.value)}>

@@ -71,6 +71,21 @@ export default function HomestayRegistrationFields({ form, setField, toggleAmeni
             onChange={(e) => setField('ownerName', e.target.value)}
             required
           />
+          <Input
+            label={t('stayRegistration.managerName')}
+            value={form.managerName}
+            onChange={(e) => setField('managerName', e.target.value)}
+          />
+          <Input
+            label={t('stayRegistration.managerNumber')}
+            value={form.managerNumber}
+            onChange={(e) => setField('managerNumber', e.target.value)}
+          />
+          <Input
+            label={t('stayRegistration.extraMobileNumber')}
+            value={form.extraMobileNumber}
+            onChange={(e) => setField('extraMobileNumber', e.target.value)}
+          />
           <Input label={t('stayRegistration.pinCode')} value={form.pincode} onChange={(e) => setField('pincode', e.target.value)} />
           <Input
             className="sm:col-span-2"

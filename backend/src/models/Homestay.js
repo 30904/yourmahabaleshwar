@@ -42,6 +42,9 @@ const homestaySchema = new mongoose.Schema(
     slug: { type: String, unique: true, lowercase: true },
     description: { type: String },
     ownerName: { type: String },
+    managerName: { type: String },
+    managerNumber: { type: String },
+    extraMobileNumber: { type: String },
     location: { type: String, default: 'Mahabaleshwar' },
     address: {
       line1: String,

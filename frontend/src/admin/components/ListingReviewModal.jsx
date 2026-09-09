@@ -453,6 +453,9 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
                   }
                 />
                 <Info label="Owner / Partner" value={listing.ownerName} />
+                <Info label="Manager name" value={listing.managerName} />
+                <Info label="Manager number" value={listing.managerNumber} />
+                <Info label="Extra mobile" value={listing.extraMobileNumber} />
                 {type === 'GUIDE' && (
                   <>
                     <Info label="Gender" value={listing.gender} />
