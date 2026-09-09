@@ -59,6 +59,7 @@ export default function StayGuestBookingFormCore({
   gst,
   total,
   dateBlocked,
+  inventory = null,
   submitting,
   legalOpen,
   setLegalOpen,
@@ -132,6 +133,22 @@ export default function StayGuestBookingFormCore({
               </select>
             </div>
           </div>
+          {form.checkIn && inventory?.capacity != null && (
+            <p
+              className={`text-sm font-medium ${
+                inventory.remaining <= 0
+                  ? 'text-red-600'
+                  : inventory.remaining <= 2
+                    ? 'text-amber-700'
+                    : 'text-emerald-700'
+              }`}
+            >
+              {t('booking.roomsRemaining', {
+                remaining: inventory.remaining,
+                capacity: inventory.capacity,
+              })}
+            </p>
+          )}
           {dateBlocked && <p className="text-sm text-red-600">{t('booking.allRoomsBooked')}</p>}
         </Card>
 

@@ -262,3 +262,34 @@ export const getUnavailableDates = async ({
 
   return [...unavailable].sort();
 };
+
+/** Live inventory for a stay window: capacity, peak booked, remaining. */
+export const getRangeInventory = async ({
+  type,
+  listingField,
+  listingId,
+  from,
+  to,
+  capacity = 1,
+  extraFilter = {},
+}) => {
+  const ci = startOfDay(from);
+  let co = startOfDay(to);
+  if (co.getTime() <= ci.getTime()) {
+    co = new Date(ci.getTime() + 86400000);
+  }
+
+  const bookings = await Booking.find({
+    type: resolveTypeFilter(type, listingField),
+    [listingField]: listingId,
+    status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.CONFIRMED] },
+    checkIn: { $lt: co },
+    $or: [{ checkOut: { $gt: ci } }, { checkOut: null }],
+    ...extraFilter,
+  });
+
+  const booked = peakOccupancyForRange(bookings, ci, co, type);
+  const cap = Math.max(1, Number(capacity) || 1);
+  const remaining = Math.max(0, cap - booked);
+  return { capacity: cap, booked, remaining };
+};

@@ -16,6 +16,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   const roomList = rooms?.length ? rooms : hotel?.rooms || [];
   const isResort = hotel?.type === 'RESORT';
   const [unavailable, setUnavailable] = useState([]);
+  const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
   const [form, setForm] = useState(() => ({
@@ -94,11 +95,25 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
 
   useEffect(() => {
     const roomId = form.roomId || roomList[0]?._id;
-    if (!roomId || !form.checkIn) return;
+    if (!roomId || !form.checkIn) {
+      setInventory(null);
+      setUnavailable([]);
+      return;
+    }
     const to = form.checkOut || form.checkIn;
     fetchAvailability('room', roomId, form.checkIn, to)
-      .then((d) => setUnavailable(d.unavailable || []))
-      .catch(() => setUnavailable([]));
+      .then((d) => {
+        setUnavailable(d.unavailable || []);
+        setInventory({
+          capacity: d.capacity ?? null,
+          booked: d.booked ?? 0,
+          remaining: d.remaining ?? null,
+        });
+      })
+      .catch(() => {
+        setUnavailable([]);
+        setInventory(null);
+      });
   }, [form.roomId, roomList, form.checkIn, form.checkOut]);
 
   const validate = () => {
@@ -190,6 +205,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       gst={gst}
       total={total}
       dateBlocked={dateBlocked}
+      inventory={inventory}
       submitting={submitting}
       legalOpen={legalOpen}
       setLegalOpen={setLegalOpen}

@@ -14,6 +14,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [unavailable, setUnavailable] = useState([]);
+  const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
   const [form, setForm] = useState(() => ({
@@ -93,11 +94,25 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
 
   useEffect(() => {
     const roomId = form.roomId || item?.rooms?.[0]?._id;
-    if (!item?._id || !form.checkIn || !roomId) return;
+    if (!item?._id || !form.checkIn || !roomId) {
+      setInventory(null);
+      setUnavailable([]);
+      return;
+    }
     const to = form.checkOut || form.checkIn;
     fetchAvailability('homestay', item._id, form.checkIn, to, { roomId })
-      .then((d) => setUnavailable(d.unavailable || []))
-      .catch(() => setUnavailable([]));
+      .then((d) => {
+        setUnavailable(d.unavailable || []);
+        setInventory({
+          capacity: d.capacity ?? null,
+          booked: d.booked ?? 0,
+          remaining: d.remaining ?? null,
+        });
+      })
+      .catch(() => {
+        setUnavailable([]);
+        setInventory(null);
+      });
   }, [item?._id, form.roomId, form.checkIn, form.checkOut, item?.rooms]);
 
   const validate = () => {
@@ -189,6 +204,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
       gst={gst}
       total={total}
       dateBlocked={dateBlocked}
+      inventory={inventory}
       submitting={submitting}
       legalOpen={legalOpen}
       setLegalOpen={setLegalOpen}

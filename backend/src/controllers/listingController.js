@@ -18,6 +18,7 @@ import {
 import {
   getBookedDates,
   getUnavailableDates,
+  getRangeInventory,
   availabilityWindow,
   normalizeBlockedDates,
   applyBlockedDateAction,
@@ -311,7 +312,25 @@ export const getListingAvailability = async (req, res) => {
     extraFilter,
   });
 
-  return success(res, { unavailable, blockedDates, capacity, from, to });
+  const inventory = await getRangeInventory({
+    type: bookingType,
+    listingField,
+    listingId,
+    from,
+    to,
+    capacity,
+    extraFilter,
+  });
+
+  return success(res, {
+    unavailable,
+    blockedDates,
+    capacity: inventory.capacity,
+    booked: inventory.booked,
+    remaining: inventory.remaining,
+    from,
+    to,
+  });
 };
 
 export const updateBlockedDates = async (req, res) => {

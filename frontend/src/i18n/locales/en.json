@@ -78,6 +78,8 @@
     "favorites": "Favorites",
     "unavailable": "Selected dates unavailable",
     "allRoomsBooked": "All rooms for this listing are already booked for the selected dates",
+    "roomsRemaining": "{{remaining}}/{{capacity}} rooms remaining for these dates",
+    "tentsRemaining": "{{remaining}}/{{capacity}} tents remaining for these dates",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
     "guests": "Guests",

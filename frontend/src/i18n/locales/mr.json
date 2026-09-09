@@ -78,6 +78,8 @@
     "favorites": "आवडते",
     "unavailable": "निवडलेल्या तारखा उपलब्ध नाहीत",
     "allRoomsBooked": "निवडलेल्या तारखांसाठी या लिस्टिंगच्या सर्व खोल्या आधीच बुक झाल्या आहेत",
+    "roomsRemaining": "या तारखांसाठी {{remaining}}/{{capacity}} खोल्या शिल्लक",
+    "tentsRemaining": "या तारखांसाठी {{remaining}}/{{capacity}} तंबू शिल्लक",
     "checkIn": "चेक-इन",
     "checkOut": "चेक-आउट",
     "guests": "पाहुणे",

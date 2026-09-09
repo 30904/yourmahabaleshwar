@@ -26,6 +26,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [unavailable, setUnavailable] = useState([]);
+  const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
 
@@ -100,16 +101,36 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
   useCoTravellerSync(form.adults, form.children, setForm);
 
   useEffect(() => {
-    if (openMode || !item?._id || !form.checkIn) return;
+    if (openMode || !item?._id || !form.checkIn) {
+      setInventory(null);
+      setUnavailable([]);
+      return;
+    }
     fetchAvailability('tent', item._id, form.checkIn, form.checkOut || form.checkIn)
-      .then((d) => setUnavailable(d.unavailable || []))
-      .catch(() => setUnavailable([]));
+      .then((d) => {
+        setUnavailable(d.unavailable || []);
+        setInventory({
+          capacity: d.capacity ?? null,
+          booked: d.booked ?? 0,
+          remaining: d.remaining ?? null,
+        });
+      })
+      .catch(() => {
+        setUnavailable([]);
+        setInventory(null);
+      });
   }, [openMode, item?._id, form.checkIn, form.checkOut]);
 
   const validate = () => {
     if (!form.checkIn || !form.checkOut) return t('stayGuestBooking.validation.datesRequired');
     if (dateBlocked) return t('booking.allRoomsBooked');
     if (tentQuantity < 1) return t('tentGuestBooking.validation.tentQuantity');
+    if (!openMode && inventory?.remaining != null && tentQuantity > inventory.remaining) {
+      return t('booking.tentsRemaining', {
+        remaining: inventory.remaining,
+        capacity: inventory.capacity,
+      });
+    }
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) {
@@ -272,6 +293,22 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               </p>
             )}
           </div>
+          {!openMode && form.checkIn && inventory?.capacity != null && (
+            <p
+              className={`text-sm font-medium ${
+                inventory.remaining <= 0
+                  ? 'text-red-600'
+                  : inventory.remaining <= 2
+                    ? 'text-amber-700'
+                    : 'text-emerald-700'
+              }`}
+            >
+              {t('booking.tentsRemaining', {
+                remaining: inventory.remaining,
+                capacity: inventory.capacity,
+              })}
+            </p>
+          )}
           {dateBlocked && <p className="text-sm text-red-600">{t('booking.allRoomsBooked')}</p>}
         </Card>
 
