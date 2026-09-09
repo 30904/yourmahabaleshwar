@@ -13,7 +13,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import Seo from '../../components/seo/Seo';
-import { CONTACT_EMAIL } from '../../constants/site';
+import { CONTACT_EMAIL, SUPPORT_PHONES } from '../../constants/site';
 
 const reasons = [
   {
@@ -44,9 +44,6 @@ const services = [
   { label: 'Horse Riding', to: '/horses', icon: Trees },
   { label: 'Driver Services', to: '/drivers', icon: UserRound },
 ];
-
-const SUPPORT_PHONE = '+91 98765 43210';
-const SUPPORT_PHONE_HREF = 'tel:+919876543210';
 
 export default function AboutUsPage() {
   return (
@@ -130,9 +127,11 @@ export default function AboutUsPage() {
             Reach out anytime — we are here to help you discover, book, and experience Mahabaleshwar with confidence.
           </p>
           <div className="mt-6 flex flex-col gap-3 text-sm sm:flex-row sm:flex-wrap sm:gap-6">
-            <a href={SUPPORT_PHONE_HREF} className="inline-flex items-center gap-2 hover:underline">
-              <Phone size={16} /> {SUPPORT_PHONE}
-            </a>
+            {SUPPORT_PHONES.map((phone) => (
+              <a key={phone.href} href={phone.href} className="inline-flex items-center gap-2 hover:underline">
+                <Phone size={16} /> {phone.label}
+              </a>
+            ))}
             <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center gap-2 hover:underline">
               <Mail size={16} /> {CONTACT_EMAIL}
             </a>

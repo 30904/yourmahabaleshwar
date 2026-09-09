@@ -59,6 +59,7 @@ const driverSchema = new mongoose.Schema(
     commissionRate: { type: Number, default: 8 },
     acceptedTermsAt: { type: Date },
     acceptedAgreementAt: { type: Date },
+    acceptedRulesAt: { type: Date },
     declarationAcceptedAt: { type: Date },
   },
   { timestamps: true }

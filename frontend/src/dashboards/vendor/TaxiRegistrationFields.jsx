@@ -4,12 +4,13 @@ import Input from '../../components/ui/Input';
 import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 import { VEHICLE_TYPES } from './vendorListingFormConfig';
+import { getTaxiDriverRules } from '../../constants/taxiDriverRulesLegal';
 
 function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-slate-900">{children}</h3>;
 }
 
-function LegalModal({ open, title, sections, closeLabel, onClose }) {
+function LegalModal({ open, title, subtitle, sections, footerNote, closeLabel, onClose }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4" onClick={onClose} role="presentation">
@@ -21,19 +22,32 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
         aria-label={title}
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+            {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+          </div>
           <button type="button" className="text-sm font-semibold text-slate-500" onClick={onClose}>
             {closeLabel}
           </button>
         </div>
         <div className="mt-4 space-y-4 text-sm text-slate-700">
           {sections.map((section) => (
-            <div key={section.heading}>
-              <p className="font-semibold text-slate-900">{section.heading}</p>
+            <div
+              key={section.heading}
+              className={
+                section.highlight
+                  ? 'rounded-xl border border-orange-200 bg-orange-50 p-4'
+                  : 'rounded-xl border border-slate-200 bg-slate-50 p-4'
+              }
+            >
+              <p className={`font-semibold ${section.highlight ? 'text-orange-800' : 'text-slate-900'}`}>
+                {section.heading}
+              </p>
               <p className="mt-1 leading-relaxed">{section.body}</p>
             </div>
           ))}
         </div>
+        {footerNote ? <p className="mt-5 text-center text-xs text-slate-400">{footerNote}</p> : null}
       </div>
     </div>
   );
@@ -64,6 +78,7 @@ export default function TaxiRegistrationFields({ form, setField, isEdit = false 
     () => (Array.isArray(partnerAgreementSections) ? partnerAgreementSections : []),
     [partnerAgreementSections]
   );
+  const rulesDoc = useMemo(() => getTaxiDriverRules(i18n.language), [i18n.language]);
 
   return (
     <>
@@ -308,6 +323,36 @@ export default function TaxiRegistrationFields({ form, setField, isEdit = false 
 
       <Card className="space-y-4">
         <SectionTitle>{t('taxiRegistration.section8')}</SectionTitle>
+        <p className="text-sm text-slate-600">{t('taxiRegistration.rulesIntro')}</p>
+        <div className="text-sm">
+          <button
+            type="button"
+            className="font-semibold text-primary underline"
+            onClick={() =>
+              setLegalDoc({
+                title: rulesDoc.title,
+                subtitle: `${rulesDoc.portalTitle} — ${rulesDoc.portalSubtitle}`,
+                sections: rulesDoc.sections,
+                footerNote: rulesDoc.footerNote,
+              })
+            }
+          >
+            {t('taxiRegistration.readRules')}
+          </button>
+        </div>
+        <label className="flex items-start gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={!!form.acceptRules}
+            onChange={(e) => setField('acceptRules', e.target.checked)}
+          />
+          <span>{t('taxiRegistration.acceptRules')}</span>
+        </label>
+      </Card>
+
+      <Card className="space-y-4">
+        <SectionTitle>{t('taxiRegistration.section9')}</SectionTitle>
         <p className="text-sm text-slate-600">{t('taxiRegistration.declaration')}</p>
         <label className="flex items-start gap-2 text-sm text-slate-700">
           <input
@@ -323,7 +368,9 @@ export default function TaxiRegistrationFields({ form, setField, isEdit = false 
       <LegalModal
         open={!!legalDoc}
         title={legalDoc?.title || ''}
+        subtitle={legalDoc?.subtitle || ''}
         sections={legalDoc?.sections || []}
+        footerNote={legalDoc?.footerNote || ''}
         closeLabel={t('taxiRegistration.close')}
         onClose={() => setLegalDoc(null)}
       />

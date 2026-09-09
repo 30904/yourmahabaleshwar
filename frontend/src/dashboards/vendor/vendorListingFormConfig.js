@@ -263,6 +263,7 @@ export const defaultsFor = (vertical) => {
       ifsc: '',
       acceptTerms: false,
       acceptAgreement: false,
+      acceptRules: false,
       acceptDeclaration: false,
       isActive: true,
     };
@@ -297,6 +298,7 @@ export const defaultsFor = (vertical) => {
       ifsc: '',
       acceptTerms: false,
       acceptAgreement: false,
+      acceptRules: false,
       acceptDeclaration: false,
       isActive: true,
     };
@@ -567,6 +569,7 @@ export const toFormValues = (vertical, doc) => {
       ifsc: bank.ifsc || '',
       acceptTerms: Boolean(doc.acceptedTermsAt),
       acceptAgreement: Boolean(doc.acceptedAgreementAt),
+      acceptRules: Boolean(doc.acceptedRulesAt),
       acceptDeclaration: Boolean(doc.declarationAcceptedAt),
       isActive: doc.isActive !== false,
       approvalStatus: doc.approvalStatus,
@@ -849,6 +852,7 @@ export const toPayload = (vertical, form) => {
       },
       ...(form.acceptTerms ? { acceptedTermsAt: now } : {}),
       ...(form.acceptAgreement ? { acceptedAgreementAt: now } : {}),
+      ...(form.acceptRules ? { acceptedRulesAt: now } : {}),
       ...(form.acceptDeclaration ? { declarationAcceptedAt: now } : {}),
     };
   }
@@ -1005,6 +1009,7 @@ export const validateListingForm = (vertical, form, { isCreate = true } = {}) =>
     if (isCreate) {
       if (!form.acceptTerms) return 'Please accept the Terms and Conditions';
       if (!form.acceptAgreement) return 'Please accept the Partner Agreement';
+      if (!form.acceptRules) return 'Please accept the Rules & Regulations';
       if (!form.acceptDeclaration) return 'Please accept the declaration';
     }
     return null;
@@ -1029,6 +1034,7 @@ export const validateListingForm = (vertical, form, { isCreate = true } = {}) =>
     if (isCreate) {
       if (!form.acceptTerms) return 'Please accept the Terms and Conditions';
       if (!form.acceptAgreement) return 'Please accept the Partner Agreement';
+      if (!form.acceptRules) return 'Please accept the Rules & Regulations';
       if (!form.acceptDeclaration) return 'Please accept the declaration';
     }
     return null;

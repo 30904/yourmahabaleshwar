@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import api from '../../services/api';
+import { CONTACT_EMAIL, SUPPORT_PHONES } from '../../constants/site';
 
 export default function ContactPage() {
   const { register, handleSubmit, reset } = useForm();
@@ -17,8 +18,12 @@ export default function ContactPage() {
   };
 
   const contacts = [
-    { icon: Phone, title: 'Phone', value: '+91 98765 43210' },
-    { icon: Mail, title: 'Email', value: 'hello@yourmahabaleshwar.com', href: 'mailto:hello@yourmahabaleshwar.com' },
+    {
+      icon: Phone,
+      title: 'Phone',
+      lines: SUPPORT_PHONES,
+    },
+    { icon: Mail, title: 'Email', value: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
     { icon: MapPin, title: 'Office', value: 'Main Road, Mahabaleshwar, MH 412806' },
     { icon: Clock, title: 'Hours', value: '24/7 customer support' },
   ];
@@ -38,7 +43,19 @@ export default function ContactPage() {
               <c.icon className="shrink-0 text-primary" size={24} />
               <div>
                 <p className="font-semibold text-slate-900">{c.title}</p>
-                {c.href ? (
+                {c.lines ? (
+                  <div className="mt-0.5 space-y-1">
+                    {c.lines.map((line) => (
+                      <a
+                        key={line.href}
+                        href={line.href}
+                        className="block text-sm text-primary hover:underline"
+                      >
+                        {line.label}
+                      </a>
+                    ))}
+                  </div>
+                ) : c.href ? (
                   <a href={c.href} className="text-sm text-primary hover:underline">{c.value}</a>
                 ) : (
                   <p className="text-sm text-slate-600">{c.value}</p>
