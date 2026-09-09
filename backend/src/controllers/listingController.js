@@ -233,13 +233,15 @@ export const getMyAvailability = async (req, res) => {
 
 export const getListingAvailability = async (req, res) => {
   const { type, id } = req.params;
-  const { from, to } = req.query;
+  const { from, to, roomId } = req.query;
   if (!from || !to) return error(res, 'from and to query params required', 400);
 
   let blockedDates = [];
   let capacity = 1;
   let listingField = type;
   let bookingType = type.toUpperCase();
+  let listingId = id;
+  let extraFilter = {};
 
   if (type === 'tent') {
     const tent = await Tent.findById(id);
@@ -252,9 +254,23 @@ export const getListingAvailability = async (req, res) => {
     const hs = await Homestay.findById(id);
     if (!hs) return error(res, 'Not found', 404);
     blockedDates = hs.blockedDates;
-    capacity = 1;
     listingField = 'homestay';
     bookingType = BOOKING_TYPES.HOMESTAY;
+    const selectedRoomId = roomId || req.query.homestayRoomId;
+    if (selectedRoomId) {
+      const room = (hs.rooms || []).find((r) => String(r._id) === String(selectedRoomId));
+      if (!room) return error(res, 'Room not found', 404);
+      capacity = room.totalRooms || 1;
+      extraFilter = { homestayRoomId: String(selectedRoomId) };
+    } else {
+      // Property-level: treat as sold out only when every bookable room unit is taken
+      capacity = Math.max(
+        1,
+        (hs.rooms || []).reduce((sum, r) => sum + (Number(r.totalRooms) || 1), 0) ||
+          hs.roomInventory?.totalRooms ||
+          1
+      );
+    }
   } else if (type === 'horse') {
     const horse = await Horse.findById(id);
     if (!horse) return error(res, 'Not found', 404);
@@ -268,7 +284,8 @@ export const getListingAvailability = async (req, res) => {
     blockedDates = room.blockedDates;
     capacity = room.totalRooms || 1;
     listingField = 'room';
-    bookingType = BOOKING_TYPES.HOTEL;
+    const hotel = await Hotel.findById(room.hotel).select('type');
+    bookingType = hotel?.type === 'RESORT' ? BOOKING_TYPES.RESORT : BOOKING_TYPES.HOTEL;
   } else if (type === 'guide') {
     listingField = 'guide';
     bookingType = BOOKING_TYPES.GUIDE;
@@ -286,14 +303,15 @@ export const getListingAvailability = async (req, res) => {
   const unavailable = await getUnavailableDates({
     type: bookingType,
     listingField,
-    listingId: id,
+    listingId,
     from,
     to,
     blockedDates,
     capacity,
+    extraFilter,
   });
 
-  return success(res, { unavailable, blockedDates, from, to });
+  return success(res, { unavailable, blockedDates, capacity, from, to });
 };
 
 export const updateBlockedDates = async (req, res) => {

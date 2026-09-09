@@ -63,7 +63,8 @@
     "accountCreated": "Account created!",
     "registerFailed": "Registration failed",
     "haveAccount": "Have an account?",
-    "mismatch": "Passwords do not match"
+    "mismatch": "Passwords do not match",
+    "passwordMin": "Password must be at least 6 characters"
   },
   "booking": {
     "confirm": "Confirm Booking",
@@ -76,6 +77,7 @@
     "myBookings": "My Bookings",
     "favorites": "Favorites",
     "unavailable": "Selected dates unavailable",
+    "allRoomsBooked": "All rooms for this listing are already booked for the selected dates",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
     "guests": "Guests",

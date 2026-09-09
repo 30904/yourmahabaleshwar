@@ -82,8 +82,8 @@ export const fetchHorseBySlug = async (slug) => {
   return normalizeHorse(res.data.data);
 };
 
-export const fetchAvailability = async (type, id, from, to) => {
-  const res = await api.get(`/availability/${type}/${id}`, { params: { from, to } });
+export const fetchAvailability = async (type, id, from, to, extraParams = {}) => {
+  const res = await api.get(`/availability/${type}/${id}`, { params: { from, to, ...extraParams } });
   return res.data.data || { unavailable: [] };
 };
 

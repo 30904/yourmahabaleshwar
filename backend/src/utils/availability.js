@@ -1,5 +1,5 @@
 import Booking from '../models/Booking.js';
-import { BOOKING_STATUS } from '../constants/booking.js';
+import { BOOKING_STATUS, BOOKING_TYPES } from '../constants/booking.js';
 
 const startOfDay = (d) => {
   const x = new Date(d);
@@ -70,6 +70,17 @@ export const normalizeBlockedDates = (blockedDates = [], from, to) => {
   ].sort();
 };
 
+export const eachDateInRange = (from, to) => {
+  const dates = [];
+  const cur = startOfDay(from);
+  const end = startOfDay(to);
+  while (cur < end) {
+    dates.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+};
+
 export const getBookedDates = async ({ type, listingField, listingId, from, to }) => {
   const start = startOfDay(from);
   const end = startOfDay(to);
@@ -96,17 +107,6 @@ export const getBookedDates = async ({ type, listingField, listingId, from, to }
   return [...booked].sort();
 };
 
-export const eachDateInRange = (from, to) => {
-  const dates = [];
-  const cur = startOfDay(from);
-  const end = startOfDay(to);
-  while (cur < end) {
-    dates.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return dates;
-};
-
 export const isDateBlocked = (blockedDates = [], date) => {
   const target = startOfDay(date).getTime();
   return (blockedDates || []).some((d) => startOfDay(d).getTime() === target);
@@ -119,8 +119,55 @@ export const rangeHasBlocked = (blockedDates = [], checkIn, checkOut) => {
   return eachDateInRange(checkIn, checkOut).some((d) => isDateBlocked(blockedDates, d));
 };
 
+const unitsForBooking = (booking, type) => {
+  if (type === BOOKING_TYPES.TENT || type === 'TENT') return Number(booking.tentQuantity) || 1;
+  return 1;
+};
+
+/** True if booking occupies the night starting on `night` (check-in night semantics). */
+export const bookingCoversNight = (booking, night) => {
+  const nightStart = startOfDay(night).getTime();
+  if (!booking?.checkIn) return false;
+  const ci = startOfDay(booking.checkIn).getTime();
+  if (booking.checkOut) {
+    const co = startOfDay(booking.checkOut).getTime();
+    return nightStart >= ci && nightStart < co;
+  }
+  return nightStart === ci;
+};
+
+/** Peak units booked on any night in [checkIn, checkOut). */
+export const peakOccupancyForRange = (bookings, checkIn, checkOut, type) => {
+  const ci = startOfDay(checkIn);
+  const co = checkOut ? startOfDay(checkOut) : new Date(ci.getTime() + 86400000);
+  const nights = eachDateInRange(ci, co);
+  if (!nights.length) {
+    const count = (bookings || []).reduce(
+      (sum, b) => sum + (bookingCoversNight(b, ci) ? unitsForBooking(b, type) : 0),
+      0
+    );
+    return count;
+  }
+  let peak = 0;
+  for (const night of nights) {
+    let used = 0;
+    for (const booking of bookings || []) {
+      if (bookingCoversNight(booking, night)) used += unitsForBooking(booking, type);
+    }
+    if (used > peak) peak = used;
+  }
+  return peak;
+};
+
+const resolveTypeFilter = (type, listingField) => {
+  if (listingField === 'room' && (type === BOOKING_TYPES.HOTEL || type === BOOKING_TYPES.RESORT || type === 'HOTEL' || type === 'RESORT')) {
+    return { $in: [BOOKING_TYPES.HOTEL, BOOKING_TYPES.RESORT] };
+  }
+  return type;
+};
+
 /**
- * Check overlapping active bookings for inventory conflict.
+ * Check overlapping active bookings for inventory conflict (per-night capacity).
  */
 export const hasBookingConflict = async ({
   type,
@@ -136,7 +183,7 @@ export const hasBookingConflict = async ({
   const co = checkOut ? startOfDay(checkOut) : endOfDay(checkIn);
 
   const filter = {
-    type,
+    type: resolveTypeFilter(type, listingField),
     [listingField]: listingId,
     status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.CONFIRMED] },
     ...extraFilter,
@@ -152,13 +199,18 @@ export const hasBookingConflict = async ({
   const existing = await Booking.find(filter);
   if (!existing.length) return false;
 
-  if (type === 'TENT') {
-    const bookedQty = existing.reduce((sum, b) => sum + (b.tentQuantity || 1), 0);
-    return bookedQty + quantity > capacity;
-  }
-
-  if (type === 'HOTEL' || type === 'HOMESTAY' || type === 'RESORT') {
-    return existing.length + quantity > capacity;
+  if (
+    type === BOOKING_TYPES.TENT ||
+    type === 'TENT' ||
+    type === BOOKING_TYPES.HOTEL ||
+    type === 'HOTEL' ||
+    type === BOOKING_TYPES.HOMESTAY ||
+    type === 'HOMESTAY' ||
+    type === BOOKING_TYPES.RESORT ||
+    type === 'RESORT'
+  ) {
+    const peak = peakOccupancyForRange(existing, checkIn, checkOut || new Date(ci.getTime() + 86400000), type);
+    return peak + quantity > capacity;
   }
 
   // guide/taxi/horse — one booking per slot/day by default
@@ -173,29 +225,39 @@ export const getUnavailableDates = async ({
   to,
   blockedDates = [],
   capacity = 1,
+  extraFilter = {},
 }) => {
   const start = startOfDay(from);
   const end = startOfDay(to);
   const unavailable = new Set((blockedDates || []).map((d) => toDateKey(d)));
 
   const bookings = await Booking.find({
-    type,
+    type: resolveTypeFilter(type, listingField),
     [listingField]: listingId,
     status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.CONFIRMED] },
     checkIn: { $lt: end },
     $or: [{ checkOut: { $gt: start } }, { checkOut: null, checkIn: { $gte: start } }],
+    ...extraFilter,
   });
 
-  for (const b of bookings) {
-    if (b.checkOut) {
-      for (const d of eachDateInRange(b.checkIn, b.checkOut)) {
-        const key = toDateKey(d);
-        // simplify: mark date unavailable when capacity is 1 or fully booked
-        if (capacity <= 1) unavailable.add(key);
-      }
-    } else if (b.checkIn) {
-      unavailable.add(toDateKey(b.checkIn));
+  const occupancy = new Map();
+  for (const booking of bookings) {
+    const nights = booking.checkOut
+      ? eachDateInRange(booking.checkIn, booking.checkOut)
+      : booking.checkIn
+        ? [startOfDay(booking.checkIn)]
+        : [];
+    const units = unitsForBooking(booking, type);
+    for (const night of nights) {
+      const t = startOfDay(night).getTime();
+      if (t < start.getTime() || t >= end.getTime()) continue;
+      const key = toDateKey(night);
+      occupancy.set(key, (occupancy.get(key) || 0) + units);
     }
+  }
+
+  for (const [key, used] of occupancy.entries()) {
+    if (used >= capacity) unavailable.add(key);
   }
 
   return [...unavailable].sort();

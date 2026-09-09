@@ -132,7 +132,7 @@ export default function StayGuestBookingFormCore({
               </select>
             </div>
           </div>
-          {dateBlocked && <p className="text-sm text-red-600">{t('booking.unavailable')}</p>}
+          {dateBlocked && <p className="text-sm text-red-600">{t('booking.allRoomsBooked')}</p>}
         </Card>
 
         <Card className="space-y-4">

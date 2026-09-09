@@ -75,7 +75,11 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   const subtotal = (room?.basePrice || item?.priceFrom || 0) * nights;
   const gst = calcGST(subtotal);
   const total = subtotal + gst;
-  const dateBlocked = form.checkIn && unavailable.includes(form.checkIn);
+  const dateBlocked = useMemo(() => {
+    if (!form.checkIn || !unavailable.length) return false;
+    const end = form.checkOut || form.checkIn;
+    return unavailable.some((d) => d >= form.checkIn && d < end);
+  }, [form.checkIn, form.checkOut, unavailable]);
 
   const termsSummary = useMemo(() => {
     const lines = t('homestayRegistration.termsSummary', { returnObjects: true });
@@ -88,15 +92,17 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   }, [t, i18n.language]);
 
   useEffect(() => {
-    if (!item?._id || !form.checkIn) return;
-    fetchAvailability('homestay', item._id, form.checkIn, form.checkOut || form.checkIn)
+    const roomId = form.roomId || item?.rooms?.[0]?._id;
+    if (!item?._id || !form.checkIn || !roomId) return;
+    const to = form.checkOut || form.checkIn;
+    fetchAvailability('homestay', item._id, form.checkIn, to, { roomId })
       .then((d) => setUnavailable(d.unavailable || []))
       .catch(() => setUnavailable([]));
-  }, [item?._id, form.checkIn, form.checkOut]);
+  }, [item?._id, form.roomId, form.checkIn, form.checkOut, item?.rooms]);
 
   const validate = () => {
     if (!form.checkIn || !form.checkOut) return t('stayGuestBooking.validation.datesRequired');
-    if (dateBlocked) return t('booking.unavailable');
+    if (dateBlocked) return t('booking.allRoomsBooked');
     if (!form.roomId && !item?.rooms?.[0]?._id) return t('stayGuestBooking.validation.selectRoom');
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');

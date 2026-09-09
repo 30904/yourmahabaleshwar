@@ -61,7 +61,7 @@ export const createHotelBooking = async (req, res) => {
     checkOut,
     capacity: room.totalRooms || 1,
   });
-  if (conflict) return error(res, 'Room not available for selected dates', 400);
+  if (conflict) return error(res, 'All rooms are already booked for the selected dates', 400);
 
   const nights = getNights(checkIn, checkOut);
   const nightPrice = resolveRoomPrice(room, checkIn);
@@ -175,7 +175,7 @@ export const createTentBooking = async (req, res) => {
     capacity: tent.totalTents || 10,
     quantity: qty,
   });
-  if (conflict) return error(res, 'Tents not available for selected dates', 400);
+  if (conflict) return error(res, 'All tents are already booked for the selected dates', 400);
 
   const nights = getNights(checkIn, checkOut);
   const nightPrice = tent.pricePerNight;
@@ -502,7 +502,7 @@ export const createHomestayBooking = async (req, res) => {
     capacity: room.totalRooms || 1,
     extraFilter: { homestayRoomId: String(roomId) },
   });
-  if (conflict) return error(res, 'Homestay/Villa room not available', 400);
+  if (conflict) return error(res, 'All rooms are already booked for the selected dates', 400);
 
   const nights = getNights(checkIn, checkOut);
   const subtotal = room.basePrice * nights;

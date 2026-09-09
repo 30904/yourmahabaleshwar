@@ -81,7 +81,11 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
   const subtotal = pricePerNight * nights * tentQuantity;
   const gst = calcGST(subtotal);
   const total = subtotal + gst;
-  const dateBlocked = form.checkIn && unavailable.includes(form.checkIn);
+  const dateBlocked = useMemo(() => {
+    if (!form.checkIn || !unavailable.length) return false;
+    const end = form.checkOut || form.checkIn;
+    return unavailable.some((d) => d >= form.checkIn && d < end);
+  }, [form.checkIn, form.checkOut, unavailable]);
 
   const termsSummary = useMemo(() => {
     const lines = t('tentGuestBooking.termsSummary', { returnObjects: true });
@@ -104,7 +108,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
   const validate = () => {
     if (!form.checkIn || !form.checkOut) return t('stayGuestBooking.validation.datesRequired');
-    if (dateBlocked) return t('booking.unavailable');
+    if (dateBlocked) return t('booking.allRoomsBooked');
     if (tentQuantity < 1) return t('tentGuestBooking.validation.tentQuantity');
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');
@@ -268,7 +272,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               </p>
             )}
           </div>
-          {dateBlocked && <p className="text-sm text-red-600">{t('booking.unavailable')}</p>}
+          {dateBlocked && <p className="text-sm text-red-600">{t('booking.allRoomsBooked')}</p>}
         </Card>
 
         <Card className="space-y-4">
