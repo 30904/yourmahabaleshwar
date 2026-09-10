@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
@@ -334,22 +335,25 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               <p className="text-xs text-slate-600">{t('taxiGuestBooking.openRateHint')}</p>
             </ServiceRateChartToggle>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Input
-              label={t('taxiGuestBooking.tripDate')}
-              type="date"
-              value={form.tripDate}
-              onChange={(e) => setField('tripDate', e.target.value)}
-              required
-            />
-            <Input
-              label={t('taxiGuestBooking.pickupTime')}
-              type="time"
-              value={form.pickupTime}
-              onChange={(e) => setField('pickupTime', e.target.value)}
-            />
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <Input
+                className="w-full max-w-[11.5rem]"
+                label={t('taxiGuestBooking.tripDate')}
+                type="date"
+                value={form.tripDate}
+                onChange={(e) => setField('tripDate', e.target.value)}
+                required
+              />
+              <TimePicker12h
+                label={t('taxiGuestBooking.pickupTime')}
+                name="pickupTime"
+                value={form.pickupTime}
+                onChange={(v) => setField('pickupTime', v)}
+              />
+            </div>
             {openMode ? (
-              <div className="sm:col-span-2 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
                     {t('taxiGuestBooking.routeCategoryLabel')}
@@ -386,7 +390,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
                 </div>
               </div>
             ) : (
-              <>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
                     {t('taxiGuestBooking.tripTypeLabel')}
@@ -413,21 +417,23 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
                     onChange={(e) => setField('hours', e.target.value)}
                   />
                 )}
-              </>
+              </div>
             )}
-            <Input
-              label={t('taxiGuestBooking.passengerCount')}
-              type="number"
-              min="1"
-              value={form.passengerCount}
-              onChange={(e) => setField('passengerCount', e.target.value)}
-            />
-            <Input
-              label={t('taxiGuestBooking.vehiclePreference')}
-              value={form.vehiclePreference}
-              onChange={(e) => setField('vehiclePreference', e.target.value)}
-              placeholder={item?.vehicleType || 'SEDAN, SUV, INNOVA'}
-            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label={t('taxiGuestBooking.passengerCount')}
+                type="number"
+                min="1"
+                value={form.passengerCount}
+                onChange={(e) => setField('passengerCount', e.target.value)}
+              />
+              <Input
+                label={t('taxiGuestBooking.vehiclePreference')}
+                value={form.vehiclePreference}
+                onChange={(e) => setField('vehiclePreference', e.target.value)}
+                placeholder={item?.vehicleType || 'SEDAN, SUV, INNOVA'}
+              />
+            </div>
           </div>
           {dateBlocked && <p className="text-sm text-red-600">{t('taxiGuestBooking.validation.unavailable')}</p>}
         </Card>

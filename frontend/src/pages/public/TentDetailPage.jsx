@@ -12,6 +12,7 @@ import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
 import { resolveMediaUrls } from '../../utils/mediaUrl';
 import { formatCurrency } from '../../utils/format';
+import { formatTime12 } from '../../utils/time12h';
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200';
 const amenityIcons = {
@@ -253,8 +254,8 @@ export default function TentDetailPage() {
         {tab === 'policies' && (
           <div className="mt-6 max-w-3xl card space-y-4 p-6 text-sm text-slate-600">
             <p>
-              <strong>Check-in:</strong> {item.checkInTime || '14:00'} · <strong>Check-out:</strong>{' '}
-              {item.checkOutTime || '11:00'}
+              <strong>Check-in:</strong> {formatTime12(item.checkInTime || '14:00')} · <strong>Check-out:</strong>{' '}
+              {formatTime12(item.checkOutTime || '11:00')}
             </p>
             <p>
               {item.cancellationPolicyText ||

@@ -28,6 +28,7 @@ import { taxiRoutePrice } from '../constants/taxiClientRateChart.js';
 import { guideOpenPrice, normalizeGuidePackageId } from '../constants/guideClientRateChart.js';
 import { driverPackagePrice } from '../constants/driverClientRateChart.js';
 import { horsePackagePrice } from '../constants/horseClientRateChart.js';
+import { resolveStayBookingTimes } from '../utils/timeRange.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -75,10 +76,16 @@ export const createHotelBooking = async (req, res) => {
 
   let registration;
   if (guestRegistration) {
+    const stayTimes = resolveStayBookingTimes({
+      guestCheckInTime: guestRegistration?.checkInTime,
+      guestCheckOutTime: guestRegistration?.checkOutTime,
+      listingCheckInTime: hotel.checkInTime,
+      listingCheckOutTime: hotel.checkOutTime,
+    });
     registration = {
       formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
-      checkInTime: guestRegistration?.checkInTime || hotel.checkInTime || '14:00',
-      checkOutTime: guestRegistration?.checkOutTime || hotel.checkOutTime || '11:00',
+      checkInTime: stayTimes.checkInTime,
+      checkOutTime: stayTimes.checkOutTime,
       leadGuest: {
         fullName: String(lead.fullName || '').trim(),
         age: lead.age != null ? Number(lead.age) : undefined,
@@ -189,10 +196,16 @@ export const createTentBooking = async (req, res) => {
 
   let registration;
   if (guestRegistration) {
+    const stayTimes = resolveStayBookingTimes({
+      guestCheckInTime: guestRegistration?.checkInTime,
+      guestCheckOutTime: guestRegistration?.checkOutTime,
+      listingCheckInTime: tent.checkInTime,
+      listingCheckOutTime: tent.checkOutTime,
+    });
     registration = {
       formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
-      checkInTime: guestRegistration?.checkInTime || '14:00',
-      checkOutTime: guestRegistration?.checkOutTime || '11:00',
+      checkInTime: stayTimes.checkInTime,
+      checkOutTime: stayTimes.checkOutTime,
       leadGuest: {
         fullName: String(lead.fullName || '').trim(),
         age: lead.age != null ? Number(lead.age) : undefined,
@@ -510,10 +523,17 @@ export const createHomestayBooking = async (req, res) => {
   const adults = Number(guests?.adults ?? guestRegistration?.adults ?? 1) || 1;
   const children = Number(guests?.children ?? guestRegistration?.children ?? 0) || 0;
 
+  const stayTimes = resolveStayBookingTimes({
+    guestCheckInTime: guestRegistration?.checkInTime,
+    guestCheckOutTime: guestRegistration?.checkOutTime,
+    listingCheckInTime: homestay.checkInTime,
+    listingCheckOutTime: homestay.checkOutTime,
+  });
+
   const registration = {
     formDate: guestRegistration?.formDate ? new Date(guestRegistration.formDate) : new Date(),
-    checkInTime: guestRegistration?.checkInTime || homestay.checkInTime || '14:00',
-    checkOutTime: guestRegistration?.checkOutTime || homestay.checkOutTime || '11:00',
+    checkInTime: stayTimes.checkInTime,
+    checkOutTime: stayTimes.checkOutTime,
     leadGuest: {
       fullName: String(lead.fullName || '').trim(),
       age: lead.age != null ? Number(lead.age) : undefined,
@@ -882,6 +902,20 @@ async function createOpenServiceBooking(req, res, serviceTenant) {
     acceptedTermsAt: guestRegistration?.acceptedTermsAt ? new Date(guestRegistration.acceptedTermsAt) : new Date(),
     advanceAmount: guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
     paymentMode: guestRegistration?.paymentMode || 'ONLINE',
+    ...(tenant === 'TENT'
+      ? (() => {
+          const stayTimes = resolveStayBookingTimes({
+            guestCheckInTime: guestRegistration?.checkInTime,
+            guestCheckOutTime: guestRegistration?.checkOutTime,
+            listingCheckInTime: '14:00',
+            listingCheckOutTime: '11:00',
+          });
+          return {
+            checkInTime: stayTimes.checkInTime,
+            checkOutTime: stayTimes.checkOutTime,
+          };
+        })()
+      : {}),
   };
 
   const booking = await Booking.create({

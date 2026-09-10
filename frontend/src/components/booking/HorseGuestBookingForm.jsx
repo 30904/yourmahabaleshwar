@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
@@ -282,7 +283,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               <p className="text-xs text-slate-600">{t('horseGuestBooking.openRateHint')}</p>
             </ServiceRateChartToggle>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.35fr)] lg:items-end">
             <Input
               label={t('horseGuestBooking.rideDate')}
               type="date"
@@ -290,13 +291,13 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('rideDate', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('horseGuestBooking.startTime')}
-              type="time"
+              name="startTime"
               value={form.startTime}
-              onChange={(e) => setField('startTime', e.target.value)}
+              onChange={(v) => setField('startTime', v)}
             />
-            <div>
+            <div className="min-w-0 sm:col-span-2 lg:col-span-1">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
                 {t('horseGuestBooking.routeLabel')}
               </label>

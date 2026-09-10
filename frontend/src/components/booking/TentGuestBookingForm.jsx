@@ -4,10 +4,12 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import TimePicker12h from '../ui/TimePicker12h';
 import ImageUploadField from '../ui/ImageUploadField';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
+import { clampTime24, formatTime12 } from '../../utils/time12h';
 import { createTentBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
@@ -33,8 +35,8 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
   const [form, setForm] = useState(() => ({
     checkIn: '',
     checkOut: '',
-    checkInTime: '14:00',
-    checkOutTime: '11:00',
+    checkInTime: item?.checkInTime || '14:00',
+    checkOutTime: item?.checkOutTime || '11:00',
     tentQuantity: 1,
     adults: 2,
     children: 0,
@@ -62,6 +64,15 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  useEffect(() => {
+    if (openMode) return;
+    setForm((prev) => ({
+      ...prev,
+      checkInTime: item?.checkInTime || '14:00',
+      checkOutTime: item?.checkOutTime || '11:00',
+    }));
+  }, [item?.checkInTime, item?.checkOutTime, openMode]);
+
   const setTraveller = (index, key, value) => {
     setForm((prev) => {
       const next = [...(prev.coTravellers || [])];
@@ -72,6 +83,8 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
   const pricePerNight = openMode ? OPEN_DEFAULT_PRICE_PER_NIGHT : item?.pricePerNight || 0;
   const tentLabel = openMode ? t('tentGuestBooking.standardCamp') : item?.name || t('tentGuestBooking.standardCamp');
+  const checkInTimeMin = openMode ? '14:00' : item?.checkInTime || '14:00';
+  const checkOutTimeMax = openMode ? '11:00' : item?.checkOutTime || '11:00';
 
   const nights = useMemo(() => {
     if (!form.checkIn || !form.checkOut) return 1;
@@ -158,8 +171,8 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
         tentQuantity,
         guestRegistration: {
           formDate: new Date().toISOString(),
-          checkInTime: form.checkInTime,
-          checkOutTime: form.checkOutTime,
+          checkInTime: clampTime24(form.checkInTime, checkInTimeMin, '23:59'),
+          checkOutTime: clampTime24(form.checkOutTime, '00:00', checkOutTimeMax),
           adults: Number(form.adults) || 1,
           children: Number(form.children) || 0,
           notes: form.specialRequests,
@@ -251,7 +264,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('tentGuestBooking.sectionStay')}</SectionTitle>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-end">
             <Input
               label={t('stayGuestBooking.checkInDate')}
               type="date"
@@ -259,11 +272,13 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('checkIn', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('stayGuestBooking.checkInTime')}
-              type="time"
+              name="checkInTime"
               value={form.checkInTime}
-              onChange={(e) => setField('checkInTime', e.target.value)}
+              onChange={(v) => setField('checkInTime', v)}
+              minTime={checkInTimeMin}
+              maxTime="23:59"
             />
             <Input
               label={t('stayGuestBooking.checkOutDate')}
@@ -272,11 +287,13 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('checkOut', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('stayGuestBooking.checkOutTime')}
-              type="time"
+              name="checkOutTime"
               value={form.checkOutTime}
-              onChange={(e) => setField('checkOutTime', e.target.value)}
+              onChange={(v) => setField('checkOutTime', v)}
+              minTime="00:00"
+              maxTime={checkOutTimeMax}
             />
             <Input
               label={t('tentGuestBooking.tentQuantity')}
@@ -286,13 +303,20 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               value={form.tentQuantity}
               onChange={(e) => setField('tentQuantity', e.target.value)}
               required
+              className="min-w-0 sm:col-span-2 lg:col-span-1"
             />
             {openMode && (
-              <p className="sm:col-span-2 lg:col-span-3 text-sm text-slate-500">
+              <p className="sm:col-span-2 lg:col-span-5 text-sm text-slate-500">
                 {t('tentGuestBooking.openPriceHint', { price: formatCurrency(pricePerNight) })}
               </p>
             )}
           </div>
+          <p className="text-xs text-slate-500">
+            {t('stayGuestBooking.timesRangeHint', {
+              checkIn: formatTime12(checkInTimeMin),
+              checkOut: formatTime12(checkOutTimeMax),
+            })}
+          </p>
           {!openMode && form.checkIn && inventory?.capacity != null && (
             <p
               className={`text-sm font-medium ${

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { calcGST } from '../../utils/format';
+import { clampTime24 } from '../../utils/time12h';
 import { createHotelBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
@@ -63,6 +64,14 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   useEffect(() => {
     if (initialRoomId) setField('roomId', initialRoomId);
   }, [initialRoomId]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      checkInTime: hotel?.checkInTime || '14:00',
+      checkOutTime: hotel?.checkOutTime || '11:00',
+    }));
+  }, [hotel?.checkInTime, hotel?.checkOutTime]);
 
   const room = useMemo(
     () => roomList.find((r) => String(r._id) === String(form.roomId)) || roomList[0],
@@ -145,8 +154,8 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
         guests: { adults: Number(form.adults) || 1, children: Number(form.children) || 0 },
         guestRegistration: {
           formDate: new Date().toISOString(),
-          checkInTime: form.checkInTime,
-          checkOutTime: form.checkOutTime,
+          checkInTime: clampTime24(form.checkInTime, hotel?.checkInTime || '14:00', '23:59'),
+          checkOutTime: clampTime24(form.checkOutTime, '00:00', hotel?.checkOutTime || '11:00'),
           adults: Number(form.adults) || 1,
           children: Number(form.children) || 0,
           leadGuest: {
@@ -210,6 +219,8 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       legalOpen={legalOpen}
       setLegalOpen={setLegalOpen}
       onSubmit={onSubmit}
+      checkInTimeMin={hotel?.checkInTime || '14:00'}
+      checkOutTimeMax={hotel?.checkOutTime || '11:00'}
       purposeName="hotelPurpose"
       idTypeName="hotelIdType"
       paymentModeName="hotelPaymentMode"

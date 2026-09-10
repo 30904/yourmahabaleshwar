@@ -12,6 +12,8 @@ import {
 } from '../../services/enterpriseAdminApi';
 import { adminSetStayRenewalPrice } from '../../services/staySubscriptionApi';
 import { formatCurrency } from '../../utils/format';
+import { formatTime12 } from '../../utils/time12h';
+import TimePicker12h from '../../components/ui/TimePicker12h';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { listingStatusOf } from '../../utils/listingStatus';
 import useAdminAccess from '../../hooks/useAdminAccess';
@@ -388,14 +390,26 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
                       GST number
                       <input className="admin-input" value={form.gstNumber} onChange={(e) => setField('gstNumber', e.target.value)} />
                     </label>
-                    <label className="admin-label">
-                      Check-in
-                      <input className="admin-input" value={form.checkInTime} onChange={(e) => setField('checkInTime', e.target.value)} />
-                    </label>
-                    <label className="admin-label">
-                      Check-out
-                      <input className="admin-input" value={form.checkOutTime} onChange={(e) => setField('checkOutTime', e.target.value)} />
-                    </label>
+                    <div className="flex flex-wrap items-end gap-4 sm:col-span-2">
+                      <div>
+                        <p className="admin-label mb-1.5">Check-in</p>
+                        <TimePicker12h
+                          name="checkInTime"
+                          value={form.checkInTime}
+                          onChange={(v) => setField('checkInTime', v)}
+                          selectClassName="admin-input"
+                        />
+                      </div>
+                      <div>
+                        <p className="admin-label mb-1.5">Check-out</p>
+                        <TimePicker12h
+                          name="checkOutTime"
+                          value={form.checkOutTime}
+                          onChange={(v) => setField('checkOutTime', v)}
+                          selectClassName="admin-input"
+                        />
+                      </div>
+                    </div>
                     <label className="admin-label sm:col-span-2">
                       Policies
                       <textarea className="admin-input min-h-[64px]" value={form.policies} onChange={(e) => setField('policies', e.target.value)} />
@@ -553,7 +567,7 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
                 <Info label="Property email" value={listing.propertyEmail || listing.contactEmail} />
                 <Info label="Website" value={listing.website} />
                 <Info label="GST" value={listing.gstNumber} />
-                <Info label="Check-in / Check-out" value={listing.checkInTime && listing.checkOutTime ? `${listing.checkInTime} / ${listing.checkOutTime}` : ''} />
+                <Info label="Check-in / Check-out" value={listing.checkInTime && listing.checkOutTime ? `${formatTime12(listing.checkInTime)} / ${formatTime12(listing.checkOutTime)}` : ''} />
                 <Info label="Contact" value={listing.contactPhone} />
                 <Info label="Driver accommodation" value={listing.driverAccommodation === true ? 'Yes' : listing.driverAccommodation === false ? 'No' : ''} />
                 <Info

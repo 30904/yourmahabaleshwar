@@ -2,10 +2,12 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import ImageUploadField from '../ui/ImageUploadField';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import { formatCurrency } from '../../utils/format';
+import { formatTime12 } from '../../utils/time12h';
 import { useAuth } from '../../context/AuthContext';
 
 function SectionTitle({ children }) {
@@ -64,6 +66,8 @@ export default function StayGuestBookingFormCore({
   legalOpen,
   setLegalOpen,
   onSubmit,
+  checkInTimeMin = '14:00',
+  checkOutTimeMax = '11:00',
   purposeName = 'purpose',
   idTypeName = 'idType',
   paymentModeName = 'paymentMode',
@@ -117,12 +121,26 @@ export default function StayGuestBookingFormCore({
 
         <Card className="space-y-4">
           <SectionTitle>{t('stayGuestBooking.sectionStayDates')}</SectionTitle>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] lg:items-end">
             <Input label={t('stayGuestBooking.checkInDate')} type="date" value={form.checkIn} onChange={(e) => setField('checkIn', e.target.value)} required />
-            <Input label={t('stayGuestBooking.checkInTime')} type="time" value={form.checkInTime} onChange={(e) => setField('checkInTime', e.target.value)} />
+            <TimePicker12h
+              label={t('stayGuestBooking.checkInTime')}
+              name="checkInTime"
+              value={form.checkInTime}
+              onChange={(v) => setField('checkInTime', v)}
+              minTime={checkInTimeMin}
+              maxTime="23:59"
+            />
             <Input label={t('stayGuestBooking.checkOutDate')} type="date" value={form.checkOut} onChange={(e) => setField('checkOut', e.target.value)} required />
-            <Input label={t('stayGuestBooking.checkOutTime')} type="time" value={form.checkOutTime} onChange={(e) => setField('checkOutTime', e.target.value)} />
-            <div className="sm:col-span-2">
+            <TimePicker12h
+              label={t('stayGuestBooking.checkOutTime')}
+              name="checkOutTime"
+              value={form.checkOutTime}
+              onChange={(v) => setField('checkOutTime', v)}
+              minTime="00:00"
+              maxTime={checkOutTimeMax}
+            />
+            <div className="min-w-0 sm:col-span-2 lg:col-span-4">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('stayGuestBooking.room')}</label>
               <select className="input-field" value={form.roomId} onChange={(e) => setField('roomId', e.target.value)}>
                 {roomList.map((r) => (
@@ -133,6 +151,12 @@ export default function StayGuestBookingFormCore({
               </select>
             </div>
           </div>
+          <p className="text-xs text-slate-500">
+            {t('stayGuestBooking.timesRangeHint', {
+              checkIn: formatTime12(checkInTimeMin),
+              checkOut: formatTime12(checkOutTimeMax),
+            })}
+          </p>
           {form.checkIn && inventory?.capacity != null && (
             <p
               className={`text-sm font-medium ${

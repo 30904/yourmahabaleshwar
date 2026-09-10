@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { calcGST } from '../../utils/format';
+import { clampTime24 } from '../../utils/time12h';
 import { createHomestayBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
@@ -67,6 +68,14 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   useEffect(() => {
     if (initialRoomId) setField('roomId', initialRoomId);
   }, [initialRoomId]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      checkInTime: item?.checkInTime || '14:00',
+      checkOutTime: item?.checkOutTime || '11:00',
+    }));
+  }, [item?.checkInTime, item?.checkOutTime]);
 
   const nights = useMemo(() => {
     if (!form.checkIn || !form.checkOut) return 1;
@@ -144,8 +153,8 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
         guests: { adults: Number(form.adults) || 1, children: Number(form.children) || 0 },
         guestRegistration: {
           formDate: new Date().toISOString(),
-          checkInTime: form.checkInTime,
-          checkOutTime: form.checkOutTime,
+          checkInTime: clampTime24(form.checkInTime, item?.checkInTime || '14:00', '23:59'),
+          checkOutTime: clampTime24(form.checkOutTime, '00:00', item?.checkOutTime || '11:00'),
           adults: Number(form.adults) || 1,
           children: Number(form.children) || 0,
           leadGuest: {
@@ -209,6 +218,8 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
       legalOpen={legalOpen}
       setLegalOpen={setLegalOpen}
       onSubmit={onSubmit}
+      checkInTimeMin={item?.checkInTime || '14:00'}
+      checkOutTimeMax={item?.checkOutTime || '11:00'}
     />
   );
 }

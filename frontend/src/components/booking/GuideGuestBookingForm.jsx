@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
@@ -16,6 +17,7 @@ import {
   DEFAULT_GUIDE_PACKAGE_ID,
   GUIDE_BIKE_ADDON,
   GUIDE_PACKAGES,
+  GUIDE_TOUR_BREAKDOWN,
   GUIDE_TOUR_LOCATIONS,
   guideOpenPrice,
 } from '../../constants/guideClientRateChart';
@@ -25,6 +27,21 @@ const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: ''
 
 function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-slate-900">{children}</h3>;
+}
+
+function SpotList({ spots }) {
+  const list = Array.isArray(spots) ? spots : [];
+  if (!list.length) return null;
+  return (
+    <ul className="space-y-1.5">
+      {list.map((spot) => (
+        <li key={spot} className="flex gap-2 text-xs leading-snug text-slate-700 sm:text-sm">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-primary" aria-hidden />
+          <span>{spot}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function LegalModal({ open, title, sections, closeLabel, onClose }) {
@@ -138,6 +155,30 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
   const gst = calcGST(subtotal);
   const total = subtotal + gst;
   const dateBlocked = form.tourDate && unavailable.includes(form.tourDate);
+
+  const selectedTourBreakdown = useMemo(
+    () => GUIDE_TOUR_BREAKDOWN.find((tour) => tour.id === form.selectedTourId) || GUIDE_TOUR_BREAKDOWN[0],
+    [form.selectedTourId]
+  );
+
+  const selectedTourSpots = useMemo(() => {
+    if (!openMode || !selectedTourBreakdown) return [];
+    const isEightHour = form.guidePackage === '8HR' || form.guidePackage === '12HR';
+    const spots = t(
+      isEightHour ? selectedTourBreakdown.eightHourSpotsKey : selectedTourBreakdown.fourHourSpotsKey,
+      { returnObjects: true }
+    );
+    return Array.isArray(spots) ? spots : [];
+  }, [openMode, selectedTourBreakdown, form.guidePackage, t, i18n.language]);
+
+  const selectedPackageLabel = useMemo(() => {
+    if (!openMode) return '';
+    if (form.guidePackage === '8HR' || form.guidePackage === '12HR') {
+      return t('guideGuestBooking.packages.eightHour.name');
+    }
+    if (selectedTourBreakdown?.halfDayLabelKey) return t(selectedTourBreakdown.halfDayLabelKey);
+    return t('guideGuestBooking.packages.fourHour.name');
+  }, [openMode, form.guidePackage, selectedTourBreakdown, t, i18n.language]);
 
   useEffect(() => {
     if (openMode || !item?._id || !form.tourDate) return;
@@ -258,36 +299,84 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               seeLabel={t('serviceBooking.seeRateChart')}
               hideLabel={t('serviceBooking.hideRateChart')}
             >
-              <div>
-                <p className="font-semibold text-slate-900">{t('guideGuestBooking.rateChartTitle')}</p>
-                <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.rateChartNote')}</p>
-                <div className="mt-3 overflow-x-auto">
-                  <table className="min-w-full text-left text-xs sm:text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-600">
-                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartPackage')}</th>
-                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartDuration')}</th>
-                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartGuideOnly')}</th>
-                        <th className="py-2 font-medium">{t('guideGuestBooking.chartGuideBike')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {GUIDE_PACKAGES.map((pkg) => (
-                        <tr key={pkg.id} className="border-b border-slate-100">
-                          <td className="py-2 pr-3">{t(pkg.nameKey)}</td>
-                          <td className="py-2 pr-3">{t(pkg.durationKey)}</td>
-                          <td className="py-2 pr-3 font-semibold">{formatCurrency(pkg.guideOnly)}</td>
-                          <td className="py-2 font-semibold">{formatCurrency(pkg.withBike)}</td>
+              <div className="space-y-5">
+                <div>
+                  <p className="font-semibold text-slate-900">{t('guideGuestBooking.rateChartTitle')}</p>
+                  <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.rateChartNote')}</p>
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="min-w-full text-left text-xs sm:text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-600">
+                          <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartPackage')}</th>
+                          <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartDuration')}</th>
+                          <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartGuideOnly')}</th>
+                          <th className="py-2 font-medium">{t('guideGuestBooking.chartGuideBike')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {GUIDE_PACKAGES.map((pkg) => (
+                          <tr key={pkg.id} className="border-b border-slate-100">
+                            <td className="py-2 pr-3">{t(pkg.nameKey)}</td>
+                            <td className="py-2 pr-3">{t(pkg.durationKey)}</td>
+                            <td className="py-2 pr-3 font-semibold">{formatCurrency(pkg.guideOnly)}</td>
+                            <td className="py-2 font-semibold">{formatCurrency(pkg.withBike)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-slate-900">{t('guideGuestBooking.sightseeingTitle')}</p>
+                  <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.sightseeingNote')}</p>
+                  <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="min-w-[720px] w-full text-left text-xs sm:text-sm">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="px-3 py-3 font-semibold">{t('guideGuestBooking.chartTourType')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('guideGuestBooking.chartFourHour')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('guideGuestBooking.chartEightHour')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {GUIDE_TOUR_BREAKDOWN.map((tour) => {
+                          const fourSpots = t(tour.fourHourSpotsKey, { returnObjects: true });
+                          const eightSpots = t(tour.eightHourSpotsKey, { returnObjects: true });
+                          return (
+                            <tr key={tour.id} className="border-t border-slate-200 align-top odd:bg-white even:bg-slate-50">
+                              <td className="px-3 py-3 font-semibold text-slate-900">
+                                {t(tour.nameKey)}
+                              </td>
+                              <td className="px-3 py-3">
+                                {tour.halfDayLabelKey ? (
+                                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                                    {t(tour.halfDayLabelKey)}
+                                  </p>
+                                ) : null}
+                                <SpotList spots={fourSpots} />
+                                {tour.noteKey ? (
+                                  <p className="mt-2 text-[11px] italic text-slate-500">{t(tour.noteKey)}</p>
+                                ) : null}
+                              </td>
+                              <td className="px-3 py-3">
+                                <SpotList spots={eightSpots} />
+                                {tour.noteKey ? (
+                                  <p className="mt-2 text-[11px] italic text-slate-500">{t(tour.noteKey)}</p>
+                                ) : null}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-slate-600">{t('guideGuestBooking.openRateHint')}</p>
             </ServiceRateChartToggle>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.35fr)] lg:items-end">
             <Input
               label={t('guideGuestBooking.tourDate')}
               type="date"
@@ -295,13 +384,13 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('tourDate', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('guideGuestBooking.startTime')}
-              type="time"
+              name="startTime"
               value={form.startTime}
-              onChange={(e) => setField('startTime', e.target.value)}
+              onChange={(v) => setField('startTime', v)}
             />
-            <div>
+            <div className="min-w-0 sm:col-span-2 lg:col-span-1">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
                 {t('guideGuestBooking.packageLabel')}
               </label>
@@ -329,21 +418,45 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               </select>
             </div>
             {openMode && (
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  {t('guideGuestBooking.tourLocationLabel')}
-                </label>
-                <select
-                  className="input-field"
-                  value={form.selectedTourId}
-                  onChange={(e) => setField('selectedTourId', e.target.value)}
-                >
-                  {GUIDE_TOUR_LOCATIONS.map((tour) => (
-                    <option key={tour.id} value={tour.id}>
-                      {t(tour.nameKey)}
-                    </option>
-                  ))}
-                </select>
+              <div className="sm:col-span-2 lg:col-span-3 space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    {t('guideGuestBooking.tourLocationLabel')}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={form.selectedTourId}
+                    onChange={(e) => setField('selectedTourId', e.target.value)}
+                  >
+                    {GUIDE_TOUR_LOCATIONS.map((tour) => (
+                      <option key={tour.id} value={tour.id}>
+                        {t(tour.nameKey)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {selectedTourSpots.length > 0 && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {t('guideGuestBooking.pointsCoveredTitle', {
+                        tour: t(selectedTourBreakdown.nameKey),
+                        package: selectedPackageLabel,
+                      })}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.pointsCoveredHint')}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {selectedTourSpots.map((spot) => (
+                        <div key={spot} className="flex gap-2 text-sm text-slate-700">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-primary" aria-hidden />
+                          <span>{spot}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedTourBreakdown?.noteKey ? (
+                      <p className="mt-3 text-xs italic text-slate-500">{t(selectedTourBreakdown.noteKey)}</p>
+                    ) : null}
+                  </div>
+                )}
               </div>
             )}
             <Input

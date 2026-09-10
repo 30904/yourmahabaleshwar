@@ -13,6 +13,8 @@ const tentSchema = new mongoose.Schema(
     capacity: { type: Number, default: 2 },
     totalTents: { type: Number, default: 10 },
     pricePerNight: { type: Number, required: true },
+    checkInTime: { type: String, default: '14:00' },
+    checkOutTime: { type: String, default: '11:00' },
     amenities: [String],
     rating: { type: Number, default: 4.0 },
     reviewCount: { type: Number, default: 0 },

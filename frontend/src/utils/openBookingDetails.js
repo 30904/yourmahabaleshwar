@@ -1,6 +1,7 @@
 import { taxiRouteById } from '../constants/taxiClientRateChart';
 import { driverPackageById } from '../constants/driverClientRateChart';
 import { horsePackageById } from '../constants/horseClientRateChart';
+import { formatTime12 } from './time12h';
 
 function detailRow(label, value) {
   const text = value == null || value === '' ? null : String(value).trim();
@@ -10,7 +11,7 @@ function detailRow(label, value) {
 
 function formatTime(value) {
   if (!value) return null;
-  return value;
+  return formatTime12(value);
 }
 
 export function buildOpenBookingDetailRows(booking, t) {

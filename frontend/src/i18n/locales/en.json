@@ -1172,6 +1172,8 @@
     "checkInTime": "Check-in time",
     "checkOutDate": "Check-out date",
     "checkOutTime": "Check-out time",
+    "timesFixedHint": "Fixed by the property — you cannot change these times.",
+    "timesRangeHint": "Check-in from {{checkIn}} or later · Check-out by {{checkOut}} or earlier.",
     "room": "Room",
     "perNight": "/ night",
     "fullName": "Full Name",
@@ -1319,12 +1321,20 @@
     "package12hr": "12 hours",
     "rateChartTitle": "Official package rate chart",
     "rateChartNote": "Rates as per S.M. Enterprises guide booking form (4-seater sightseeing).",
+    "sightseeingTitle": "Tour sightseeing breakdown: 4 hours vs 8 hours",
+    "sightseeingNote": "Points covered under each package as per the official S.M. Enterprises guide form.",
     "openRateHint": "Spot entry fees, parking and personal expenses are extra. GST is added at checkout.",
     "chartPackage": "Package",
     "chartDuration": "Duration",
     "chartGuideOnly": "Guide only",
     "chartGuideBike": "Guide + bike",
+    "chartTourType": "Tour type",
+    "chartFourHour": "4 hours package (half day)",
+    "chartEightHour": "8 hours package (full day with extended points)",
+    "chartSixHourPackage": "6 hours package",
     "tourLocationLabel": "Tour location",
+    "pointsCoveredTitle": "Points covered — {{tour}} ({{package}})",
+    "pointsCoveredHint": "These sightseeing points are included for the package you selected. Switch package or tour to compare.",
     "packages": {
       "fourHour": {
         "name": "4-hour package",
@@ -1337,22 +1347,117 @@
     },
     "tours": {
       "mahabaleshwar1": {
-        "name": "Tour 1 — Mahabaleshwar Darshan"
+        "name": "Tour 1 — Mahabaleshwar Darshan",
+        "fourHourSpots": [
+          "Old Mahabaleshwar",
+          "Panchganga Temple",
+          "Gupt Mandir",
+          "Arthur Seat",
+          "Widow Point",
+          "Tiger Spring",
+          "Strawberry Garden"
+        ],
+        "eightHourSpots": [
+          "Old Mahabaleshwar",
+          "Panchganga Temple",
+          "Gupt Mandir",
+          "Arthur Seat",
+          "Widow Point",
+          "Tiger Spring",
+          "Hunting Point",
+          "Malcolm Point",
+          "Elphinstone Point",
+          "Kate's Point",
+          "Sydenham Hole",
+          "Elphin's Head",
+          "Strawberry Garden"
+        ]
       },
       "mahabaleshwar2": {
-        "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point)"
+        "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point)",
+        "fourHourSpots": [
+          "Wilson Point",
+          "Ganesh Temple",
+          "Plato Point",
+          "Lingmala Waterfall",
+          "Venna Lake",
+          "Mumbai Point"
+        ],
+        "eightHourSpots": [
+          "Wilson Point",
+          "Ganesh Temple",
+          "Plato Point",
+          "King's Chair",
+          "Lingmala Waterfall",
+          "Venna Lake",
+          "Kimi Dam",
+          "Lodwick Point",
+          "Mumbai Point"
+        ]
       },
       "pratapgad": {
-        "name": "Tour 3 — Pratapgad Darshan"
+        "name": "Tour 3 — Pratapgad Darshan",
+        "fourHourSpots": [
+          "Pratapgad Fort",
+          "Bhavani Mata Temple",
+          "Pratap Garden",
+          "Shivaji Maharaj Statue",
+          "Kadelot Point"
+        ],
+        "eightHourSpots": [
+          "Pratapgad Fort",
+          "Bhavani Mata Temple",
+          "Pratap Garden",
+          "Shivaji Maharaj Statue",
+          "Kadelot Point",
+          "Afzal Khan Tomb",
+          "Shivkalin Village and peaceful exploration of the entire premises"
+        ],
+        "note": "Additional expense may apply for Shri Ramvaradayini Temple premises."
       },
       "panchgani": {
-        "name": "Tour 4 — Panchgani Darshan"
+        "name": "Tour 4 — Panchgani Darshan",
+        "fourHourSpots": [
+          "Parsi Point",
+          "Table Land (Caves)",
+          "Museum (Gureghar)",
+          "Bhilar Waterfall (during monsoon season)"
+        ],
+        "eightHourSpots": [
+          "Parsi Point",
+          "Table Land (Caves)",
+          "Museum (Gureghar)",
+          "Bhilar Waterfall (monsoon)",
+          "Devrai Art Village / On Wheels Theme Park"
+        ],
+        "note": "Additional expense may apply for Velocity / Mapro Garden."
       },
       "panchganiWai": {
-        "name": "Tour 5 — Panchgani / Wai Darshan"
+        "name": "Tour 5 — Panchgani / Wai Darshan",
+        "fourHourSpots": [
+          "Sydney Point",
+          "Wai (Ganpati Temple & Kashi Vishveshwar Temple)",
+          "Dhom Dam"
+        ],
+        "eightHourSpots": [
+          "Sydney Point",
+          "Wai (Ganpati Temple & Kashi Vishveshwar Temple)",
+          "Dhom Dam",
+          "Nana Fadnavis Wada (Menavli)",
+          "Mapro Factory (Sendurjane Wai)"
+        ]
       },
       "tapola": {
-        "name": "Tour 6 — Tapola Darshan"
+        "name": "Tour 6 — Tapola Darshan",
+        "fourHourSpots": [
+          "Mini Kashmir",
+          "Shivsagar Darshan"
+        ],
+        "eightHourSpots": [
+          "Mini Kashmir",
+          "Water Sports",
+          "Shivsagar Darshan (extended scenic points up to 8 hours)"
+        ]
       }
     },
     "bikeAddon": "Bike add-on",

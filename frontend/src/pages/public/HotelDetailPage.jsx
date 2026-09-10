@@ -14,6 +14,7 @@ import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
 import { resolveMediaUrls } from '../../utils/mediaUrl';
 import { formatCurrency } from '../../utils/format';
+import { formatTime12 } from '../../utils/time12h';
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200';
 const amenityIcons = { WiFi: Wifi, 'Free WiFi': Wifi, Parking: Car, 'Free parking': Car, Breakfast: Coffee, Pool: Waves };
@@ -275,8 +276,8 @@ export default function HotelDetailPage() {
         {tab === 'policies' && (
           <div className="mt-6 max-w-3xl card space-y-2 p-6 text-sm text-slate-600">
             <p>
-              <strong>Check-in:</strong> {property.checkInTime || '14:00'} · <strong>Check-out:</strong>{' '}
-              {property.checkOutTime || '11:00'}
+              <strong>Check-in:</strong> {formatTime12(property.checkInTime || '14:00')} · <strong>Check-out:</strong>{' '}
+              {formatTime12(property.checkOutTime || '11:00')}
             </p>
             <p>Free cancellation available on select room rates. GST 12% applicable.</p>
           </div>

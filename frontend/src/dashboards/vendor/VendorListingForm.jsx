@@ -8,6 +8,7 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
+import TimePicker12h from '../../components/ui/TimePicker12h';
 import Skeleton from '../../components/ui/Skeleton';
 import {
   ROLE_CREATE_VERTICALS,
@@ -383,6 +384,20 @@ export default function VendorListingForm({ adminMode = false } = {}) {
               <Input label={t('vendor.pricePerNight')} type="number" min="1" value={form.pricePerNight} onChange={(e) => setField('pricePerNight', e.target.value)} />
               <Input label={t('vendor.capacity')} type="number" min="1" value={form.capacity} onChange={(e) => setField('capacity', e.target.value)} />
               <Input label={t('vendor.totalTents')} type="number" min="1" value={form.totalTents} onChange={(e) => setField('totalTents', e.target.value)} />
+              <div className="flex flex-wrap items-end gap-4 sm:col-span-2">
+                <TimePicker12h
+                  label={t('stayRegistration.checkInTime')}
+                  name="checkInTime"
+                  value={form.checkInTime || '14:00'}
+                  onChange={(v) => setField('checkInTime', v)}
+                />
+                <TimePicker12h
+                  label={t('stayRegistration.checkOutTime')}
+                  name="checkOutTime"
+                  value={form.checkOutTime || '11:00'}
+                  onChange={(v) => setField('checkOutTime', v)}
+                />
+              </div>
             </>
           )}
 
