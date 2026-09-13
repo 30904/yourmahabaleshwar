@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import PincodeInput from '../ui/PincodeInput';
 import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import ImageUploadField from '../ui/ImageUploadField';
@@ -194,7 +195,7 @@ export default function StayGuestBookingFormCore({
             <Input label={t('stayGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
             <Input className="sm:col-span-2" label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChange={(e) => setField('leadAddress', e.target.value)} />
             <Input label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
-            <Input label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
+            <PincodeInput label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('stayGuestBooking.comingFrom')} value={form.comingFrom} onChange={(e) => setField('comingFrom', e.target.value)} />
             <Input label={t('stayGuestBooking.goingTo')} value={form.goingTo} onChange={(e) => setField('goingTo', e.target.value)} />
             <div className="sm:col-span-2">
@@ -324,10 +325,12 @@ export default function StayGuestBookingFormCore({
               <span>{t('stayGuestBooking.subtotalNights', { count: nights })}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {/* GST temporarily disabled
             <div className="mt-1 flex justify-between">
               <span>{t('stayGuestBooking.gstLabel')}</span>
               <span>{formatCurrency(gst)}</span>
             </div>
+            */}
             <div className="mt-2 flex justify-between font-bold text-primary">
               <span>{t('stayGuestBooking.totalLabel')}</span>
               <span>{formatCurrency(total)}</span>

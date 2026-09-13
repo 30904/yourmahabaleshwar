@@ -1,6 +1,8 @@
 /** Client guide customer form — SM_Enterprises_Tour_Breakdown_Complete_Bilingual_v3.pdf */
 
 export const GUIDE_BIKE_ADDON = 200;
+/** Extra charge when the tour runs past the selected package duration. Prefer SERVICE_OVERTIME_PER_HOUR. */
+export const GUIDE_OVERTIME_PER_HOUR = 150;
 
 export const GUIDE_PACKAGES = [
   {

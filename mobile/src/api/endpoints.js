@@ -25,6 +25,11 @@ export const createBooking = (type, body) => {
 export const myBookings = () => api.get('/bookings/my').then((r) => r.data.data);
 export const vendorBookings = () => api.get('/bookings/vendor').then((r) => r.data.data);
 export const updateBookingStatus = (id, status) => api.patch(`/bookings/${id}/status`, { status }).then((r) => r.data.data);
+export const vendorMarkArrived = (id) => api.patch(`/bookings/${id}/vendor-arrived`).then((r) => r.data.data);
+export const confirmServiceArrival = (id) => api.patch(`/bookings/${id}/confirm-arrival`).then((r) => r.data.data);
+export const vendorProposeEnd = (id, overtimeHours = 0) =>
+  api.patch(`/bookings/${id}/propose-end`, { overtimeHours }).then((r) => r.data.data);
+export const confirmServiceEnd = (id) => api.patch(`/bookings/${id}/confirm-end`).then((r) => r.data.data);
 export const createPaymentOrder = (bookingId) => api.post('/payments/create-order', { bookingId }).then((r) => r.data.data);
 export const verifyPayment = (payload) => api.post('/payments/verify', payload).then((r) => r.data.data);
 export const requestRefund = (bookingId, reason) => api.post('/payments/refund', { bookingId, reason }).then((r) => r.data.data);

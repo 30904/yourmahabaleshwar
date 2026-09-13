@@ -29,6 +29,13 @@ router.get('/vendor/open', authorize(...VENDOR_ROLES), booking.getOpenServiceBoo
 router.get('/all', authorize(...staffAndAdmin), booking.getAllBookings);
 router.patch('/:id/assign', authorize(ROLES.SUPER_ADMIN), booking.assignVendorToBooking);
 router.patch('/:id/accept', authorize(...VENDOR_ROLES), booking.acceptOpenServiceBooking);
+router.patch('/:id/vendor-arrived', authorize(...VENDOR_ROLES), booking.vendorMarkArrived);
+router.patch('/:id/confirm-arrival', booking.confirmServiceArrival);
+router.patch('/:id/propose-end', authorize(...VENDOR_ROLES), booking.vendorProposeEnd);
+router.patch('/:id/confirm-end', booking.confirmServiceEnd);
+/** @deprecated aliases */
+router.patch('/:id/guide-reached', booking.confirmServiceArrival);
+router.patch('/:id/end-guide', booking.confirmServiceEnd);
 router.get('/vendor/monetization-gate', authorize(...VENDOR_ROLES), booking.getVendorMonetizationGate);
 router.get('/:id/invoice', booking.downloadInvoice);
 router.patch('/:id/status', authorize(ROLES.SUPER_ADMIN, ...VENDOR_ROLES), booking.updateBookingStatus);

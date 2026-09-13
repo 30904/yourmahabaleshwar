@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { BOOKING_STATUS, BOOKING_TYPES, REFUND_STATUS } from '../constants/booking.js';
+import { BOOKING_STATUS, BOOKING_TYPES, REFUND_STATUS, BOOKING_SOURCE } from '../constants/booking.js';
 
 const bookingSchema = new mongoose.Schema(
   {
@@ -17,7 +17,36 @@ const bookingSchema = new mongoose.Schema(
     },
     assignedAt: { type: Date },
     assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+    /** Vendor-led trip lifecycle (GUIDE / TAXI / DRIVER / HORSE) */
+    vendorArrivedAt: { type: Date },
+    vendorArrivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    arrivalConfirmed: { type: Boolean, default: false },
+    arrivalConfirmedAt: { type: Date },
+    arrivalConfirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    endProposedAt: { type: Date },
+    endProposedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    serviceEndedAt: { type: Date },
+    serviceEndedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+    /** Legacy guide fields — kept in sync for older bookings */
+    guideReachedConfirmed: { type: Boolean, default: false },
+    guideReachedAt: { type: Date },
+    guideReachedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    guideEndedAt: { type: Date },
+    guideEndedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+    /** Package amount before overtime (preserved when ending) */
+    packageSubtotal: { type: Number },
+    overtimeHours: { type: Number, default: 0 },
+    overtimeAmount: { type: Number, default: 0 },
+    overtimeRatePerHour: { type: Number, default: 0 },
     type: { type: String, enum: Object.values(BOOKING_TYPES), required: true },
+    bookingSource: {
+      type: String,
+      enum: Object.values(BOOKING_SOURCE),
+      default: BOOKING_SOURCE.WEBSITE,
+    },
     status: {
       type: String,
       enum: Object.values(BOOKING_STATUS),

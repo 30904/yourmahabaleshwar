@@ -6,7 +6,8 @@ import { fetchPublicFaqs } from '../../services/listingsApi';
 
 const fallbackFaqs = [
   { question: 'How do I cancel my booking?', answer: 'Go to My Bookings in your account. Free cancellation applies on properties marked with the green badge.', category: 'BOOKING' },
-  { question: 'Is GST included in the price?', answer: '12% GST is calculated at checkout and appears on your invoice.', category: 'PAYMENT' },
+  // GST temporarily disabled
+  // { question: 'Is GST included in the price?', answer: '12% GST is calculated at checkout and appears on your invoice.', category: 'PAYMENT' },
   { question: 'Can I pay at the property?', answer: 'Many listings offer pay at property. Others require online payment to confirm.', category: 'PAYMENT' },
   { question: 'How do reviews work?', answer: 'Only guests who completed a stay can leave verified reviews.', category: 'REVIEWS' },
   { question: 'How do I list my hotel?', answer: 'Click List your property. Our team verifies KYC before going live.', category: 'PARTNERS' },

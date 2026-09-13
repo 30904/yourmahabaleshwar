@@ -39,6 +39,10 @@ router.get('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise
 router.post('/enterprise/properties', authorize(...staffAndAdmin), enterprise.createAdminProperty);
 router.put('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise.updateAdminProperty);
 router.get('/enterprise/bookings', authorize(...staffAndAdmin), enterprise.getAdminBookings);
+router.post('/enterprise/bookings', authorize(...staffAndAdmin), enterprise.createAdminBooking);
+router.patch('/enterprise/bookings/:id/confirm-arrival', authorize(...staffAndAdmin), enterprise.adminConfirmArrival);
+router.patch('/enterprise/bookings/:id/confirm-end', authorize(...staffAndAdmin), enterprise.adminConfirmEnd);
+router.post('/enterprise/bookings/:id/email-invoice', authorize(...staffAndAdmin), enterprise.adminEmailInvoice);
 router.get('/enterprise/guides', authorize(...staffAndAdmin), enterprise.getAdminGuides);
 router.get('/enterprise/drivers', authorize(...staffAndAdmin), enterprise.getAdminDrivers);
 router.get('/enterprise/vendors', authorize(...staffAndAdmin), enterprise.getAdminVendors);

@@ -11,8 +11,11 @@ export default function StickyReservation({ property, selectedRoom, pricePerNigh
   const nights = checkIn && checkOut ? Math.max(1, Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000)) : 1;
   const rate = selectedRoom?.basePrice || pricePerNight || property?.priceFrom || 0;
   const subtotal = rate * nights;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
 
   return (
     <div className="card sticky top-24 border-2 border-amber-200/60 p-5 shadow-elevated">
@@ -41,7 +44,9 @@ export default function StickyReservation({ property, selectedRoom, pricePerNigh
       {selectedRoom && <p className="mt-3 text-sm font-medium text-slate-700">{selectedRoom.name} selected</p>}
       <div className="mt-4 space-y-1 border-t border-border pt-3 text-sm">
         <div className="flex justify-between"><span>{nights} night(s) × {formatCurrency(rate)}</span><span>{formatCurrency(subtotal)}</span></div>
+        {/* GST temporarily disabled
         <div className="flex justify-between text-slate-500"><span>GST (12%)</span><span>{formatCurrency(gst)}</span></div>
+        */}
         <div className="flex justify-between font-bold text-slate-900"><span>Total</span><span>{formatCurrency(total)}</span></div>
       </div>
       {property?.freeCancellation && <p className="mt-3 flex items-center gap-1 text-xs text-secondary"><Check size={14} /> Free cancellation on select rates</p>}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import PincodeInput from '../../components/ui/PincodeInput';
 import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 import { VEHICLE_TYPES } from './vendorListingFormConfig';
@@ -114,7 +115,7 @@ export default function DriverRegistrationFields({ form, setField, isEdit = fals
             onChange={(e) => setField('dateOfBirth', e.target.value)}
             required
           />
-          <Input
+          <PincodeInput
             label={t('driverRegistration.pinCode')}
             value={form.pincode}
             onChange={(e) => setField('pincode', e.target.value)}

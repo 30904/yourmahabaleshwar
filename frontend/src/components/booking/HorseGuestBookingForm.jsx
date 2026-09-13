@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import PincodeInput from '../ui/PincodeInput';
 import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
@@ -123,8 +124,11 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
   }, [routes, form.routeId]);
 
   const subtotal = selectedRoute?.price || item?.priceFrom || 0;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
   const dateBlocked = form.rideDate && unavailable.includes(form.rideDate);
 
   useEffect(() => {
@@ -360,7 +364,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('leadAddress', e.target.value)}
             />
             <Input label={t('horseGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
-            <Input label={t('horseGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
+            <PincodeInput label={t('horseGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('horseGuestBooking.emergencyName')} value={form.emergencyName} onChange={(e) => setField('emergencyName', e.target.value)} />
             <Input label={t('horseGuestBooking.emergencyMobile')} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', e.target.value)} />
           </div>
@@ -465,10 +469,12 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               <span>{t('horseGuestBooking.subtotalLabel')}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {/* GST temporarily disabled
             <div className="mt-1 flex justify-between">
               <span>{t('horseGuestBooking.gstLabel')}</span>
               <span>{formatCurrency(gst)}</span>
             </div>
+            */}
             <div className="mt-2 flex justify-between font-bold text-primary">
               <span>{t('horseGuestBooking.totalLabel')}</span>
               <span>{formatCurrency(total)}</span>

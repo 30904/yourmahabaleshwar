@@ -29,9 +29,21 @@ import { ROLES } from '../constants/roles.js';
 import { denyIfNotOwner } from '../utils/vendorListingAccess.js';
 import { publicStaySubscriptionFilter } from '../services/stayListingSubscriptionService.js';
 
+const GENERIC_SEARCH_TERMS = new Set(['', 'mahabaleshwar', 'panchgani', 'satara']);
+
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildListingSearchFilter = (term, fields = ['name']) => {
+  const q = String(term || '').trim();
+  if (!q || GENERIC_SEARCH_TERMS.has(q.toLowerCase())) return {};
+  const regex = { $regex: escapeRegex(q), $options: 'i' };
+  if (fields.length === 1) return { [fields[0]]: regex };
+  return { $or: fields.map((field) => ({ [field]: regex })) };
+};
+
 const paginate = async (Model, filter, req, enrichFn) => {
   const { search, page = 1, limit = 12, featured } = req.query;
-  if (search) filter.name = { $regex: search, $options: 'i' };
+  if (search) Object.assign(filter, buildListingSearchFilter(search, ['name', 'description', 'location']));
   if (featured === 'true') filter.isFeatured = true;
   filter.isActive = { $ne: false };
   const skip = (page - 1) * limit;
@@ -383,15 +395,21 @@ export const updateBlockedDates = async (req, res) => {
 
 export const globalSearch = async (req, res) => {
   const { q = '', limit = 12 } = req.query;
-  const regex = { $regex: q || 'Mahabaleshwar', $options: 'i' };
+  const textFilter = buildListingSearchFilter(q, ['name', 'description', 'location', 'shortDescription']);
+  const hotelFilter = {
+    isActive: true,
+    ...publicStaySubscriptionFilter(),
+    ...textFilter,
+  };
+  const stayFilter = { isActive: { $ne: false }, ...textFilter };
   const cap = Number(limit);
   const [hotelsRaw, tentsRaw, guidesRaw, driversRaw, homestaysRaw, horsesRaw] = await Promise.all([
-    Hotel.find({ isActive: true, name: regex, ...publicStaySubscriptionFilter() }).limit(cap),
-    Tent.find({ isActive: { $ne: false }, name: regex }).limit(cap),
-    Guide.find({ isActive: { $ne: false }, name: regex }).limit(cap),
-    Driver.find({ isActive: { $ne: false }, name: regex }).limit(cap),
-    Homestay.find({ isActive: { $ne: false }, name: regex, ...publicStaySubscriptionFilter() }).limit(cap),
-    Horse.find({ isActive: { $ne: false }, name: regex }).limit(cap),
+    Hotel.find(hotelFilter).limit(cap),
+    Tent.find(stayFilter).limit(cap),
+    Guide.find(stayFilter).limit(cap),
+    Driver.find(stayFilter).limit(cap),
+    Homestay.find({ ...stayFilter, ...publicStaySubscriptionFilter() }).limit(cap),
+    Horse.find(stayFilter).limit(cap),
   ]);
   const hotels = await attachHotelPrices(hotelsRaw);
   return success(res, {

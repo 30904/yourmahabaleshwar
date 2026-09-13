@@ -9,11 +9,39 @@ import { dummyHotels } from '../../data/dummyListings';
 import { normalizeHotel } from '../../utils/listingHelpers';
 import { HOMESTAY_VILLA } from '../../constants/homestayVillaLabels';
 
+const EMPTY_RESULTS = {
+  hotels: [],
+  tents: [],
+  guides: [],
+  drivers: [],
+  homestays: [],
+  horses: [],
+};
+
+function ResultSection({ title, items, linkPrefix, itemType, priceKey, priceSuffix }) {
+  if (!items.length) return null;
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+      {items.map((item) => (
+        <PropertyCard
+          key={`${itemType}-${item._id}`}
+          item={item}
+          linkPrefix={linkPrefix}
+          itemType={itemType}
+          priceKey={priceKey}
+          priceSuffix={priceSuffix}
+        />
+      ))}
+    </section>
+  );
+}
+
 export default function SearchPage() {
   const { t } = useTranslation();
   const [params] = useSearchParams();
   const q = params.get('q') || 'Mahabaleshwar';
-  const [results, setResults] = useState({ hotels: [], tents: [], guides: [], drivers: [], homestays: [], horses: [] });
+  const [results, setResults] = useState(EMPTY_RESULTS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -72,15 +100,27 @@ export default function SearchPage() {
               <Skeleton key={i} className="h-52" />
             ))}
           </div>
+        ) : total === 0 ? (
+          <p className="mt-8 text-slate-500">No results found. Try a different search.</p>
         ) : (
-          <div className="mt-8 space-y-4">
-            {results.hotels.map((h) => (
-              <PropertyCard key={h._id} item={h} linkPrefix="/hotels" itemType="HOTEL" />
-            ))}
-            {results.homestays.map((h) => (
-              <PropertyCard key={h._id} item={h} linkPrefix="/homestays" itemType="HOMESTAY" />
-            ))}
-            {total === 0 && <p className="text-slate-500">No results found. Try a different search.</p>}
+          <div className="mt-8 space-y-10">
+            <ResultSection
+              title="Hotels"
+              items={results.hotels.filter((h) => String(h.type || 'HOTEL').toUpperCase() !== 'RESORT')}
+              linkPrefix="/hotels"
+              itemType="HOTEL"
+            />
+            <ResultSection
+              title="Resorts"
+              items={results.hotels.filter((h) => String(h.type || '').toUpperCase() === 'RESORT')}
+              linkPrefix="/resorts"
+              itemType="RESORT"
+            />
+            <ResultSection title={HOMESTAY_VILLA.plural} items={results.homestays} linkPrefix="/homestays" itemType="HOMESTAY" />
+            <ResultSection title="Tent stays & glamping" items={results.tents} linkPrefix="/tents" itemType="TENT" priceKey="pricePerNight" />
+            <ResultSection title={t('serviceBooking.guideTitle')} items={results.guides} linkPrefix="/guides" itemType="GUIDE" priceKey="package6hr" priceSuffix="/ 6 hrs" />
+            <ResultSection title={`${t('serviceBooking.taxiTitle')} & ${t('serviceBooking.driverTitle')}`} items={results.drivers} linkPrefix="/taxi" itemType="TAXI" priceKey="perTripPrice" priceSuffix="/ trip" />
+            <ResultSection title={t('serviceBooking.horseTitle')} items={results.horses} linkPrefix="/horses" itemType="HORSE" priceKey="priceFrom" priceSuffix="/ ride" />
           </div>
         )}
         <div className="mt-10">

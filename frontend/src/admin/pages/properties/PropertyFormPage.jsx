@@ -29,6 +29,7 @@ import {
 } from '../../../services/enterpriseAdminApi';
 import { formatCurrency } from '../../../utils/format';
 import TimePicker12h from '../../../components/ui/TimePicker12h';
+import { MAHABALESHWAR_PINCODE } from '../../../constants/site';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
 
@@ -77,7 +78,7 @@ export default function PropertyFormPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
 
-  const { register, handleSubmit, control, reset, watch, trigger, formState: { errors } } = useForm({
+  const { register, handleSubmit, control, reset, watch, trigger, setValue, formState: { errors } } = useForm({
     defaultValues,
   });
   const { fields: roomFields, append, remove } = useFieldArray({ control, name: 'rooms' });
@@ -303,7 +304,15 @@ export default function PropertyFormPage() {
                 <input className="admin-input" {...register('address.state')} />
               </label>
               <label className="admin-label">Pincode *
-                <input className="admin-input" {...register('address.pincode', { required: true })} />
+                <input
+                  className="admin-input"
+                  {...register('address.pincode', { required: true })}
+                  onFocus={(e) => {
+                    if (!String(e.target.value || '').trim()) {
+                      setValue('address.pincode', MAHABALESHWAR_PINCODE, { shouldDirty: true });
+                    }
+                  }}
+                />
               </label>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

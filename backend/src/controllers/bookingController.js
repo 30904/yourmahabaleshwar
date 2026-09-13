@@ -15,7 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { success, error } from '../utils/apiResponse.js';
 import User from '../models/User.js';
-import { ROLES } from '../constants/roles.js';
+import { ROLES, ADMIN_ROLES } from '../constants/roles.js';
 import { getServiceMonetizationConfig } from '../services/serviceMonetizationService.js';
 import {
   canServiceVendorAcceptBooking,
@@ -26,6 +26,16 @@ import { emitOpenBookingCreated, emitOpenBookingRemoved } from '../services/open
 import { redactOpenBookingList } from '../utils/redactCustomerContact.js';
 import { taxiRoutePrice } from '../constants/taxiClientRateChart.js';
 import { guideOpenPrice, normalizeGuidePackageId } from '../constants/guideClientRateChart.js';
+import {
+  SERVICE_OVERTIME_PER_HOUR,
+  isTripServiceBooking,
+  serviceTripLabel,
+  adminBookingsLink,
+  hasVendorArrived,
+  isArrivalConfirmed,
+  isEndProposed,
+  isServiceEnded,
+} from '../constants/serviceTrip.js';
 import { driverPackagePrice } from '../constants/driverClientRateChart.js';
 import { horsePackagePrice } from '../constants/horseClientRateChart.js';
 import { resolveStayBookingTimes } from '../utils/timeRange.js';
@@ -780,10 +790,9 @@ export const downloadInvoice = async (req, res) => {
     'customer vendor hotel tent guide driver homestay horse'
   );
   if (!booking) return error(res, 'Booking not found', 404);
-  if (
-    String(booking.customer._id || booking.customer) !== String(req.user._id) &&
-    req.user.role !== 'SUPER_ADMIN'
-  ) {
+  const isOwner = String(booking.customer?._id || booking.customer) === String(req.user._id);
+  const isAdmin = ADMIN_ROLES.includes(req.user.role);
+  if (!isOwner && !isAdmin) {
     return error(res, 'Forbidden', 403);
   }
 
@@ -864,7 +873,8 @@ async function createOpenServiceBooking(req, res, serviceTenant) {
     const packageId = guestRegistration?.taxiDetails?.packageId;
     const tripPrice = Number(guestRegistration?.taxiDetails?.tripPrice);
     subtotal = tripPrice > 0 ? tripPrice : driverPackagePrice(packageId);
-    extra.taxiType = 'PACKAGE';
+    // Booking.taxiType enum is only PER_TRIP | HOURLY
+    extra.taxiType = 'PER_TRIP';
     extra.driverPackageId = packageId || null;
   } else if (tenant === 'HORSE') {
     bookingType = BOOKING_TYPES.HORSE;
@@ -1102,3 +1112,287 @@ export const getVendorMonetizationGate = async (req, res) => {
     return error(res, err.message || 'Failed', 500);
   }
 };
+
+async function notifyTripAdmins(booking, title, message) {
+  const admins = await User.find({
+    role: { $in: [ROLES.SUPER_ADMIN, ROLES.OFFICE_STAFF_GUIDE] },
+    isActive: { $ne: false },
+  }).select('_id');
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification({
+        userId: admin._id,
+        title,
+        message,
+        type: 'BOOKING',
+        link: adminBookingsLink(booking),
+      })
+    )
+  );
+}
+
+function assertTripBookingActive(booking) {
+  if (!isTripServiceBooking(booking)) {
+    return 'Only guide, taxi, driver and horse bookings support this action';
+  }
+  if (booking.assignmentStatus !== 'ASSIGNED' || !booking.vendor) {
+    return 'A partner must be assigned before this action';
+  }
+  if ([BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REFUNDED].includes(booking.status)) {
+    return 'Cannot update a cancelled booking';
+  }
+  if (isServiceEnded(booking)) {
+    return 'This booking has already ended';
+  }
+  return null;
+}
+
+function listingNameForBooking(booking) {
+  return (
+    booking.guide?.name ||
+    booking.driver?.name ||
+    booking.horse?.name ||
+    booking.hotel?.name ||
+    booking.homestay?.name ||
+    booking.tent?.name ||
+    serviceTripLabel(booking)
+  );
+}
+
+/** Vendor marks that they have reached the customer. */
+export const vendorMarkArrived = async (req, res) => {
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) return error(res, 'Booking not found', 404);
+
+  if (String(booking.vendor) !== String(req.user._id)) {
+    return error(res, 'Forbidden', 403);
+  }
+
+  const gate = assertTripBookingActive(booking);
+  if (gate) return error(res, gate, 400);
+
+  if (hasVendorArrived(booking)) {
+    return success(res, booking, 'Arrival already marked');
+  }
+
+  const now = new Date();
+  booking.vendorArrivedAt = now;
+  booking.vendorArrivedBy = req.user._id;
+  await booking.save();
+
+  const label = serviceTripLabel(booking);
+  await createNotification({
+    userId: booking.customer,
+    title: `${label} has arrived`,
+    message: `Your ${label.toLowerCase()} marked arrival for booking ${booking.bookingNumber}. Please confirm in My Bookings.`,
+    type: 'BOOKING',
+    link: '/dashboard/customer/bookings',
+  });
+  await notifyTripAdmins(
+    booking,
+    `${label} marked arrival`,
+    `${req.user.name || label} marked arrival for booking ${booking.bookingNumber}. Awaiting customer confirmation.`
+  );
+
+  return success(res, booking, 'Arrival marked');
+};
+
+/** Customer confirms vendor arrival. */
+export const confirmServiceArrival = async (req, res) => {
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) return error(res, 'Booking not found', 404);
+
+  if (String(booking.customer) !== String(req.user._id)) {
+    return error(res, 'Forbidden', 403);
+  }
+
+  const gate = assertTripBookingActive(booking);
+  if (gate) return error(res, gate, 400);
+
+  if (!hasVendorArrived(booking)) {
+    return error(res, 'Partner has not marked arrival yet', 400);
+  }
+
+  if (isArrivalConfirmed(booking)) {
+    return success(res, booking, 'Arrival already confirmed');
+  }
+
+  const now = new Date();
+  booking.arrivalConfirmed = true;
+  booking.arrivalConfirmedAt = now;
+  booking.arrivalConfirmedBy = req.user._id;
+  booking.guideReachedConfirmed = true;
+  booking.guideReachedAt = now;
+  booking.guideReachedBy = req.user._id;
+  await booking.save();
+
+  const label = serviceTripLabel(booking);
+  const customerName = req.user.name || 'Customer';
+
+  if (booking.vendor) {
+    await createNotification({
+      userId: booking.vendor,
+      title: 'Customer confirmed your arrival',
+      message: `${customerName} confirmed your arrival for booking ${booking.bookingNumber}.`,
+      type: 'BOOKING',
+      link: '/dashboard/vendor/bookings',
+    });
+  }
+  await notifyTripAdmins(
+    booking,
+    `${label} arrival confirmed`,
+    `${customerName} confirmed ${label.toLowerCase()} arrival for booking ${booking.bookingNumber}.`
+  );
+
+  return success(res, booking, 'Arrival confirmed');
+};
+
+/** Vendor proposes end of trip with optional overtime hours. */
+export const vendorProposeEnd = async (req, res) => {
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) return error(res, 'Booking not found', 404);
+
+  if (String(booking.vendor) !== String(req.user._id)) {
+    return error(res, 'Forbidden', 403);
+  }
+
+  const gate = assertTripBookingActive(booking);
+  if (gate) return error(res, gate, 400);
+
+  if (!isArrivalConfirmed(booking)) {
+    return error(res, 'Customer must confirm arrival before ending the booking', 400);
+  }
+
+  if (isEndProposed(booking)) {
+    return success(res, booking, 'End already proposed — waiting for customer confirmation');
+  }
+
+  const rawHours = Number(req.body?.overtimeHours);
+  const overtimeHours = Number.isFinite(rawHours) ? Math.max(0, Math.round(rawHours * 100) / 100) : 0;
+  const overtimeRate = SERVICE_OVERTIME_PER_HOUR;
+  const overtimeAmount = Math.round(overtimeHours * overtimeRate);
+  const packageSubtotal = Number(
+    booking.packageSubtotal != null ? booking.packageSubtotal : booking.subtotal || 0
+  );
+  const subtotal = packageSubtotal + overtimeAmount;
+
+  booking.packageSubtotal = packageSubtotal;
+  booking.overtimeHours = overtimeHours;
+  booking.overtimeAmount = overtimeAmount;
+  booking.overtimeRatePerHour = overtimeRate;
+  booking.subtotal = subtotal;
+  booking.gst = 0;
+  booking.total = subtotal;
+  booking.endProposedAt = new Date();
+  booking.endProposedBy = req.user._id;
+  await booking.save();
+
+  const label = serviceTripLabel(booking);
+  const overtimeNote =
+    overtimeHours > 0
+      ? ` Overtime proposed: ${overtimeHours} hr × ₹${overtimeRate} = ₹${overtimeAmount}.`
+      : ' No overtime.';
+
+  await createNotification({
+    userId: booking.customer,
+    title: `${label} proposed ending booking`,
+    message: `Please confirm ending booking ${booking.bookingNumber}.${overtimeNote}`,
+    type: 'BOOKING',
+    link: '/dashboard/customer/bookings',
+  });
+  await notifyTripAdmins(
+    booking,
+    `${label} proposed end`,
+    `${req.user.name || label} proposed ending booking ${booking.bookingNumber}.${overtimeNote}`
+  );
+
+  return success(res, booking, 'End proposed — awaiting customer confirmation');
+};
+
+/** Customer confirms end + overtime; completes booking and generates invoice. */
+export const confirmServiceEnd = async (req, res) => {
+  const booking = await Booking.findById(req.params.id).populate(
+    'customer vendor guide hotel tent driver homestay horse'
+  );
+  if (!booking) return error(res, 'Booking not found', 404);
+
+  if (String(booking.customer._id || booking.customer) !== String(req.user._id)) {
+    return error(res, 'Forbidden', 403);
+  }
+
+  if (!isTripServiceBooking(booking)) {
+    return error(res, 'Only guide, taxi, driver and horse bookings support this action', 400);
+  }
+
+  if ([BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REFUNDED].includes(booking.status)) {
+    return error(res, 'Cannot end a cancelled booking', 400);
+  }
+
+  if (isServiceEnded(booking)) {
+    return success(res, booking, 'Booking already ended');
+  }
+
+  if (!booking.endProposedAt) {
+    return error(res, 'Partner has not proposed ending this booking yet', 400);
+  }
+
+  const now = new Date();
+  booking.serviceEndedAt = now;
+  booking.serviceEndedBy = req.user._id;
+  booking.guideEndedAt = now;
+  booking.guideEndedBy = req.user._id;
+  booking.status = BOOKING_STATUS.COMPLETED;
+  booking.endProposedAt = booking.endProposedAt || now;
+
+  if (booking.guestRegistration?.tourDetails) {
+    booking.guestRegistration.tourDetails.overtimeHours = booking.overtimeHours || 0;
+    booking.guestRegistration.tourDetails.overtimeAmount = booking.overtimeAmount || 0;
+    booking.markModified('guestRegistration');
+  }
+
+  try {
+    const invoice = await generateInvoicePdf({
+      booking,
+      customer: booking.customer,
+      vendor: booking.vendor,
+      listingName: listingNameForBooking(booking),
+      gstNumber: booking.hotel?.gstNumber || booking.homestay?.gstNumber,
+    });
+    booking.invoiceNumber = invoice.invoiceNumber;
+    booking.invoiceUrl = invoice.invoiceUrl;
+  } catch {
+    /* download can regenerate */
+  }
+
+  await booking.save();
+
+  const label = serviceTripLabel(booking);
+  const customerName = req.user.name || 'Customer';
+  const overtimeNote =
+    booking.overtimeHours > 0
+      ? ` Overtime: ${booking.overtimeHours} hr = ₹${booking.overtimeAmount}.`
+      : '';
+
+  if (booking.vendor) {
+    await createNotification({
+      userId: booking.vendor._id || booking.vendor,
+      title: 'Customer confirmed end of booking',
+      message: `${customerName} confirmed ending booking ${booking.bookingNumber}.${overtimeNote}`,
+      type: 'BOOKING',
+      link: '/dashboard/vendor/bookings',
+    });
+  }
+  await notifyTripAdmins(
+    booking,
+    `${label} booking ended`,
+    `${customerName} confirmed ending booking ${booking.bookingNumber}.${overtimeNote}`
+  );
+
+  return success(res, booking, 'Booking ended');
+};
+
+/** @deprecated use confirmServiceArrival */
+export const confirmGuideReached = async (req, res) => confirmServiceArrival(req, res);
+
+/** @deprecated use confirmServiceEnd */
+export const endGuideBooking = async (req, res) => confirmServiceEnd(req, res);

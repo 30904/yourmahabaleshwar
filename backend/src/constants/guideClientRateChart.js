@@ -1,6 +1,8 @@
 /** Client guide customer form — keep in sync with frontend guideClientRateChart.js */
 
 export const GUIDE_BIKE_ADDON = 200;
+/** Extra charge when the tour runs past the selected package duration. */
+export const GUIDE_OVERTIME_PER_HOUR = 150;
 
 export const GUIDE_PACKAGES = [
   { id: '4HR', guideOnly: 900, withBike: 1100 },

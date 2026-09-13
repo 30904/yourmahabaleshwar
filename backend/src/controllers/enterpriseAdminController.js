@@ -17,6 +17,23 @@ import Homestay from '../models/Homestay.js';
 import Horse from '../models/Horse.js';
 import Review from '../models/Review.js';
 import { ROLES, VENDOR_ROLES, STAFF_ROLES } from '../constants/roles.js';
+import { BOOKING_STATUS, BOOKING_TYPES, BOOKING_SOURCE } from '../constants/booking.js';
+import { calculateTotalAsync, getNights } from '../utils/pricing.js';
+import { generateInvoicePdf } from '../services/invoiceService.js';
+import { createNotification } from '../services/notificationService.js';
+import { sendEmail } from '../services/emailService.js';
+import { guideOpenPrice, normalizeGuidePackageId } from '../constants/guideClientRateChart.js';
+import { taxiRoutePrice } from '../constants/taxiClientRateChart.js';
+import { driverPackagePrice } from '../constants/driverClientRateChart.js';
+import { horsePackagePrice } from '../constants/horseClientRateChart.js';
+import {
+  SERVICE_OVERTIME_PER_HOUR,
+  isTripServiceBooking,
+  isArrivalConfirmed,
+  isServiceEnded,
+  serviceTripLabel,
+} from '../constants/serviceTrip.js';
+import crypto from 'crypto';
 import { canApprove, canSeeFinance } from '../utils/roleAccess.js';
 import { success, error } from '../utils/apiResponse.js';
 import { attachHotelPrices } from '../utils/listingEnrich.js';
@@ -660,3 +677,494 @@ export const getFinanceSummary = async (req, res) => {
   ]);
   return success(res, { revenueByType: revenue, payouts, transactions });
 };
+
+async function resolveOrCreateCustomer({ customerId, name, phone, email }) {
+  if (customerId) {
+    const existing = await User.findById(customerId);
+    if (!existing) throw Object.assign(new Error('Customer not found'), { status: 404 });
+    return existing;
+  }
+  const mobile = String(phone || '').trim();
+  const fullName = String(name || '').trim();
+  if (!fullName) throw Object.assign(new Error('Customer name is required'), { status: 400 });
+  if (!mobile) throw Object.assign(new Error('Customer mobile is required'), { status: 400 });
+
+  let user = await User.findOne({ phone: mobile, role: ROLES.CUSTOMER });
+  if (!user && email) {
+    user = await User.findOne({ email: String(email).toLowerCase().trim() });
+  }
+  if (user) {
+    if (!user.phone) user.phone = mobile;
+    if (fullName && user.name !== fullName) user.name = fullName;
+    await user.save();
+    return user;
+  }
+
+  const safeEmail =
+    String(email || '').trim().toLowerCase() ||
+    `callguest_${mobile.replace(/\D/g, '') || Date.now()}@yourmahabaleshwar.local`;
+
+  return User.create({
+    name: fullName,
+    phone: mobile,
+    email: safeEmail,
+    password: crypto.randomBytes(16).toString('hex'),
+    role: ROLES.CUSTOMER,
+    isActive: true,
+  });
+}
+
+/** Admin creates a booking (call / walk-in). */
+export const createAdminBooking = async (req, res) => {
+  try {
+    const body = req.body || {};
+    const source = String(body.bookingSource || '').toUpperCase();
+    if (![BOOKING_SOURCE.CALL, BOOKING_SOURCE.WALK_IN].includes(source)) {
+      return error(res, 'Select Call booking or Walk in', 400);
+    }
+
+    const kind = String(body.bookingKind || body.type || '').toUpperCase();
+    const allowed = ['GUIDE', 'TAXI', 'DRIVER', 'HORSE', 'TENT', 'HOTEL', 'RESORT', 'HOMESTAY'];
+    if (!allowed.includes(kind)) return error(res, 'Unsupported booking type', 400);
+
+    const customer = await resolveOrCreateCustomer({
+      customerId: body.customerId,
+      name: body.customerName,
+      phone: body.customerPhone,
+      email: body.customerEmail,
+    });
+
+    if (!body.checkIn) return error(res, 'Date is required', 400);
+
+    const leadGuest = {
+      fullName: customer.name,
+      mobile: customer.phone || String(body.customerPhone || '').trim(),
+      email: customer.email || '',
+      address: String(body.address || '').trim(),
+      cityState: String(body.cityState || 'Mahabaleshwar, Maharashtra').trim(),
+      pincode: String(body.pincode || '').trim(),
+      purpose: 'TOURISM',
+    };
+
+    let bookingType = kind;
+    let serviceTenant;
+    let vendor = null;
+    let assignmentStatus = 'ASSIGNED';
+    let listingFields = {};
+    let subtotal = Number(body.subtotal) || 0;
+    let extra = {};
+
+    if (kind === 'GUIDE') {
+      bookingType = BOOKING_TYPES.GUIDE;
+      serviceTenant = 'GUIDE';
+      const packageType = normalizeGuidePackageId(body.guidePackage || '6HR');
+      const useBike = body.bikeAddon === true || body.bikeAddon === 'true';
+      if (subtotal <= 0) subtotal = guideOpenPrice(packageType === '4HR' ? '4HR' : packageType === '8HR' ? '8HR' : '4HR', useBike);
+      // Map 6HR/12HR listing packages to open chart if needed
+      if (subtotal <= 0) subtotal = useBike ? 1100 : 900;
+      extra.guidePackage = body.guidePackage || packageType;
+      extra.bikeAddon = useBike;
+      if (body.listingId) {
+        const guide = await Guide.findById(body.listingId);
+        if (!guide) return error(res, 'Guide listing not found', 404);
+        listingFields.guide = guide._id;
+        vendor = guide.user;
+        if (subtotal <= 0) {
+          subtotal =
+            (extra.guidePackage === '12HR' || extra.guidePackage === '8HR'
+              ? guide.package12hr
+              : guide.package6hr) || 900;
+          if (useBike) subtotal += guide.bikeAddonPrice || 200;
+        }
+      } else {
+        assignmentStatus = 'UNASSIGNED';
+      }
+      listingFields.guestRegistration = {
+        leadGuest,
+        acceptedTermsAt: new Date(),
+        tourDetails: {
+          packageType: extra.guidePackage,
+          bikeAddon: useBike,
+          startTime: body.startTime || '09:00',
+          specialRequests: body.notes || '',
+          packagePrice: subtotal,
+        },
+      };
+    } else if (kind === 'TAXI' || kind === 'DRIVER') {
+      bookingType = BOOKING_TYPES.TAXI;
+      serviceTenant = kind;
+      const routeOrPkg = body.routeId || body.packageId || '';
+      if (subtotal <= 0) {
+        subtotal = kind === 'DRIVER' ? driverPackagePrice(routeOrPkg) : taxiRoutePrice(routeOrPkg);
+      }
+      // Booking.taxiType enum is only PER_TRIP | HOURLY (driver packages still use PER_TRIP)
+      extra.taxiType = String(body.taxiType || '').toUpperCase() === 'HOURLY' ? 'HOURLY' : 'PER_TRIP';
+      if (body.listingId) {
+        const driver = await Driver.findById(body.listingId);
+        if (!driver) return error(res, 'Driver/taxi listing not found', 404);
+        listingFields.driver = driver._id;
+        vendor = driver.user;
+        if (subtotal <= 0) subtotal = driver.perTripPrice || driver.hourlyRate || 1000;
+      } else {
+        assignmentStatus = 'UNASSIGNED';
+      }
+      listingFields.guestRegistration = {
+        leadGuest,
+        acceptedTermsAt: new Date(),
+        taxiDetails: {
+          tripType: extra.taxiType,
+          routeId: body.routeId || '',
+          packageId: body.packageId || '',
+          startTime: body.startTime || '09:00',
+          tripPrice: subtotal,
+          specialRequests: body.notes || '',
+          serviceTenant: kind,
+        },
+      };
+    } else if (kind === 'HORSE') {
+      bookingType = BOOKING_TYPES.HORSE;
+      serviceTenant = 'HORSE';
+      const routeId = body.routeId || 'sightseeing';
+      if (subtotal <= 0) subtotal = horsePackagePrice(routeId);
+      extra.horseRouteId = routeId;
+      if (body.listingId) {
+        const horse = await Horse.findById(body.listingId);
+        if (!horse) return error(res, 'Horse listing not found', 404);
+        listingFields.horse = horse._id;
+        vendor = horse.operator;
+        if (subtotal <= 0) subtotal = horse.priceFrom || 800;
+      } else {
+        assignmentStatus = 'UNASSIGNED';
+      }
+      listingFields.guestRegistration = {
+        leadGuest,
+        acceptedTermsAt: new Date(),
+        horseDetails: {
+          routeId,
+          startTime: body.startTime || '09:00',
+          routePrice: subtotal,
+          specialRequests: body.notes || '',
+          safetyAcknowledged: true,
+        },
+      };
+    } else if (kind === 'TENT') {
+      bookingType = BOOKING_TYPES.TENT;
+      serviceTenant = 'TENT';
+      const qty = Number(body.tentQuantity) || 1;
+      const nights = getNights(body.checkIn, body.checkOut || body.checkIn);
+      extra.tentQuantity = qty;
+      extra.checkOut = body.checkOut || body.checkIn;
+      if (body.listingId) {
+        const tent = await Tent.findById(body.listingId);
+        if (!tent) return error(res, 'Tent listing not found', 404);
+        listingFields.tent = tent._id;
+        vendor = tent.operator;
+        if (subtotal <= 0) subtotal = (tent.pricePerNight || 2000) * qty * nights;
+      } else {
+        assignmentStatus = 'UNASSIGNED';
+        if (subtotal <= 0) subtotal = 2000 * qty * nights;
+      }
+      listingFields.guestRegistration = { leadGuest, acceptedTermsAt: new Date() };
+    } else if (kind === 'HOTEL' || kind === 'RESORT') {
+      if (!body.listingId || !body.roomId) return error(res, 'Hotel and room are required', 400);
+      const hotel = await Hotel.findById(body.listingId);
+      if (!hotel) return error(res, 'Hotel not found', 404);
+      const room = await Room.findById(body.roomId);
+      if (!room) return error(res, 'Room not found', 404);
+      bookingType = hotel.type === 'RESORT' ? BOOKING_TYPES.RESORT : BOOKING_TYPES.HOTEL;
+      vendor = hotel.vendor;
+      assignmentStatus = 'ASSIGNED';
+      listingFields.hotel = hotel._id;
+      listingFields.room = room._id;
+      const nights = getNights(body.checkIn, body.checkOut || body.checkIn);
+      extra.checkOut = body.checkOut || body.checkIn;
+      if (subtotal <= 0) subtotal = (room.basePrice || hotel.priceFrom || 0) * nights;
+      listingFields.guestRegistration = { leadGuest, acceptedTermsAt: new Date() };
+      listingFields.guests = {
+        adults: Number(body.adults) || 2,
+        children: Number(body.children) || 0,
+      };
+    } else if (kind === 'HOMESTAY') {
+      if (!body.listingId || !body.roomId) return error(res, 'Homestay and room are required', 400);
+      const homestay = await Homestay.findById(body.listingId);
+      if (!homestay) return error(res, 'Homestay not found', 404);
+      bookingType = BOOKING_TYPES.HOMESTAY;
+      vendor = homestay.vendor || homestay.operator;
+      assignmentStatus = 'ASSIGNED';
+      listingFields.homestay = homestay._id;
+      listingFields.homestayRoomId = String(body.roomId);
+      const nights = getNights(body.checkIn, body.checkOut || body.checkIn);
+      extra.checkOut = body.checkOut || body.checkIn;
+      const room = (homestay.rooms || []).find((r) => String(r._id) === String(body.roomId));
+      if (subtotal <= 0) subtotal = (room?.basePrice || homestay.priceFrom || 0) * nights;
+      listingFields.guestRegistration = { leadGuest, acceptedTermsAt: new Date() };
+      listingFields.guests = {
+        adults: Number(body.adults) || 2,
+        children: Number(body.children) || 0,
+      };
+    }
+
+    if (subtotal <= 0) return error(res, 'Enter a valid amount (subtotal)', 400);
+
+    const pricing = await calculateTotalAsync(subtotal);
+    const status = body.status === 'CONFIRMED' ? BOOKING_STATUS.CONFIRMED : BOOKING_STATUS.PENDING;
+    if (status === BOOKING_STATUS.CONFIRMED && assignmentStatus === 'UNASSIGNED') {
+      return error(res, 'Assign a listing/vendor before confirming, or leave status Pending', 400);
+    }
+
+    const booking = await Booking.create({
+      customer: customer._id,
+      vendor: vendor || null,
+      type: bookingType,
+      serviceTenant,
+      assignmentStatus,
+      assignedAt: vendor ? new Date() : undefined,
+      assignedBy: vendor ? req.user._id : undefined,
+      bookingSource: source,
+      status,
+      checkIn: body.checkIn,
+      checkOut: extra.checkOut,
+      tentQuantity: extra.tentQuantity,
+      guidePackage: extra.guidePackage,
+      bikeAddon: extra.bikeAddon || false,
+      taxiType: extra.taxiType,
+      horseRouteId: extra.horseRouteId,
+      subtotal: pricing.subtotal,
+      gst: pricing.gst,
+      total: pricing.total,
+      paymentStatus: body.paymentStatus === 'PAID' ? 'PAID' : 'PENDING',
+      notes: body.notes || `Created by admin (${source})`,
+      ...listingFields,
+    });
+
+    await booking.populate('customer', 'name email phone');
+    return success(res, booking, 'Booking created');
+  } catch (err) {
+    return error(res, err.message || 'Failed to create booking', err.status || 500);
+  }
+};
+
+/** Admin confirms partner arrival (marks arrived + confirms in one step if needed). */
+export const adminConfirmArrival = async (req, res) => {
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) return error(res, 'Booking not found', 404);
+  if (!isTripServiceBooking(booking)) {
+    return error(res, 'Only guide, taxi, driver and horse bookings support arrival', 400);
+  }
+  if (booking.assignmentStatus !== 'ASSIGNED' || !booking.vendor) {
+    return error(res, 'Assign a vendor before confirming arrival', 400);
+  }
+  if ([BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REFUNDED].includes(booking.status)) {
+    return error(res, 'Cannot update a cancelled booking', 400);
+  }
+  if (isServiceEnded(booking)) return error(res, 'Booking already ended', 400);
+
+  const now = new Date();
+  if (!booking.vendorArrivedAt) {
+    booking.vendorArrivedAt = now;
+    booking.vendorArrivedBy = req.user._id;
+  }
+  booking.arrivalConfirmed = true;
+  booking.arrivalConfirmedAt = now;
+  booking.arrivalConfirmedBy = req.user._id;
+  booking.guideReachedConfirmed = true;
+  booking.guideReachedAt = now;
+  booking.guideReachedBy = req.user._id;
+  await booking.save();
+
+  const label = serviceTripLabel(booking);
+  if (booking.customer) {
+    await createNotification({
+      userId: booking.customer,
+      title: `${label} arrival confirmed`,
+      message: `Admin confirmed ${label.toLowerCase()} arrival for booking ${booking.bookingNumber}.`,
+      type: 'BOOKING',
+      link: '/dashboard/customer/bookings',
+    });
+  }
+  if (booking.vendor) {
+    await createNotification({
+      userId: booking.vendor,
+      title: 'Arrival confirmed by admin',
+      message: `Admin confirmed your arrival for booking ${booking.bookingNumber}.`,
+      type: 'BOOKING',
+      link: '/dashboard/vendor/bookings',
+    });
+  }
+
+  return success(res, booking, 'Arrival confirmed');
+};
+
+/** Admin confirms end booking with optional overtime (completes + invoice). */
+export const adminConfirmEnd = async (req, res) => {
+  const booking = await Booking.findById(req.params.id).populate(
+    'customer vendor guide hotel tent driver homestay horse'
+  );
+  if (!booking) return error(res, 'Booking not found', 404);
+  if (!isTripServiceBooking(booking)) {
+    return error(res, 'Only guide, taxi, driver and horse bookings support end confirmation', 400);
+  }
+  if (booking.assignmentStatus !== 'ASSIGNED' || !booking.vendor) {
+    return error(res, 'Assign a vendor before ending the booking', 400);
+  }
+  if ([BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REFUNDED].includes(booking.status)) {
+    return error(res, 'Cannot end a cancelled booking', 400);
+  }
+  if (isServiceEnded(booking)) return success(res, booking, 'Booking already ended');
+
+  if (!isArrivalConfirmed(booking)) {
+    const nowArr = new Date();
+    booking.vendorArrivedAt = booking.vendorArrivedAt || nowArr;
+    booking.arrivalConfirmed = true;
+    booking.arrivalConfirmedAt = nowArr;
+    booking.arrivalConfirmedBy = req.user._id;
+    booking.guideReachedConfirmed = true;
+    booking.guideReachedAt = nowArr;
+  }
+
+  const rawHours = Number(req.body?.overtimeHours);
+  const overtimeHours = Number.isFinite(rawHours)
+    ? Math.max(0, Math.round(rawHours * 100) / 100)
+    : Number(booking.overtimeHours) || 0;
+  const overtimeRate = SERVICE_OVERTIME_PER_HOUR;
+  const overtimeAmount = Math.round(overtimeHours * overtimeRate);
+  const packageSubtotal = Number(
+    booking.packageSubtotal != null ? booking.packageSubtotal : booking.subtotal || 0
+  );
+  const subtotal = packageSubtotal + overtimeAmount;
+
+  booking.packageSubtotal = packageSubtotal;
+  booking.overtimeHours = overtimeHours;
+  booking.overtimeAmount = overtimeAmount;
+  booking.overtimeRatePerHour = overtimeRate;
+  booking.subtotal = subtotal;
+  booking.gst = 0;
+  booking.total = subtotal;
+  booking.endProposedAt = booking.endProposedAt || new Date();
+  booking.endProposedBy = booking.endProposedBy || req.user._id;
+
+  const now = new Date();
+  booking.serviceEndedAt = now;
+  booking.serviceEndedBy = req.user._id;
+  booking.guideEndedAt = now;
+  booking.guideEndedBy = req.user._id;
+  booking.status = BOOKING_STATUS.COMPLETED;
+
+  const listingName =
+    booking.guide?.name ||
+    booking.driver?.name ||
+    booking.horse?.name ||
+    serviceTripLabel(booking);
+
+  try {
+    const invoice = await generateInvoicePdf({
+      booking,
+      customer: booking.customer,
+      vendor: booking.vendor,
+      listingName,
+      gstNumber: booking.hotel?.gstNumber || booking.homestay?.gstNumber,
+    });
+    booking.invoiceNumber = invoice.invoiceNumber;
+    booking.invoiceUrl = invoice.invoiceUrl;
+  } catch {
+    /* non-blocking */
+  }
+
+  await booking.save();
+
+  const label = serviceTripLabel(booking);
+  const otNote =
+    overtimeHours > 0 ? ` Overtime: ${overtimeHours} hr = ₹${overtimeAmount}.` : '';
+  if (booking.customer) {
+    await createNotification({
+      userId: booking.customer._id || booking.customer,
+      title: `${label} booking ended`,
+      message: `Admin ended booking ${booking.bookingNumber}.${otNote}`,
+      type: 'BOOKING',
+      link: '/dashboard/customer/bookings',
+    });
+  }
+  if (booking.vendor) {
+    await createNotification({
+      userId: booking.vendor._id || booking.vendor,
+      title: 'Booking ended by admin',
+      message: `Admin ended booking ${booking.bookingNumber}.${otNote}`,
+      type: 'BOOKING',
+      link: '/dashboard/vendor/bookings',
+    });
+  }
+
+  return success(res, booking, 'Booking ended');
+};
+
+/** Admin emails booking invoice PDF to the customer. */
+export const adminEmailInvoice = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id).populate(
+      'customer vendor hotel tent guide driver homestay horse'
+    );
+    if (!booking) return error(res, 'Booking not found', 404);
+
+    const toEmail =
+      String(req.body?.email || '').trim() ||
+      String(booking.customer?.email || '').trim() ||
+      String(booking.guestRegistration?.leadGuest?.email || '').trim();
+    if (!toEmail) {
+      return error(res, 'Customer has no email. Enter an email to send the invoice.', 400);
+    }
+
+    const listingName =
+      booking.hotel?.name ||
+      booking.homestay?.name ||
+      booking.tent?.name ||
+      booking.guide?.name ||
+      booking.driver?.name ||
+      booking.horse?.name ||
+      booking.type;
+
+    const invoice = await generateInvoicePdf({
+      booking,
+      customer: booking.customer,
+      vendor: booking.vendor,
+      listingName,
+      gstNumber: booking.hotel?.gstNumber || booking.homestay?.gstNumber,
+    });
+    booking.invoiceNumber = invoice.invoiceNumber;
+    booking.invoiceUrl = invoice.invoiceUrl;
+    await booking.save();
+
+    const invoiceNo = invoice.invoiceNumber || booking.bookingNumber;
+    await sendEmail({
+      to: toEmail,
+      subject: `Invoice ${invoiceNo} — Your Mahabaleshwar`,
+      html: `
+        <p>Hello ${booking.customer?.name || 'Guest'},</p>
+        <p>Please find attached the invoice for booking <strong>${booking.bookingNumber}</strong>.</p>
+        <p>Amount: <strong>₹${Number(booking.total || 0).toLocaleString('en-IN')}</strong></p>
+        <p>Thank you for choosing Your Mahabaleshwar.</p>
+      `,
+      text: `Invoice ${invoiceNo} for booking ${booking.bookingNumber}. Amount: ₹${booking.total || 0}.`,
+      attachments: [
+        {
+          filename: `${String(invoiceNo).replace(/[^\w.-]+/g, '_')}.pdf`,
+          path: invoice.filePath,
+        },
+      ],
+    });
+
+    if (booking.customer) {
+      await createNotification({
+        userId: booking.customer._id || booking.customer,
+        title: 'Invoice emailed',
+        message: `Invoice ${invoiceNo} for booking ${booking.bookingNumber} was sent to ${toEmail}.`,
+        type: 'BOOKING',
+        link: '/dashboard/customer/bookings',
+      });
+    }
+
+    return success(res, { invoiceUrl: booking.invoiceUrl, emailedTo: toEmail }, 'Invoice emailed');
+  } catch (err) {
+    return error(res, err.message || 'Failed to email invoice', 500);
+  }
+};
+

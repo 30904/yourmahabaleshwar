@@ -13,11 +13,15 @@ export const getDefaultCommissionRate = async () => {
   return 0.1;
 };
 
-export const calculateGST = (subtotal, rate = GST_RATE) => Math.round(subtotal * rate);
+// GST temporarily disabled — restore by uncommenting the original implementations
+// export const calculateGST = (subtotal, rate = GST_RATE) => Math.round(subtotal * rate);
+export const calculateGST = (subtotal, rate = GST_RATE) => 0;
 
 export const calculateTotal = (subtotal, gst = null, rate = GST_RATE) => {
-  const gstAmount = gst ?? calculateGST(subtotal, rate);
-  return { subtotal, gst: gstAmount, total: subtotal + gstAmount };
+  // const gstAmount = gst ?? calculateGST(subtotal, rate);
+  // return { subtotal, gst: gstAmount, total: subtotal + gstAmount };
+  const gstAmount = 0;
+  return { subtotal, gst: gstAmount, total: subtotal };
 };
 
 export const calculateTotalAsync = async (subtotal) => {

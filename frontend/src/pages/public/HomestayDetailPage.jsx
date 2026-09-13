@@ -266,7 +266,7 @@ export default function HomestayDetailPage() {
             </p>
             <p>
               {item.cancellationPolicyText
-                || 'Free cancellation available on select room rates. GST 12% applicable.'}
+                || 'Free cancellation available on select room rates.' /* GST 12% applicable. */}
             </p>
             {item.houseRules?.length > 0 && (
               <div>

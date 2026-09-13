@@ -14,6 +14,7 @@ import { adminSetStayRenewalPrice } from '../../services/staySubscriptionApi';
 import { formatCurrency } from '../../utils/format';
 import { formatTime12 } from '../../utils/time12h';
 import TimePicker12h from '../../components/ui/TimePicker12h';
+import { MAHABALESHWAR_PINCODE } from '../../constants/site';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { listingStatusOf } from '../../utils/listingStatus';
 import useAdminAccess from '../../hooks/useAdminAccess';
@@ -384,7 +385,14 @@ export default function ListingReviewModal({ open, mode = 'view', listingType, l
                     </label>
                     <label className="admin-label">
                       Pincode
-                      <input className="admin-input" value={form.pincode} onChange={(e) => setField('pincode', e.target.value)} />
+                      <input
+                        className="admin-input"
+                        value={form.pincode}
+                        onChange={(e) => setField('pincode', e.target.value)}
+                        onFocus={() => {
+                          if (!String(form.pincode || '').trim()) setField('pincode', MAHABALESHWAR_PINCODE);
+                        }}
+                      />
                     </label>
                     <label className="admin-label">
                       GST number

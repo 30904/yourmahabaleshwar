@@ -279,7 +279,7 @@ export default function HotelDetailPage() {
               <strong>Check-in:</strong> {formatTime12(property.checkInTime || '14:00')} · <strong>Check-out:</strong>{' '}
               {formatTime12(property.checkOutTime || '11:00')}
             </p>
-            <p>Free cancellation available on select room rates. GST 12% applicable.</p>
+            <p>Free cancellation available on select room rates.{/* GST 12% applicable. */}</p>
           </div>
         )}
       </div>

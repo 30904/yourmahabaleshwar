@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import PincodeInput from '../ui/PincodeInput';
 import TimePicker12h from '../ui/TimePicker12h';
 import ImageUploadField from '../ui/ImageUploadField';
 import Card from '../ui/Card';
@@ -12,7 +13,6 @@ import { calcGST, formatCurrency } from '../../utils/format';
 import { clampTime24, formatTime12 } from '../../utils/time12h';
 import { createTentBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
-import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import { StayLegalModal } from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
@@ -93,8 +93,11 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
   const tentQuantity = Number(form.tentQuantity) || 1;
   const subtotal = pricePerNight * nights * tentQuantity;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
   const dateBlocked = useMemo(() => {
     if (!form.checkIn || !unavailable.length) return false;
     const end = form.checkOut || form.checkIn;
@@ -163,7 +166,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     }
     setSubmitting(true);
     try {
-      const res = await createTentBooking({
+      await createTentBooking({
         open: openMode,
         tentId: openMode ? undefined : item._id,
         checkIn: form.checkIn,
@@ -205,16 +208,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
           acceptedTermsAt: new Date().toISOString(),
         },
       });
-      const booking = res.data.data;
       toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('tentGuestBooking.bookingCreated'));
-      if (!openMode) {
-        try {
-          await payForBooking(booking, user);
-          toast.success(t('tentGuestBooking.paymentSuccess'));
-        } catch {
-          toast(t('tentGuestBooking.bookingSavedPayLater'));
-        }
-      }
       navigate('/dashboard/customer/bookings');
     } catch (error) {
       toast.error(error.response?.data?.message || t('tentGuestBooking.bookingFailed'));
@@ -360,7 +354,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
             <Input label={t('stayGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
             <Input className="sm:col-span-2" label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChange={(e) => setField('leadAddress', e.target.value)} />
             <Input label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
-            <Input label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
+            <PincodeInput label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('stayGuestBooking.comingFrom')} value={form.comingFrom} onChange={(e) => setField('comingFrom', e.target.value)} />
             <Input label={t('stayGuestBooking.goingTo')} value={form.goingTo} onChange={(e) => setField('goingTo', e.target.value)} />
             <div className="sm:col-span-2">
@@ -503,10 +497,12 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               <span>{t('stayGuestBooking.subtotalNights', { count: nights })} × {tentQuantity}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {/* GST temporarily disabled
             <div className="mt-1 flex justify-between">
               <span>{t('stayGuestBooking.gstLabel')}</span>
               <span>{formatCurrency(gst)}</span>
             </div>
+            */}
             <div className="mt-2 flex justify-between font-bold text-primary">
               <span>{t('stayGuestBooking.totalLabel')}</span>
               <span>{formatCurrency(total)}</span>

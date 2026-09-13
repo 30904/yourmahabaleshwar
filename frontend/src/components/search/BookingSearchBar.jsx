@@ -1,15 +1,27 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-export default function BookingSearchBar({ compact = false, defaultDestination = 'Mahabaleshwar' }) {
+const INLINE_SEARCH_ROUTES = new Set(['/hotels', '/resorts', '/homestays', '/tents']);
+
+export default function BookingSearchBar({
+  compact = false,
+  defaultDestination = 'Mahabaleshwar',
+  mode = 'auto',
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [destination, setDestination] = useState(defaultDestination);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState({ adults: 2, rooms: 1 });
+
+  useEffect(() => {
+    setDestination(defaultDestination);
+  }, [defaultDestination]);
 
   const guestOptions = [
     { value: '2-1', labelKey: 'search.guests2_1' },
@@ -18,10 +30,25 @@ export default function BookingSearchBar({ compact = false, defaultDestination =
     { value: '4-2', labelKey: 'search.guests4_2' },
   ];
 
+  const usesInlineSearch =
+    mode === 'inline' || (mode === 'auto' && INLINE_SEARCH_ROUTES.has(location.pathname));
+
   const handleSearch = (e) => {
     e?.preventDefault();
+    const query = destination.trim();
+
+    if (usesInlineSearch) {
+      const next = new URLSearchParams(searchParams);
+      if (query) next.set('q', query);
+      else next.delete('q');
+      setSearchParams(next, { replace: false });
+      return;
+    }
+
+    if (!query) return;
+
     const params = new URLSearchParams({
-      q: destination,
+      q: query,
       ...(checkIn && { checkIn }),
       ...(checkOut && { checkOut }),
       adults: guests.adults,
@@ -38,7 +65,7 @@ export default function BookingSearchBar({ compact = false, defaultDestination =
           <input
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
-            className="w-full border-0 bg-transparent text-sm font-medium outline-none"
+            className="w-full border-0 bg-transparent text-sm font-medium text-slate-900 caret-slate-900 placeholder:text-slate-400 outline-none"
             placeholder={t('search.placeholderWhere')}
           />
         </div>

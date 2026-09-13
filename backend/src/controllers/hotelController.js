@@ -73,7 +73,12 @@ export const getHotels = async (req, res) => {
   const filter = { isActive: true, ...publicStaySubscriptionFilter() };
   if (type) filter.type = type.toUpperCase();
   if (featured === 'true') filter.isFeatured = true;
-  if (search) filter.name = { $regex: search, $options: 'i' };
+  if (search) {
+    const regex = { $regex: String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+    Object.assign(filter, {
+      $or: [{ name: regex }, { description: regex }, { shortDescription: regex }, { 'address.city': regex }],
+    });
+  }
   const skip = (page - 1) * limit;
   const [raw, total] = await Promise.all([
     Hotel.find(filter).populate('vendor', 'name email phone').skip(skip).limit(Number(limit)).sort('-createdAt'),

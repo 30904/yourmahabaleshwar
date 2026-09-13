@@ -12,3 +12,6 @@ export const SUPPORT_PHONES = [
   { label: '+91 9987 6567 92', href: 'tel:+919987656792' },
   { label: '+91 9987 6866 92', href: 'tel:+919987686692' },
 ];
+
+/** Default pincode autofilled when a pin-code field is focused empty */
+export const MAHABALESHWAR_PINCODE = '412806';

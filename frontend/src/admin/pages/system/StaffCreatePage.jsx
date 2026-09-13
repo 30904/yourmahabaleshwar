@@ -7,6 +7,7 @@ import FileDropzone from '../../../components/ui/FileDropzone';
 import { uploadStorageFile } from '../../../services/uploadApi';
 import { createStaff, fetchStaff, resetStaffPassword, updateStaff } from '../../../services/staffApi';
 import { ROLES } from '../../../constants/roles';
+import { MAHABALESHWAR_PINCODE } from '../../../constants/site';
 
 const STAFF_ROLE_OPTIONS = [
   { value: ROLES.OFFICE_STAFF_HOTEL, label: 'Office Staff — Hotel' },
@@ -68,7 +69,7 @@ export default function StaffCreatePage() {
   const [docFiles, setDocFiles] = useState(emptyDocs());
   const [existingDocs, setExistingDocs] = useState({});
 
-  const { register, handleSubmit, reset, watch } = useForm({ defaultValues: defaultForm });
+  const { register, handleSubmit, reset, watch, setValue } = useForm({ defaultValues: defaultForm });
   const watchEmail = watch('email');
 
   useEffect(() => {
@@ -292,7 +293,16 @@ export default function StaffCreatePage() {
           <input className="admin-input sm:col-span-2" placeholder="Address line 2" {...register('addressLine2')} />
           <input className="admin-input" placeholder="City" {...register('city')} />
           <input className="admin-input" placeholder="State" {...register('state')} />
-          <input className="admin-input" placeholder="PIN code" {...register('pincode')} />
+          <input
+            className="admin-input"
+            placeholder="PIN code"
+            {...register('pincode')}
+            onFocus={(e) => {
+              if (!String(e.target.value || '').trim()) {
+                setValue('pincode', MAHABALESHWAR_PINCODE, { shouldDirty: true });
+              }
+            }}
+          />
         </section>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

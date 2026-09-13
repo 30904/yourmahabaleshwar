@@ -94,7 +94,7 @@ export default function AccommodationListingPage({
     <div className="bg-background pb-16">
       <div className="border-b border-border bg-primary py-6 text-white">
         <div className="page-container">
-          <BookingSearchBar compact />
+          <BookingSearchBar compact defaultDestination={searchParams.get('q') || ''} />
         </div>
       </div>
       <div className="page-container py-6">

@@ -84,8 +84,11 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   }, [form.checkIn, form.checkOut]);
 
   const subtotal = (room?.basePrice || hotel?.priceFrom || 0) * nights;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
   const dateBlocked = useMemo(() => {
     if (!form.checkIn || !unavailable.length) return false;
     const end = form.checkOut || form.checkIn;

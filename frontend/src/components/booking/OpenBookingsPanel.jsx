@@ -98,11 +98,13 @@ function OpenBookingCard({ booking, accepting, onRequestAccept, t }) {
         </div>
         <div className="shrink-0 text-left lg:text-right">
           <p className="text-lg font-bold text-slate-900">{formatCurrency(booking.total || booking.subtotal || 0)}</p>
+          {/* GST temporarily disabled
           {booking.gst != null && (
             <p className="text-xs text-slate-500">
               {t('openBookings.details.includesGst', { amount: formatCurrency(booking.gst) })}
             </p>
           )}
+          */}
         </div>
       </div>
 

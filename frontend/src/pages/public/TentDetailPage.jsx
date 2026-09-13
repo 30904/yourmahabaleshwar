@@ -260,7 +260,7 @@ export default function TentDetailPage() {
             <p>
               {item.cancellationPolicyText ||
                 item.cancellationPolicy ||
-                'Free cancellation available on select rates. GST 12% applicable.'}
+                'Free cancellation available on select rates.' /* GST 12% applicable. */}
             </p>
           </div>
         )}

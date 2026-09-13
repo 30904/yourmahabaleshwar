@@ -26,6 +26,18 @@ export const setAdminPropertyActive = (id, { isActive, listingType, commissionRa
 export const fetchAdminBookings = (params) =>
   api.get('/admin/enterprise/bookings', { params }).then((r) => r.data.data);
 
+export const createAdminBooking = (payload) =>
+  api.post('/admin/enterprise/bookings', payload).then((r) => r.data.data);
+
+export const adminConfirmBookingArrival = (id) =>
+  api.patch(`/admin/enterprise/bookings/${id}/confirm-arrival`).then((r) => r.data.data);
+
+export const adminConfirmBookingEnd = (id, { overtimeHours = 0 } = {}) =>
+  api.patch(`/admin/enterprise/bookings/${id}/confirm-end`, { overtimeHours }).then((r) => r.data.data);
+
+export const adminEmailBookingInvoice = (id, { email } = {}) =>
+  api.post(`/admin/enterprise/bookings/${id}/email-invoice`, { email }).then((r) => r.data.data);
+
 export const fetchAdminGuides = (params) =>
   api.get('/admin/enterprise/guides', { params }).then((r) => r.data.data);
 
