@@ -1,9 +1,13 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ClipboardList, UserCheck, CheckCircle2 } from 'lucide-react';
 import BookingSearchBar from '../../components/search/BookingSearchBar';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import ServiceHubGallery from '../../components/service/ServiceHubGallery';
+import { fetchPublicServiceHubImages } from '../../services/listingsApi';
+import { DEFAULT_SERVICE_HUB_LAYOUT } from '../../constants/serviceHubGallery';
 
 const TENANT_CONFIG = {
   GUIDE: {
@@ -38,9 +42,38 @@ const TENANT_CONFIG = {
   },
 };
 
+const HUB_IMAGE_TENANTS = new Set(['GUIDE', 'TAXI', 'DRIVER', 'HORSE']);
+
 export default function ServiceBookHubPage({ tenant }) {
   const { t } = useTranslation();
   const config = TENANT_CONFIG[tenant];
+  const [hubImages, setHubImages] = useState([]);
+  const [layout, setLayout] = useState(DEFAULT_SERVICE_HUB_LAYOUT);
+
+  useEffect(() => {
+    if (!HUB_IMAGE_TENANTS.has(tenant)) {
+      setHubImages([]);
+      setLayout(DEFAULT_SERVICE_HUB_LAYOUT);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchPublicServiceHubImages()
+      .then((data) => {
+        if (cancelled) return;
+        setHubImages(Array.isArray(data?.images?.[tenant]) ? data.images[tenant] : []);
+        setLayout(data?.layouts?.[tenant] || DEFAULT_SERVICE_HUB_LAYOUT);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHubImages([]);
+          setLayout(DEFAULT_SERVICE_HUB_LAYOUT);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant]);
+
   if (!config) return null;
 
   const steps = [
@@ -48,6 +81,8 @@ export default function ServiceBookHubPage({ tenant }) {
     { icon: UserCheck, text: t('serviceBooking.step2') },
     { icon: CheckCircle2, text: t('serviceBooking.step3') },
   ];
+
+  const isSplit = layout === 'split' && hubImages.length > 0;
 
   return (
     <div className="bg-background pb-16">
@@ -57,14 +92,27 @@ export default function ServiceBookHubPage({ tenant }) {
         </div>
       </div>
       <div className="page-container py-10">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold text-slate-900">{t(config.titleKey)}</h1>
-          <p className="mt-3 text-slate-600">{t(config.descKey)}</p>
-          <p className="mt-2 text-sm text-slate-500">{t('serviceBooking.noVendorPick')}</p>
-          <Link to={config.bookPath} className="mt-6 inline-block">
-            <Button className="px-8 py-3 text-base">{t('serviceBooking.bookNow')}</Button>
-          </Link>
-        </div>
+        {!isSplit && (
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="text-3xl font-bold text-slate-900">{t(config.titleKey)}</h1>
+            <p className="mt-3 text-slate-600">{t(config.descKey)}</p>
+            <p className="mt-2 text-sm text-slate-500">{t('serviceBooking.noVendorPick')}</p>
+            <Link to={config.bookPath} className="mt-6 inline-block">
+              <Button className="px-8 py-3 text-base">{t('serviceBooking.bookNow')}</Button>
+            </Link>
+          </div>
+        )}
+
+        {hubImages.length > 0 && (
+          <ServiceHubGallery
+            images={hubImages}
+            layout={layout}
+            splitTitle={t(config.titleKey)}
+            splitDescription={`${t(config.descKey)} ${t('serviceBooking.noVendorPick')}`}
+            bookPath={config.bookPath}
+            bookLabel={t('serviceBooking.bookNow')}
+          />
+        )}
 
         <Card className="mx-auto mt-10 max-w-3xl p-6 sm:p-8">
           <h2 className="text-lg font-bold text-slate-900">{t('serviceBooking.howItWorks')}</h2>

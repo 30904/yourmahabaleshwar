@@ -655,6 +655,83 @@ export const updatePlatformSettings = async (req, res) => {
   return success(res, settings);
 };
 
+const SERVICE_HUB_IMAGE_KEYS = ['GUIDE', 'TAXI', 'DRIVER', 'HORSE'];
+const SERVICE_HUB_LAYOUT_IDS = new Set([
+  'collage',
+  'carousel',
+  'masonry',
+  'strip',
+  'moments',
+  'split',
+  'lightbox',
+]);
+const DEFAULT_SERVICE_HUB_LAYOUT = 'collage';
+
+function normalizeServiceHubImageItem(item) {
+  if (!item) return null;
+  if (typeof item === 'string') {
+    const url = item.trim();
+    return url ? { url, caption: '' } : null;
+  }
+  const url = String(item.url || item.src || item.key || '').trim();
+  if (!url) return null;
+  return {
+    url,
+    caption: String(item.caption || item.label || '').trim().slice(0, 80),
+  };
+}
+
+function normalizeServiceHubImages(raw = {}) {
+  const out = {};
+  for (const key of SERVICE_HUB_IMAGE_KEYS) {
+    const list = raw?.[key];
+    out[key] = Array.isArray(list)
+      ? list.map(normalizeServiceHubImageItem).filter(Boolean).slice(0, 12)
+      : [];
+  }
+  return out;
+}
+
+function normalizeServiceHubLayouts(raw = {}) {
+  const out = {};
+  for (const key of SERVICE_HUB_IMAGE_KEYS) {
+    const id = String(raw?.[key] || DEFAULT_SERVICE_HUB_LAYOUT).toLowerCase();
+    out[key] = SERVICE_HUB_LAYOUT_IDS.has(id) ? id : DEFAULT_SERVICE_HUB_LAYOUT;
+  }
+  return out;
+}
+
+function buildServiceHubPayload(settings) {
+  return {
+    images: normalizeServiceHubImages(settings?.serviceHubImages),
+    layouts: normalizeServiceHubLayouts(settings?.serviceHubLayouts),
+  };
+}
+
+export const getServiceHubImages = async (req, res) => {
+  let settings = await PlatformSettings.findOne({ key: 'default' }).select('serviceHubImages serviceHubLayouts');
+  if (!settings) settings = await PlatformSettings.create({ key: 'default' });
+  return success(res, buildServiceHubPayload(settings));
+};
+
+export const updateServiceHubImages = async (req, res) => {
+  const incomingImages = req.body?.serviceHubImages || req.body?.images || {};
+  const incomingLayouts = req.body?.serviceHubLayouts || req.body?.layouts || {};
+  const nextImages = normalizeServiceHubImages(incomingImages);
+  const nextLayouts = normalizeServiceHubLayouts(incomingLayouts);
+  const settings = await PlatformSettings.findOneAndUpdate(
+    { key: 'default' },
+    { $set: { serviceHubImages: nextImages, serviceHubLayouts: nextLayouts } },
+    { new: true, upsert: true }
+  );
+  return success(res, buildServiceHubPayload(settings), 'Service page images saved');
+};
+
+export const getPublicServiceHubImages = async (req, res) => {
+  const settings = await PlatformSettings.findOne({ key: 'default' }).select('serviceHubImages serviceHubLayouts');
+  return success(res, buildServiceHubPayload(settings));
+};
+
 export const getFinanceSummary = async (req, res) => {
   const [revenue, payouts, transactions] = await Promise.all([
     Booking.aggregate([

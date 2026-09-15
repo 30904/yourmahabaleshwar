@@ -26,6 +26,7 @@ router.get('/public/faqs', admin.getPublicFaqs);
 router.get('/public/blogs', admin.getPublicBlogs);
 router.get('/public/destinations', domain.listDestinations);
 router.get('/public/document-requirements', domain.getDocumentRequirements);
+router.get('/public/service-hub-images', enterprise.getPublicServiceHubImages);
 
 router.use(protect);
 router.use(auditAdminActions);
@@ -53,6 +54,8 @@ router.post('/enterprise/coupons', authorize(...adminOnly), enterprise.createCou
 router.patch('/enterprise/coupons/:id', authorize(...adminOnly), enterprise.updateCoupon);
 router.get('/enterprise/settings', authorize(...adminOnly), enterprise.getPlatformSettings);
 router.put('/enterprise/settings', authorize(...adminOnly), enterprise.updatePlatformSettings);
+router.get('/enterprise/service-hub-images', authorize(...staffAndAdmin), enterprise.getServiceHubImages);
+router.put('/enterprise/service-hub-images', authorize(...staffAndAdmin), enterprise.updateServiceHubImages);
 router.get('/enterprise/finance', authorize(...adminOnly), enterprise.getFinanceSummary);
 router.get('/upload-center/types', authorize(...adminOnly), uploadCenter.getUploadTypes);
 router.get('/upload-center/templates/:type', authorize(...adminOnly), uploadCenter.downloadTemplate);

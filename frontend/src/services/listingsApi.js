@@ -115,6 +115,16 @@ export const fetchPublicBanners = async () => {
   return res.data.data || [];
 };
 
+export const fetchPublicServiceHubImages = async () => {
+  const res = await api.get('/admin/public/service-hub-images');
+  return (
+    res.data.data || {
+      images: { GUIDE: [], TAXI: [], DRIVER: [], HORSE: [] },
+      layouts: { GUIDE: 'collage', TAXI: 'collage', DRIVER: 'collage', HORSE: 'collage' },
+    }
+  );
+};
+
 export const fetchReviews = async (listingType, listingId) => {
   const res = await api.get('/reviews', { params: { listingType, listingId } });
   return res.data.data || [];

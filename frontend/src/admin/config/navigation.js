@@ -172,6 +172,7 @@ export const adminNavGroups = [
       { to: '/admin/cms/banners', label: 'Banners', icon: Image },
       { to: '/admin/cms/blogs', label: 'Blogs', icon: FileText },
       { to: '/admin/cms/faqs', label: 'FAQs', icon: HelpCircle },
+      { to: '/admin/cms/service-images', label: 'Service page images', icon: Image },
       { to: '/admin/cms/seo', label: 'SEO Settings', icon: Globe },
     ],
   },

@@ -100,6 +100,12 @@ export const fetchPlatformSettings = () =>
 export const updatePlatformSettings = (payload) =>
   api.put('/admin/enterprise/settings', payload).then((r) => r.data.data);
 
+export const fetchAdminServiceHubImages = () =>
+  api.get('/admin/enterprise/service-hub-images').then((r) => r.data.data);
+
+export const updateAdminServiceHubImages = (payload) =>
+  api.put('/admin/enterprise/service-hub-images', payload).then((r) => r.data.data);
+
 export const fetchFinanceSummary = () =>
   api.get('/admin/enterprise/finance').then((r) => r.data.data);
 
