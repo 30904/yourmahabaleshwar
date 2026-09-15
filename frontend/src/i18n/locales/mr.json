@@ -1826,6 +1826,14 @@
     "chartRate": "दर",
     "selectedRouteLabel": "निवडलेली टूर / मार्ग",
     "routeCategoryLabel": "प्रवास प्रकार",
+    "carTypeLabel": "कार प्रकार",
+    "carTypes": {
+      "ac4": "AC ४ सीटर",
+      "ac7": "AC ७ सीटर",
+      "nonAc4": "नॉन AC ४ सीटर",
+      "nonAc7": "नॉन AC ७ सीटर",
+      "miniTravels19": "मिनी ट्रॅवल्स १९ सीटर"
+    },
     "selectedFareLabel": "निवडलेल्या मार्गाचे भाडे",
     "tollExtra": "(+ टोल अतिरिक्त)",
     "tours": {

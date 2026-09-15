@@ -1836,6 +1836,14 @@
     "chartRate": "Rate",
     "selectedRouteLabel": "Selected tour / route",
     "routeCategoryLabel": "Trip category",
+    "carTypeLabel": "Car type",
+    "carTypes": {
+      "ac4": "AC 4 seater",
+      "ac7": "AC 7 seater",
+      "nonAc4": "NON AC 4 seater",
+      "nonAc7": "NON AC 7 seater",
+      "miniTravels19": "Mini Travels 19 seater"
+    },
     "selectedFareLabel": "Fare for selected route",
     "tollExtra": "(+ toll extra)",
     "tours": {

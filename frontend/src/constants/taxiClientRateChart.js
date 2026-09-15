@@ -1,5 +1,19 @@
 /** Client taxi customer form rate chart — SM_Enterprises_Taxi_Rate_Chart_Booking_Form-v3.pdf */
 
+export const TAXI_CAR_TYPES = [
+  { id: 'AC_4_SEATER', labelKey: 'taxiGuestBooking.carTypes.ac4' },
+  { id: 'AC_7_SEATER', labelKey: 'taxiGuestBooking.carTypes.ac7' },
+  { id: 'NON_AC_4_SEATER', labelKey: 'taxiGuestBooking.carTypes.nonAc4' },
+  { id: 'NON_AC_7_SEATER', labelKey: 'taxiGuestBooking.carTypes.nonAc7' },
+  { id: 'MINI_TRAVELS_19_SEATER', labelKey: 'taxiGuestBooking.carTypes.miniTravels19' },
+];
+
+export const DEFAULT_TAXI_CAR_TYPE = TAXI_CAR_TYPES[0].id;
+
+export function taxiCarTypeById(carTypeId) {
+  return TAXI_CAR_TYPES.find((c) => c.id === carTypeId) || TAXI_CAR_TYPES[0];
+}
+
 export const TAXI_LOCAL_TOURS = [
   { id: 'tour_mahabaleshwar_1', price: 1200, nameKey: 'taxiGuestBooking.tours.mahabaleshwar1.name', durationKey: 'taxiGuestBooking.tours.mahabaleshwar1.duration' },
   { id: 'tour_mahabaleshwar_2', price: 1200, nameKey: 'taxiGuestBooking.tours.mahabaleshwar2.name', durationKey: 'taxiGuestBooking.tours.mahabaleshwar2.duration' },

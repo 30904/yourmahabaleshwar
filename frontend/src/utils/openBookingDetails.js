@@ -50,7 +50,10 @@ export function buildOpenBookingDetailRows(booking, t) {
     if (taxi.preferredDestinations?.length) {
       push('openBookings.details.destinations', taxi.preferredDestinations.join(', '));
     }
-    push('openBookings.details.vehicle', reg.taxiDetails?.vehiclePreference);
+    push(
+      'openBookings.details.vehicle',
+      taxi.carTypeLabel || reg.taxiDetails?.vehiclePreference
+    );
     push('openBookings.details.specialRequests', taxi.specialRequests);
   }
 

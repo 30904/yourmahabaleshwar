@@ -16,8 +16,11 @@ import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import {
   DEFAULT_TAXI_ROUTE_ID,
+  DEFAULT_TAXI_CAR_TYPE,
+  TAXI_CAR_TYPES,
   TAXI_LOCAL_TOURS,
   TAXI_OUTSTATION_ROUTES,
+  taxiCarTypeById,
   taxiRouteById,
   taxiRoutePrice,
 } from '../../constants/taxiClientRateChart';
@@ -87,6 +90,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     pickupTime: '09:00',
     taxiType: 'PER_TRIP',
     selectedRouteId: DEFAULT_TAXI_ROUTE_ID,
+    carType: DEFAULT_TAXI_CAR_TYPE,
     hours: 4,
     passengerCount: 2,
     vehiclePreference: item?.vehicleType || '',
@@ -131,17 +135,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
   const perTripRate = item?.perTripPrice || 0;
   const hourlyRate = item?.hourlyRate || 0;
   const selectedRoute = taxiRouteById(form.selectedRouteId);
-
-  const routeCategory = useMemo(() => {
-    return TAXI_LOCAL_TOURS.some((route) => route.id === form.selectedRouteId) ? 'local' : 'outstation';
-  }, [form.selectedRouteId]);
-
-  const categoryRoutes = routeCategory === 'local' ? TAXI_LOCAL_TOURS : TAXI_OUTSTATION_ROUTES;
-
-  const onRouteCategoryChange = (category) => {
-    const routes = category === 'local' ? TAXI_LOCAL_TOURS : TAXI_OUTSTATION_ROUTES;
-    setField('selectedRouteId', routes[0].id);
-  };
+  const selectedCarType = taxiCarTypeById(form.carType);
 
   const tripHours = Number(form.hours || 1);
   const tripPrice = openMode
@@ -189,9 +183,12 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     setSubmitting(true);
     try {
       const emergencyNote = [form.emergencyName, form.emergencyMobile].filter(Boolean).join(' · ');
-      const vehicleNote = form.vehiclePreference
-        ? `${t('taxiGuestBooking.vehiclePreference')}: ${form.vehiclePreference}`
-        : '';
+      const carTypeLabel = t(selectedCarType.labelKey);
+      const vehicleNote = openMode
+        ? `${t('taxiGuestBooking.carTypeLabel')}: ${carTypeLabel}`
+        : form.vehiclePreference
+          ? `${t('taxiGuestBooking.vehiclePreference')}: ${form.vehiclePreference}`
+          : '';
       const specialRequests = [form.specialRequests, vehicleNote, emergencyNote ? `Emergency: ${emergencyNote}` : '']
         .filter(Boolean)
         .join('\n');
@@ -229,6 +226,8 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
             tripType: openMode ? 'ROUTE' : form.taxiType,
             routeId: openMode ? form.selectedRouteId : undefined,
             routeName: openMode ? t(selectedRoute.nameKey) : undefined,
+            carType: openMode ? form.carType : undefined,
+            carTypeLabel: openMode ? carTypeLabel : undefined,
             hours: !openMode && form.taxiType === 'HOURLY' ? tripHours : undefined,
             startTime: form.pickupTime,
             passengerCount: Number(form.passengerCount) || 1,
@@ -360,15 +359,18 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    {t('taxiGuestBooking.routeCategoryLabel')}
+                    {t('taxiGuestBooking.carTypeLabel')}
                   </label>
                   <select
                     className="input-field"
-                    value={routeCategory}
-                    onChange={(e) => onRouteCategoryChange(e.target.value)}
+                    value={form.carType}
+                    onChange={(e) => setField('carType', e.target.value)}
                   >
-                    <option value="local">{t('taxiGuestBooking.localToursTitle')}</option>
-                    <option value="outstation">{t('taxiGuestBooking.outstationTitle')}</option>
+                    {TAXI_CAR_TYPES.map((car) => (
+                      <option key={car.id} value={car.id}>
+                        {t(car.labelKey)}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -380,12 +382,21 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
                     value={form.selectedRouteId}
                     onChange={(e) => setField('selectedRouteId', e.target.value)}
                   >
-                    {categoryRoutes.map((route) => (
-                      <option key={route.id} value={route.id}>
-                        {t(route.nameKey)}
-                        {route.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
-                      </option>
-                    ))}
+                    <optgroup label={t('taxiGuestBooking.localToursTitle')}>
+                      {TAXI_LOCAL_TOURS.map((route) => (
+                        <option key={route.id} value={route.id}>
+                          {t(route.nameKey)}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label={t('taxiGuestBooking.outstationTitle')}>
+                      {TAXI_OUTSTATION_ROUTES.map((route) => (
+                        <option key={route.id} value={route.id}>
+                          {t(route.nameKey)}
+                          {route.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                   <p className="mt-2 text-sm text-slate-600">
                     {t('taxiGuestBooking.selectedFareLabel')}:{' '}
@@ -431,12 +442,14 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
                 value={form.passengerCount}
                 onChange={(e) => setField('passengerCount', e.target.value)}
               />
-              <Input
-                label={t('taxiGuestBooking.vehiclePreference')}
-                value={form.vehiclePreference}
-                onChange={(e) => setField('vehiclePreference', e.target.value)}
-                placeholder={item?.vehicleType || 'SEDAN, SUV, INNOVA'}
-              />
+              {!openMode && (
+                <Input
+                  label={t('taxiGuestBooking.vehiclePreference')}
+                  value={form.vehiclePreference}
+                  onChange={(e) => setField('vehiclePreference', e.target.value)}
+                  placeholder={item?.vehicleType || 'SEDAN, SUV, INNOVA'}
+                />
+              )}
             </div>
           </div>
           {dateBlocked && <p className="text-sm text-red-600">{t('taxiGuestBooking.validation.unavailable')}</p>}
