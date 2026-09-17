@@ -82,6 +82,7 @@ const homestaySchema = new mongoose.Schema(
     contactPhone: { type: String },
     contactEmail: { type: String },
     isActive: { type: Boolean, default: true },
+    customFormData: { type: mongoose.Schema.Types.Mixed, default: {} },
     approvalStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' },
     isFeatured: { type: Boolean, default: false },
     commissionRate: { type: Number, default: 10 },

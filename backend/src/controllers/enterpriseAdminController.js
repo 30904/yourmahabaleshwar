@@ -19,6 +19,17 @@ import Review from '../models/Review.js';
 import { ROLES, VENDOR_ROLES, STAFF_ROLES } from '../constants/roles.js';
 import { BOOKING_STATUS, BOOKING_TYPES, BOOKING_SOURCE } from '../constants/booking.js';
 import { calculateTotalAsync, getNights } from '../utils/pricing.js';
+import { hasBookingConflict } from '../utils/availability.js';
+import {
+  withBookingLocks,
+  respondBookingLockError,
+  hotelRoomLockKeys,
+  tentLockKeys,
+  guideDayLockKeys,
+  driverDayLockKeys,
+  homestayRoomLockKeys,
+  horseDayLockKeys,
+} from '../utils/bookingLock.js';
 import { generateInvoicePdf } from '../services/invoiceService.js';
 import { createNotification } from '../services/notificationService.js';
 import { sendEmail } from '../services/emailService.js';
@@ -830,6 +841,8 @@ export const createAdminBooking = async (req, res) => {
     let listingFields = {};
     let subtotal = Number(body.subtotal) || 0;
     let extra = {};
+    let inventoryLocks = [];
+    let inventoryConflict = null;
 
     if (kind === 'GUIDE') {
       bookingType = BOOKING_TYPES.GUIDE;
@@ -846,6 +859,15 @@ export const createAdminBooking = async (req, res) => {
         if (!guide) return error(res, 'Guide listing not found', 404);
         listingFields.guide = guide._id;
         vendor = guide.user;
+        inventoryLocks = guideDayLockKeys(guide._id, body.checkIn);
+        inventoryConflict = {
+          type: BOOKING_TYPES.GUIDE,
+          listingField: 'guide',
+          listingId: guide._id,
+          checkIn: body.checkIn,
+          capacity: 1,
+          message: 'Guide not available on selected date',
+        };
         if (subtotal <= 0) {
           subtotal =
             (extra.guidePackage === '12HR' || extra.guidePackage === '8HR'
@@ -881,6 +903,15 @@ export const createAdminBooking = async (req, res) => {
         if (!driver) return error(res, 'Driver/taxi listing not found', 404);
         listingFields.driver = driver._id;
         vendor = driver.user;
+        inventoryLocks = driverDayLockKeys(driver._id, body.checkIn);
+        inventoryConflict = {
+          type: BOOKING_TYPES.TAXI,
+          listingField: 'driver',
+          listingId: driver._id,
+          checkIn: body.checkIn,
+          capacity: 1,
+          message: 'Driver not available on selected date',
+        };
         if (subtotal <= 0) subtotal = driver.perTripPrice || driver.hourlyRate || 1000;
       } else {
         assignmentStatus = 'UNASSIGNED';
@@ -909,6 +940,15 @@ export const createAdminBooking = async (req, res) => {
         if (!horse) return error(res, 'Horse listing not found', 404);
         listingFields.horse = horse._id;
         vendor = horse.operator;
+        inventoryLocks = horseDayLockKeys(horse._id, body.checkIn);
+        inventoryConflict = {
+          type: BOOKING_TYPES.HORSE,
+          listingField: 'horse',
+          listingId: horse._id,
+          checkIn: body.checkIn,
+          capacity: horse.availability?.slotsPerDay || 8,
+          message: 'No horse slots available on selected date',
+        };
         if (subtotal <= 0) subtotal = horse.priceFrom || 800;
       } else {
         assignmentStatus = 'UNASSIGNED';
@@ -936,6 +976,17 @@ export const createAdminBooking = async (req, res) => {
         if (!tent) return error(res, 'Tent listing not found', 404);
         listingFields.tent = tent._id;
         vendor = tent.operator;
+        inventoryLocks = tentLockKeys(tent._id, body.checkIn, extra.checkOut || body.checkIn);
+        inventoryConflict = {
+          type: BOOKING_TYPES.TENT,
+          listingField: 'tent',
+          listingId: tent._id,
+          checkIn: body.checkIn,
+          checkOut: extra.checkOut || body.checkIn,
+          capacity: tent.totalTents || 10,
+          quantity: qty,
+          message: 'All tents are already booked for the selected dates',
+        };
         if (subtotal <= 0) subtotal = (tent.pricePerNight || 2000) * qty * nights;
       } else {
         assignmentStatus = 'UNASSIGNED';
@@ -955,6 +1006,16 @@ export const createAdminBooking = async (req, res) => {
       listingFields.room = room._id;
       const nights = getNights(body.checkIn, body.checkOut || body.checkIn);
       extra.checkOut = body.checkOut || body.checkIn;
+      inventoryLocks = hotelRoomLockKeys(room._id, body.checkIn, extra.checkOut);
+      inventoryConflict = {
+        type: bookingType,
+        listingField: 'room',
+        listingId: room._id,
+        checkIn: body.checkIn,
+        checkOut: extra.checkOut,
+        capacity: room.totalRooms || 1,
+        message: 'All rooms are already booked for the selected dates',
+      };
       if (subtotal <= 0) subtotal = (room.basePrice || hotel.priceFrom || 0) * nights;
       listingFields.guestRegistration = { leadGuest, acceptedTermsAt: new Date() };
       listingFields.guests = {
@@ -973,6 +1034,17 @@ export const createAdminBooking = async (req, res) => {
       const nights = getNights(body.checkIn, body.checkOut || body.checkIn);
       extra.checkOut = body.checkOut || body.checkIn;
       const room = (homestay.rooms || []).find((r) => String(r._id) === String(body.roomId));
+      inventoryLocks = homestayRoomLockKeys(homestay._id, body.roomId, body.checkIn, extra.checkOut);
+      inventoryConflict = {
+        type: BOOKING_TYPES.HOMESTAY,
+        listingField: 'homestay',
+        listingId: homestay._id,
+        checkIn: body.checkIn,
+        checkOut: extra.checkOut,
+        capacity: room?.totalRooms || 1,
+        extraFilter: { homestayRoomId: String(body.roomId) },
+        message: 'All rooms are already booked for the selected dates',
+      };
       if (subtotal <= 0) subtotal = (room?.basePrice || homestay.priceFrom || 0) * nights;
       listingFields.guestRegistration = { leadGuest, acceptedTermsAt: new Date() };
       listingFields.guests = {
@@ -989,7 +1061,7 @@ export const createAdminBooking = async (req, res) => {
       return error(res, 'Assign a listing/vendor before confirming, or leave status Pending', 400);
     }
 
-    const booking = await Booking.create({
+    const bookingPayload = {
       customer: customer._id,
       vendor: vendor || null,
       type: bookingType,
@@ -1012,12 +1084,26 @@ export const createAdminBooking = async (req, res) => {
       paymentStatus: body.paymentStatus === 'PAID' ? 'PAID' : 'PENDING',
       notes: body.notes || `Created by admin (${source})`,
       ...listingFields,
+    };
+
+    const booking = await withBookingLocks(inventoryLocks, async () => {
+      if (inventoryConflict) {
+        const { message, ...conflictArgs } = inventoryConflict;
+        const conflict = await hasBookingConflict(conflictArgs);
+        if (conflict) {
+          const err = new Error(message || 'Listing not available for selected dates');
+          err.statusCode = 400;
+          throw err;
+        }
+      }
+      return Booking.create(bookingPayload);
     });
 
     await booking.populate('customer', 'name email phone');
     return success(res, booking, 'Booking created');
   } catch (err) {
-    return error(res, err.message || 'Failed to create booking', err.status || 500);
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Failed to create booking', err.statusCode || err.status || 500);
   }
 };
 

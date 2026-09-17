@@ -107,6 +107,7 @@ const bookingSchema = new mongoose.Schema(
       advanceAmount: Number,
       paymentMode: String,
       acceptedTermsAt: { type: Date },
+      customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
       tourDetails: {
         packageType: String,
         bikeAddon: { type: Boolean, default: false },

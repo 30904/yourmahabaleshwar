@@ -55,6 +55,7 @@ const driverSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     isAvailable: { type: Boolean, default: true },
     blockedDates: [{ type: Date }],
+    customFormData: { type: mongoose.Schema.Types.Mixed, default: {} },
     approvalStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'PENDING' },
     commissionRate: { type: Number, default: 8 },
     acceptedTermsAt: { type: Date },

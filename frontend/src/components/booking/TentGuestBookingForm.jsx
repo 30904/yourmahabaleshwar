@@ -16,6 +16,7 @@ import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import { StayLegalModal } from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 const OPEN_DEFAULT_PRICE_PER_NIGHT = 2000;
 
@@ -27,6 +28,13 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'TENT');
   const [unavailable, setUnavailable] = useState([]);
   const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -154,6 +162,8 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     }
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -206,6 +216,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
         },
       });
       toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('tentGuestBooking.bookingCreated'));
@@ -450,6 +461,12 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
             ))}
           </div>
         </Card>
+
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
 
         <Card className="space-y-4">
           <SectionTitle>{t('tentGuestBooking.sectionPayment')}</SectionTitle>

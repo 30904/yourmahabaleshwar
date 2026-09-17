@@ -14,6 +14,7 @@ import { createGuideBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 import {
   DEFAULT_GUIDE_PACKAGE_ID,
   GUIDE_BIKE_ADDON,
@@ -105,6 +106,13 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
   const [unavailable, setUnavailable] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'GUIDE');
   const [bikeConfirmChoice, setBikeConfirmChoice] = useState(null);
 
   const termsSummary = useMemo(() => {
@@ -210,7 +218,10 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
     }
     if (!String(form.leadFullName || '').trim()) return t('guideGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('guideGuestBooking.validation.mobile');
+    if (!String(form.leadEmail || '').trim()) return t('guideGuestBooking.validation.email');
     if (!form.acceptTerms) return t('guideGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -256,6 +267,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
           tourDetails: {
             packageType: form.guidePackage,
             tourLocationId: openMode ? form.selectedTourId : undefined,
@@ -528,7 +540,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               required
             />
             <Input label={t('guideGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
-            <Input label={t('guideGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
+            <Input label={t('guideGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"
               label={t('guideGuestBooking.hotelOrPickupAddress')}
@@ -648,6 +660,12 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
             </div>
           </div>
         </Card>
+
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
 
         <Card className="space-y-4">
           <SectionTitle>{t('guideGuestBooking.section5')}</SectionTitle>

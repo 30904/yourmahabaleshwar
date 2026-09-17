@@ -9,11 +9,19 @@ import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
+import { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'HOMESTAY');
   const [unavailable, setUnavailable] = useState([]);
   const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -136,6 +144,8 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) return t('stayGuestBooking.validation.idProof');
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -187,6 +197,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
         },
       });
       toast.success(t('stayGuestBooking.bookingCreated'));
@@ -223,6 +234,9 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
       onSubmit={onSubmit}
       checkInTimeMin={item?.checkInTime || '14:00'}
       checkOutTimeMax={item?.checkOutTime || '11:00'}
+      customSections={customSections}
+      customValues={customValues}
+      onCustomChange={setCustomField}
     />
   );
 }

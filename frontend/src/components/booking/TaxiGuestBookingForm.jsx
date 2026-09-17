@@ -13,6 +13,7 @@ import { calcGST, formatCurrency } from '../../utils/format';
 import { createTaxiBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 import { useAuth } from '../../context/AuthContext';
 import {
   DEFAULT_TAXI_ROUTE_ID,
@@ -20,16 +21,29 @@ import {
   TAXI_CAR_TYPES,
   TAXI_LOCAL_TOURS,
   TAXI_OUTSTATION_ROUTES,
+  TAXI_OUTSTATION_CHART_ROWS,
   taxiCarTypeById,
   taxiRouteById,
   taxiRoutePrice,
 } from '../../constants/taxiClientRateChart';
-import { useGroupMemberSync } from '../../hooks/useCoTravellerSync';
-
-const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: '' });
 
 function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-slate-900">{children}</h3>;
+}
+
+function SpotList({ spots }) {
+  const list = Array.isArray(spots) ? spots : [];
+  if (!list.length) return null;
+  return (
+    <ul className="space-y-1">
+      {list.map((spot) => (
+        <li key={spot} className="flex gap-2 text-xs leading-snug text-slate-700 sm:text-sm">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-primary" aria-hidden />
+          <span>{spot}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function LegalModal({ open, title, sections, closeLabel, onClose }) {
@@ -69,11 +83,13 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
   const [unavailable, setUnavailable] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
-
-  const tripDestinations = useMemo(() => {
-    const spots = t('taxiGuestBooking.tripDestinations', { returnObjects: true });
-    return Array.isArray(spots) ? spots : [];
-  }, [t, i18n.language]);
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', serviceTenant === 'DRIVER' ? 'DRIVER' : 'TAXI');
 
   const termsSummary = useMemo(() => {
     const lines = t('taxiGuestBooking.termsSummary', { returnObjects: true });
@@ -95,8 +111,6 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     passengerCount: 2,
     vehiclePreference: item?.vehicleType || '',
     leadFullName: user?.name || '',
-    leadAge: '',
-    leadGender: '',
     leadMobile: user?.phone || '',
     leadEmail: user?.email || '',
     leadAddress: '',
@@ -106,9 +120,8 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     emergencyMobile: '',
     pickupLocation: '',
     dropLocation: '',
-    preferredDestinations: [],
+    routeTripType: 'ROUND_TRIP',
     specialRequests: '',
-    groupMembers: [],
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
@@ -116,26 +129,15 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const setMember = (index, key, value) => {
-    setForm((prev) => {
-      const next = [...(prev.groupMembers || [])];
-      next[index] = { ...next[index], [key]: value };
-      return { ...prev, groupMembers: next };
-    });
-  };
-
-  const toggleDestination = (value) => {
-    setForm((prev) => {
-      const selected = prev.preferredDestinations || [];
-      const next = selected.includes(value) ? selected.filter((s) => s !== value) : [...selected, value];
-      return { ...prev, preferredDestinations: next };
-    });
-  };
-
   const perTripRate = item?.perTripPrice || 0;
   const hourlyRate = item?.hourlyRate || 0;
   const selectedRoute = taxiRouteById(form.selectedRouteId);
   const selectedCarType = taxiCarTypeById(form.carType);
+  const selectedRoutePoints = useMemo(() => {
+    if (!selectedRoute?.pointsKey) return [];
+    const points = t(selectedRoute.pointsKey, { returnObjects: true });
+    return Array.isArray(points) ? points : [];
+  }, [selectedRoute?.pointsKey, t, i18n.language]);
 
   const tripHours = Number(form.hours || 1);
   const tripPrice = openMode
@@ -158,18 +160,21 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
       .catch(() => setUnavailable([]));
   }, [openMode, item?._id, form.tripDate]);
 
-  useGroupMemberSync(form.passengerCount, setForm, emptyMember);
+  const needsDropLocation = form.routeTripType === 'ONE_WAY' || form.routeTripType === 'DROP';
 
   const validate = () => {
     if (!form.tripDate) return t('taxiGuestBooking.validation.tripDate');
     if (dateBlocked) return t('taxiGuestBooking.validation.unavailable');
     if (!String(form.leadFullName || '').trim()) return t('taxiGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('taxiGuestBooking.validation.mobile');
+    if (!String(form.leadEmail || '').trim()) return t('taxiGuestBooking.validation.email');
     if (!String(form.pickupLocation || '').trim()) return t('taxiGuestBooking.validation.pickup');
-    if (!openMode && form.taxiType === 'PER_TRIP' && !String(form.dropLocation || '').trim()) {
+    if (needsDropLocation && !String(form.dropLocation || '').trim()) {
       return t('taxiGuestBooking.validation.drop');
     }
     if (!form.acceptTerms) return t('taxiGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -206,22 +211,21 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
           adults: Number(form.passengerCount) || 1,
           leadGuest: {
             fullName: form.leadFullName,
-            age: form.leadAge ? Number(form.leadAge) : undefined,
-            gender: form.leadGender || '',
             mobile: form.leadMobile,
             email: form.leadEmail,
             address: form.leadAddress,
             cityState: form.leadCityState,
             pincode: form.leadPincode,
             comingFrom: form.pickupLocation,
-            goingTo: form.dropLocation,
+            goingTo: needsDropLocation ? form.dropLocation : '',
             purpose: 'TOURISM',
           },
-          coTravellers: (form.groupMembers || []).filter((m) => String(m.fullName || '').trim()),
+          coTravellers: [],
           advanceAmount: form.advanceAmount !== '' ? Number(form.advanceAmount) : total,
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
           taxiDetails: {
             tripType: openMode ? 'ROUTE' : form.taxiType,
             routeId: openMode ? form.selectedRouteId : undefined,
@@ -232,8 +236,9 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
             startTime: form.pickupTime,
             passengerCount: Number(form.passengerCount) || 1,
             pickupLocation: form.pickupLocation,
-            dropLocation: form.dropLocation,
-            preferredDestinations: form.preferredDestinations || [],
+            dropLocation: needsDropLocation ? form.dropLocation : '',
+            routeTripType: form.routeTripType,
+            preferredDestinations: [],
             specialRequests,
             tripPrice,
             hourlyRate: openMode ? 0 : item?.hourlyRate || 0,
@@ -286,53 +291,80 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               seeLabel={t('serviceBooking.seeRateChart')}
               hideLabel={t('serviceBooking.hideRateChart')}
             >
-              <div>
-                <p className="font-semibold text-slate-900">{t('taxiGuestBooking.localToursTitle')}</p>
-                <p className="mt-1 text-xs text-slate-600">{t('taxiGuestBooking.localToursNote')}</p>
-                <div className="mt-3 overflow-x-auto">
-                  <table className="min-w-full text-left text-xs sm:text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-600">
-                        <th className="py-2 pr-3 font-medium">{t('taxiGuestBooking.chartTour')}</th>
-                        <th className="py-2 pr-3 font-medium">{t('taxiGuestBooking.chartDuration')}</th>
-                        <th className="py-2 font-medium">{t('taxiGuestBooking.chartRate')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {TAXI_LOCAL_TOURS.map((route) => (
-                        <tr key={route.id} className="border-b border-slate-100">
-                          <td className="py-2 pr-3">{t(route.nameKey)}</td>
-                          <td className="py-2 pr-3">{t(route.durationKey)}</td>
-                          <td className="py-2 font-semibold">{formatCurrency(route.price)}</td>
+              <div className="space-y-5">
+                <div>
+                  <p className="font-semibold text-slate-900">{t('taxiGuestBooking.localToursTitle')}</p>
+                  <p className="mt-1 text-xs text-slate-600">{t('taxiGuestBooking.localToursNote')}</p>
+                  <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="min-w-[820px] w-full text-left text-xs sm:text-sm">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="px-3 py-3 font-semibold">{t('taxiGuestBooking.chartTour')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('taxiGuestBooking.chartDuration')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('taxiGuestBooking.chartKeyPoints')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('taxiGuestBooking.chartRate')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {TAXI_LOCAL_TOURS.map((route) => {
+                          const points = t(route.pointsKey, { returnObjects: true });
+                          return (
+                            <tr key={route.id} className="border-t border-slate-200 align-top odd:bg-white even:bg-slate-50">
+                              <td className="px-3 py-3 font-semibold text-slate-900">{t(route.nameKey)}</td>
+                              <td className="px-3 py-3 whitespace-nowrap text-slate-700">{t(route.durationKey)}</td>
+                              <td className="px-3 py-3">
+                                <SpotList spots={points} />
+                                {route.noteKey ? (
+                                  <p className="mt-2 text-[11px] italic text-slate-500">{t(route.noteKey)}</p>
+                                ) : null}
+                              </td>
+                              <td className="px-3 py-3 font-semibold text-slate-900">{formatCurrency(route.price)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <p className="font-semibold text-slate-900">{t('taxiGuestBooking.outstationTitle')}</p>
-                <p className="mt-1 text-xs text-slate-600">{t('taxiGuestBooking.outstationNote')}</p>
-                <div className="mt-3 overflow-x-auto">
-                  <table className="min-w-full text-left text-xs sm:text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-600">
-                        <th className="py-2 pr-3 font-medium">{t('taxiGuestBooking.chartRoute')}</th>
-                        <th className="py-2 font-medium">{t('taxiGuestBooking.chartRate')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {TAXI_OUTSTATION_ROUTES.map((route) => (
-                        <tr key={route.id} className="border-b border-slate-100">
-                          <td className="py-2 pr-3">
-                            {t(route.nameKey)}
-                            {route.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
-                          </td>
-                          <td className="py-2 font-semibold">{formatCurrency(route.price)}</td>
+
+                <div>
+                  <p className="font-semibold text-slate-900">{t('taxiGuestBooking.outstationTitle')}</p>
+                  <p className="mt-1 text-xs text-slate-600">{t('taxiGuestBooking.outstationNote')}</p>
+                  <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="min-w-[560px] w-full text-left text-xs sm:text-sm">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="px-3 py-3 font-semibold">{t('taxiGuestBooking.chartRoute')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('taxiGuestBooking.chartDrop')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('taxiGuestBooking.chartReturn')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {TAXI_OUTSTATION_CHART_ROWS.map((row) => (
+                          <tr key={row.id} className="border-t border-slate-200 odd:bg-white even:bg-slate-50">
+                            <td className="px-3 py-3 font-medium text-slate-900">
+                              {t(row.nameKey)}
+                              {row.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
+                            </td>
+                            {row.ratesLabelKey ? (
+                              <td className="px-3 py-3 font-semibold text-slate-900" colSpan={2}>
+                                {t(row.ratesLabelKey)}
+                              </td>
+                            ) : (
+                              <>
+                                <td className="px-3 py-3 font-semibold text-slate-900">
+                                  {row.drop != null ? formatCurrency(row.drop) : '—'}
+                                </td>
+                                <td className="px-3 py-3 font-semibold text-slate-900">
+                                  {row.return != null ? formatCurrency(row.return) : '—'}
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-slate-600">{t('taxiGuestBooking.openRateHint')}</p>
@@ -356,53 +388,81 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               />
             </div>
             {openMode ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    {t('taxiGuestBooking.carTypeLabel')}
-                  </label>
-                  <select
-                    className="input-field"
-                    value={form.carType}
-                    onChange={(e) => setField('carType', e.target.value)}
-                  >
-                    {TAXI_CAR_TYPES.map((car) => (
-                      <option key={car.id} value={car.id}>
-                        {t(car.labelKey)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    {t('taxiGuestBooking.selectedRouteLabel')}
-                  </label>
-                  <select
-                    className="input-field"
-                    value={form.selectedRouteId}
-                    onChange={(e) => setField('selectedRouteId', e.target.value)}
-                  >
-                    <optgroup label={t('taxiGuestBooking.localToursTitle')}>
-                      {TAXI_LOCAL_TOURS.map((route) => (
-                        <option key={route.id} value={route.id}>
-                          {t(route.nameKey)}
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                      {t('taxiGuestBooking.carTypeLabel')}
+                    </label>
+                    <select
+                      className="input-field"
+                      value={form.carType}
+                      onChange={(e) => setField('carType', e.target.value)}
+                    >
+                      {TAXI_CAR_TYPES.map((car) => (
+                        <option key={car.id} value={car.id}>
+                          {t(car.labelKey)}
                         </option>
                       ))}
-                    </optgroup>
-                    <optgroup label={t('taxiGuestBooking.outstationTitle')}>
-                      {TAXI_OUTSTATION_ROUTES.map((route) => (
-                        <option key={route.id} value={route.id}>
-                          {t(route.nameKey)}
-                          {route.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                  <p className="mt-2 text-sm text-slate-600">
-                    {t('taxiGuestBooking.selectedFareLabel')}:{' '}
-                    <span className="font-semibold text-slate-900">{formatCurrency(tripPrice)}</span>
-                  </p>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                      {t('taxiGuestBooking.selectedRouteLabel')}
+                    </label>
+                    <select
+                      className="input-field"
+                      value={form.selectedRouteId}
+                      onChange={(e) => setField('selectedRouteId', e.target.value)}
+                    >
+                      <optgroup label={t('taxiGuestBooking.localToursTitle')}>
+                        {TAXI_LOCAL_TOURS.map((route) => (
+                          <option key={route.id} value={route.id}>
+                            {t(route.nameKey)} — {formatCurrency(route.price)}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label={t('taxiGuestBooking.outstationTitle')}>
+                        {TAXI_OUTSTATION_ROUTES.map((route) => (
+                          <option key={route.id} value={route.id}>
+                            {t(route.nameKey)} — {formatCurrency(route.price)}
+                            {route.tollNote ? ` ${t('taxiGuestBooking.tollExtra')}` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {t('taxiGuestBooking.selectedFareLabel')}:{' '}
+                      <span className="font-semibold text-slate-900">{formatCurrency(tripPrice)}</span>
+                      {selectedRoute?.durationKey ? (
+                        <span className="text-slate-500"> · {t(selectedRoute.durationKey)}</span>
+                      ) : null}
+                    </p>
+                  </div>
                 </div>
+
+                {selectedRoutePoints.length > 0 && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {t('taxiGuestBooking.pointsCoveredTitle', {
+                        tour: t(selectedRoute.nameKey),
+                        duration: selectedRoute.durationKey ? t(selectedRoute.durationKey) : '',
+                      })}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">{t('taxiGuestBooking.pointsCoveredHint')}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {selectedRoutePoints.map((spot) => (
+                        <div key={spot} className="flex gap-2 text-sm text-slate-700">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-primary" aria-hidden />
+                          <span>{spot}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedRoute.noteKey ? (
+                      <p className="mt-3 text-xs italic text-slate-500">{t(selectedRoute.noteKey)}</p>
+                    ) : null}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -452,6 +512,11 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               )}
             </div>
           </div>
+          {openMode && (
+            <p className="rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2.5 text-sm text-slate-700">
+              {t('taxiGuestBooking.tollExtraNote')}
+            </p>
+          )}
           {dateBlocked && <p className="text-sm text-red-600">{t('taxiGuestBooking.validation.unavailable')}</p>}
         </Card>
 
@@ -465,21 +530,11 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               onChange={(e) => setField('leadFullName', e.target.value)}
               required
             />
-            <Input label={t('taxiGuestBooking.age')} type="number" min="1" value={form.leadAge} onChange={(e) => setField('leadAge', e.target.value)} />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('taxiGuestBooking.gender')}</label>
-              <select className="input-field" value={form.leadGender} onChange={(e) => setField('leadGender', e.target.value)}>
-                <option value="">{t('taxiGuestBooking.selectGender')}</option>
-                <option value="M">{t('taxiGuestBooking.genderMale')}</option>
-                <option value="F">{t('taxiGuestBooking.genderFemale')}</option>
-                <option value="OTHER">{t('taxiGuestBooking.genderOther')}</option>
-              </select>
-            </div>
             <Input label={t('taxiGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
-            <Input label={t('taxiGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
+            <Input label={t('taxiGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"
-              label={t('taxiGuestBooking.address')}
+              label={t('taxiGuestBooking.hotelOrPickupAddress')}
               value={form.leadAddress}
               onChange={(e) => setField('leadAddress', e.target.value)}
             />
@@ -492,33 +547,39 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
 
         <Card className="space-y-4">
           <SectionTitle>{t('taxiGuestBooking.section3')}</SectionTitle>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('taxiGuestBooking.routeTripTypeLabel')}</label>
+            <select
+              className="input-field"
+              value={form.routeTripType}
+              onChange={(e) => {
+                const nextType = e.target.value;
+                setForm((prev) => ({
+                  ...prev,
+                  routeTripType: nextType,
+                  dropLocation: nextType === 'ROUND_TRIP' ? '' : prev.dropLocation,
+                }));
+              }}
+            >
+              <option value="ROUND_TRIP">{t('taxiGuestBooking.routeTripTypes.roundTrip')}</option>
+              <option value="ONE_WAY">{t('taxiGuestBooking.routeTripTypes.oneWay')}</option>
+              <option value="DROP">{t('taxiGuestBooking.routeTripTypes.drop')}</option>
+            </select>
+          </div>
           <Input
             label={t('taxiGuestBooking.pickupLocation')}
             value={form.pickupLocation}
             onChange={(e) => setField('pickupLocation', e.target.value)}
             required
           />
-          <Input
-            label={t('taxiGuestBooking.dropLocation')}
-            value={form.dropLocation}
-            onChange={(e) => setField('dropLocation', e.target.value)}
-            required={form.taxiType === 'PER_TRIP'}
-          />
-          <div>
-            <p className="mb-2 text-sm font-medium text-slate-700">{t('taxiGuestBooking.preferredDestinations')}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {tripDestinations.map((spot) => (
-                <label key={spot.value} className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={(form.preferredDestinations || []).includes(spot.value)}
-                    onChange={() => toggleDestination(spot.value)}
-                  />
-                  {spot.label}
-                </label>
-              ))}
-            </div>
-          </div>
+          {needsDropLocation && (
+            <Input
+              label={t('taxiGuestBooking.dropLocation')}
+              value={form.dropLocation}
+              onChange={(e) => setField('dropLocation', e.target.value)}
+              required
+            />
+          )}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('taxiGuestBooking.specialRequests')}</label>
             <textarea
@@ -529,42 +590,14 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
           </div>
         </Card>
 
-        {(form.groupMembers || []).length > 0 && (
-          <Card className="space-y-4">
-            <SectionTitle>{t('taxiGuestBooking.section4')}</SectionTitle>
-            <div className="space-y-3">
-              {(form.groupMembers || []).map((member, index) => (
-                <div key={index} className="grid gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-4">
-                  <Input
-                    className="sm:col-span-2"
-                    label={t('taxiGuestBooking.guestFullName', { n: index + 2 })}
-                    value={member.fullName}
-                    onChange={(e) => setMember(index, 'fullName', e.target.value)}
-                  />
-                  <Input label={t('taxiGuestBooking.age')} type="number" min="0" value={member.age} onChange={(e) => setMember(index, 'age', e.target.value)} />
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('taxiGuestBooking.gender')}</label>
-                    <select className="input-field" value={member.gender} onChange={(e) => setMember(index, 'gender', e.target.value)}>
-                      <option value="">{t('taxiGuestBooking.selectGender')}</option>
-                      <option value="M">{t('taxiGuestBooking.genderMale')}</option>
-                      <option value="F">{t('taxiGuestBooking.genderFemale')}</option>
-                      <option value="OTHER">{t('taxiGuestBooking.genderOther')}</option>
-                    </select>
-                  </div>
-                  <Input
-                    className="sm:col-span-2"
-                    label={t('taxiGuestBooking.relationship')}
-                    value={member.relationship}
-                    onChange={(e) => setMember(index, 'relationship', e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
 
         <Card className="space-y-4">
-          <SectionTitle>{t('taxiGuestBooking.section5')}</SectionTitle>
+          <SectionTitle>{t('taxiGuestBooking.section4')}</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl bg-slate-50 p-3 text-sm">
               <p className="text-slate-500">{t('taxiGuestBooking.fareSummary')}</p>
@@ -625,6 +658,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               <span>{formatCurrency(total)}</span>
             </div>
           </div>
+          <p className="text-xs leading-relaxed text-slate-600">{t('taxiGuestBooking.directDriverPaymentNote')}</p>
         </Card>
 
         <Card className="space-y-4">

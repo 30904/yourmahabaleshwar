@@ -9,6 +9,16 @@ import Horse from '../models/Horse.js';
 import { BOOKING_TYPES, BOOKING_STATUS } from '../constants/booking.js';
 import { calculateTotalAsync, getNights, resolveRoomPrice, getDefaultCommissionRate } from '../utils/pricing.js';
 import { rangeHasBlocked, hasBookingConflict } from '../utils/availability.js';
+import {
+  withBookingLocks,
+  respondBookingLockError,
+  hotelRoomLockKeys,
+  tentLockKeys,
+  guideDayLockKeys,
+  driverDayLockKeys,
+  homestayRoomLockKeys,
+  horseDayLockKeys,
+} from '../utils/bookingLock.js';
 import { createNotification } from '../services/notificationService.js';
 import { generateInvoicePdf } from '../services/invoiceService.js';
 import path from 'path';
@@ -40,6 +50,19 @@ import { driverPackagePrice } from '../constants/driverClientRateChart.js';
 import { horsePackagePrice } from '../constants/horseClientRateChart.js';
 import { resolveStayBookingTimes } from '../utils/timeRange.js';
 
+const conflictError = (message, statusCode = 400) => {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+};
+
+const pickCustomFields = (guestRegistration) =>
+  guestRegistration?.customFields &&
+  typeof guestRegistration.customFields === 'object' &&
+  !Array.isArray(guestRegistration.customFields)
+    ? guestRegistration.customFields
+    : {};
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const createHotelBooking = async (req, res) => {
@@ -64,15 +87,6 @@ export const createHotelBooking = async (req, res) => {
   if (rangeHasBlocked(room.blockedDates, checkIn, checkOut)) {
     return error(res, 'Selected dates are blocked', 400);
   }
-  const conflict = await hasBookingConflict({
-    type: hotel.type === 'RESORT' ? BOOKING_TYPES.RESORT : BOOKING_TYPES.HOTEL,
-    listingField: 'room',
-    listingId: roomId,
-    checkIn,
-    checkOut,
-    capacity: room.totalRooms || 1,
-  });
-  if (conflict) return error(res, 'All rooms are already booked for the selected dates', 400);
 
   const nights = getNights(checkIn, checkOut);
   const nightPrice = resolveRoomPrice(room, checkIn);
@@ -132,22 +146,41 @@ export const createHotelBooking = async (req, res) => {
       acceptedTermsAt: guestRegistration?.acceptedTermsAt
         ? new Date(guestRegistration.acceptedTermsAt)
         : new Date(),
+      customFields: pickCustomFields(guestRegistration),
     };
   }
 
-  const booking = await Booking.create({
-    customer: req.user._id,
-    vendor: hotel.vendor,
-    type: hotel.type === 'RESORT' ? BOOKING_TYPES.RESORT : BOOKING_TYPES.HOTEL,
-    hotel: hotelId,
-    room: roomId,
-    checkIn,
-    checkOut,
-    guests: { adults, children },
-    ...(registration ? { guestRegistration: registration } : {}),
-    ...pricing,
-    commission: Math.round(pricing.subtotal * commissionRate),
-  });
+  const bookingType = hotel.type === 'RESORT' ? BOOKING_TYPES.RESORT : BOOKING_TYPES.HOTEL;
+  let booking;
+  try {
+    booking = await withBookingLocks(hotelRoomLockKeys(roomId, checkIn, checkOut), async () => {
+      const conflict = await hasBookingConflict({
+        type: bookingType,
+        listingField: 'room',
+        listingId: roomId,
+        checkIn,
+        checkOut,
+        capacity: room.totalRooms || 1,
+      });
+      if (conflict) throw conflictError('All rooms are already booked for the selected dates');
+      return Booking.create({
+        customer: req.user._id,
+        vendor: hotel.vendor,
+        type: bookingType,
+        hotel: hotelId,
+        room: roomId,
+        checkIn,
+        checkOut,
+        guests: { adults, children },
+        ...(registration ? { guestRegistration: registration } : {}),
+        ...pricing,
+        commission: Math.round(pricing.subtotal * commissionRate),
+      });
+    });
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Booking failed', err.statusCode || 500);
+  }
 
   if (hotel.vendor) {
     await createNotification({
@@ -183,16 +216,6 @@ export const createTentBooking = async (req, res) => {
     return error(res, 'Selected dates are blocked', 400);
   }
   const qty = Number(tentQuantity) || 1;
-  const conflict = await hasBookingConflict({
-    type: BOOKING_TYPES.TENT,
-    listingField: 'tent',
-    listingId: tentId,
-    checkIn,
-    checkOut,
-    capacity: tent.totalTents || 10,
-    quantity: qty,
-  });
-  if (conflict) return error(res, 'All tents are already booked for the selected dates', 400);
 
   const nights = getNights(checkIn, checkOut);
   const nightPrice = tent.pricePerNight;
@@ -255,22 +278,41 @@ export const createTentBooking = async (req, res) => {
       acceptedTermsAt: guestRegistration?.acceptedTermsAt
         ? new Date(guestRegistration.acceptedTermsAt)
         : new Date(),
+      customFields: pickCustomFields(guestRegistration),
     };
   }
 
-  const booking = await Booking.create({
-    customer: req.user._id,
-    vendor: tent.operator,
-    type: BOOKING_TYPES.TENT,
-    tent: tentId,
-    checkIn,
-    checkOut,
-    tentQuantity: qty,
-    guests: { adults, children },
-    ...(registration ? { guestRegistration: registration } : {}),
-    ...pricing,
-    commission: Math.round(pricing.subtotal * commissionRate),
-  });
+  let booking;
+  try {
+    booking = await withBookingLocks(tentLockKeys(tentId, checkIn, checkOut), async () => {
+      const conflict = await hasBookingConflict({
+        type: BOOKING_TYPES.TENT,
+        listingField: 'tent',
+        listingId: tentId,
+        checkIn,
+        checkOut,
+        capacity: tent.totalTents || 10,
+        quantity: qty,
+      });
+      if (conflict) throw conflictError('All tents are already booked for the selected dates');
+      return Booking.create({
+        customer: req.user._id,
+        vendor: tent.operator,
+        type: BOOKING_TYPES.TENT,
+        tent: tentId,
+        checkIn,
+        checkOut,
+        tentQuantity: qty,
+        guests: { adults, children },
+        ...(registration ? { guestRegistration: registration } : {}),
+        ...pricing,
+        commission: Math.round(pricing.subtotal * commissionRate),
+      });
+    });
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Booking failed', err.statusCode || 500);
+  }
 
   if (tent.operator) {
     await createNotification({
@@ -299,15 +341,6 @@ export const createGuideBooking = async (req, res) => {
   if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
     return error(res, 'Please accept the Terms and Conditions', 400);
   }
-
-  const conflict = await hasBookingConflict({
-    type: BOOKING_TYPES.GUIDE,
-    listingField: 'guide',
-    listingId: guideId,
-    checkIn,
-    capacity: 1,
-  });
-  if (conflict) return error(res, 'Guide not available on selected date', 400);
 
   const packageType = guidePackage === '12HR' ? '12HR' : '6HR';
   const useBikeAddon = bikeAddon === true || bikeAddon === 'true' || guestRegistration?.tourDetails?.bikeAddon === true;
@@ -353,6 +386,7 @@ export const createGuideBooking = async (req, res) => {
     acceptedTermsAt: guestRegistration?.acceptedTermsAt
       ? new Date(guestRegistration.acceptedTermsAt)
       : new Date(),
+    customFields: pickCustomFields(guestRegistration),
     tourDetails: {
       packageType,
       bikeAddon: useBikeAddon,
@@ -370,20 +404,35 @@ export const createGuideBooking = async (req, res) => {
 
   const adults = Number(guestRegistration?.adults ?? registration.tourDetails.touristCount ?? 1) || 1;
 
-  const booking = await Booking.create({
-    customer: req.user._id,
-    vendor: guide.user,
-    type: BOOKING_TYPES.GUIDE,
-    guide: guideId,
-    guidePackage: packageType,
-    bikeAddon: useBikeAddon,
-    checkIn,
-    guests: { adults, children: 0 },
-    guestRegistration: registration,
-    ...pricing,
-    commission: Math.round(pricing.subtotal * ((guide.commissionRate || 12) / 100)),
-  });
-  return success(res, booking, 'Guide booking created', 201);
+  try {
+    const booking = await withBookingLocks(guideDayLockKeys(guideId, checkIn), async () => {
+      const conflict = await hasBookingConflict({
+        type: BOOKING_TYPES.GUIDE,
+        listingField: 'guide',
+        listingId: guideId,
+        checkIn,
+        capacity: 1,
+      });
+      if (conflict) throw conflictError('Guide not available on selected date');
+      return Booking.create({
+        customer: req.user._id,
+        vendor: guide.user,
+        type: BOOKING_TYPES.GUIDE,
+        guide: guideId,
+        guidePackage: packageType,
+        bikeAddon: useBikeAddon,
+        checkIn,
+        guests: { adults, children: 0 },
+        guestRegistration: registration,
+        ...pricing,
+        commission: Math.round(pricing.subtotal * ((guide.commissionRate || 12) / 100)),
+      });
+    });
+    return success(res, booking, 'Guide booking created', 201);
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Booking failed', err.statusCode || 500);
+  }
 };
 
 export const createTaxiBooking = async (req, res) => {
@@ -403,15 +452,6 @@ export const createTaxiBooking = async (req, res) => {
       return error(res, 'Please accept the Terms and Conditions', 400);
     }
   }
-
-  const conflict = await hasBookingConflict({
-    type: BOOKING_TYPES.TAXI,
-    listingField: 'driver',
-    listingId: driverId,
-    checkIn,
-    capacity: 1,
-  });
-  if (conflict) return error(res, 'Driver not available on selected date', 400);
 
   const tripType =
     taxiType === 'HOURLY' || guestRegistration?.taxiDetails?.tripType === 'HOURLY' ? 'HOURLY' : 'PER_TRIP';
@@ -456,6 +496,7 @@ export const createTaxiBooking = async (req, res) => {
         acceptedTermsAt: guestRegistration?.acceptedTermsAt
           ? new Date(guestRegistration.acceptedTermsAt)
           : new Date(),
+        customFields: pickCustomFields(guestRegistration),
         taxiDetails: {
           tripType,
           hours: tripHours,
@@ -478,20 +519,35 @@ export const createTaxiBooking = async (req, res) => {
   const adults =
     Number(guestRegistration?.adults ?? registration?.taxiDetails?.passengerCount ?? 1) || 1;
 
-  const booking = await Booking.create({
-    customer: req.user._id,
-    vendor: driver.user,
-    type: BOOKING_TYPES.TAXI,
-    driver: driverId,
-    taxiType: tripType,
-    hours: tripHours,
-    checkIn,
-    guests: { adults, children: 0 },
-    guestRegistration: registration,
-    ...pricing,
-    commission: Math.round(pricing.subtotal * ((driver.commissionRate || 8) / 100)),
-  });
-  return success(res, booking, 'Taxi booking created', 201);
+  try {
+    const booking = await withBookingLocks(driverDayLockKeys(driverId, checkIn), async () => {
+      const conflict = await hasBookingConflict({
+        type: BOOKING_TYPES.TAXI,
+        listingField: 'driver',
+        listingId: driverId,
+        checkIn,
+        capacity: 1,
+      });
+      if (conflict) throw conflictError('Driver not available on selected date');
+      return Booking.create({
+        customer: req.user._id,
+        vendor: driver.user,
+        type: BOOKING_TYPES.TAXI,
+        driver: driverId,
+        taxiType: tripType,
+        hours: tripHours,
+        checkIn,
+        guests: { adults, children: 0 },
+        guestRegistration: registration,
+        ...pricing,
+        commission: Math.round(pricing.subtotal * ((driver.commissionRate || 8) / 100)),
+      });
+    });
+    return success(res, booking, 'Taxi booking created', 201);
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Booking failed', err.statusCode || 500);
+  }
 };
 
 export const createHomestayBooking = async (req, res) => {
@@ -515,17 +571,6 @@ export const createHomestayBooking = async (req, res) => {
   if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
     return error(res, 'Please accept the Terms and Conditions', 400);
   }
-
-  const conflict = await hasBookingConflict({
-    type: BOOKING_TYPES.HOMESTAY,
-    listingField: 'homestay',
-    listingId: homestayId,
-    checkIn,
-    checkOut,
-    capacity: room.totalRooms || 1,
-    extraFilter: { homestayRoomId: String(roomId) },
-  });
-  if (conflict) return error(res, 'All rooms are already booked for the selected dates', 400);
 
   const nights = getNights(checkIn, checkOut);
   const subtotal = room.basePrice * nights;
@@ -580,22 +625,43 @@ export const createHomestayBooking = async (req, res) => {
     acceptedTermsAt: guestRegistration?.acceptedTermsAt
       ? new Date(guestRegistration.acceptedTermsAt)
       : new Date(),
+    customFields: pickCustomFields(guestRegistration),
   };
 
-  const booking = await Booking.create({
-    customer: req.user._id,
-    vendor: homestay.vendor,
-    type: BOOKING_TYPES.HOMESTAY,
-    homestay: homestayId,
-    homestayRoomId: String(roomId),
-    checkIn,
-    checkOut,
-    guests: { adults, children },
-    guestRegistration: registration,
-    ...pricing,
-    commission: Math.round(pricing.subtotal * ((homestay.commissionRate || 10) / 100)),
-  });
-  return success(res, booking, 'Homestay/Villa booking created', 201);
+  try {
+    const booking = await withBookingLocks(
+      homestayRoomLockKeys(homestayId, roomId, checkIn, checkOut),
+      async () => {
+        const conflict = await hasBookingConflict({
+          type: BOOKING_TYPES.HOMESTAY,
+          listingField: 'homestay',
+          listingId: homestayId,
+          checkIn,
+          checkOut,
+          capacity: room.totalRooms || 1,
+          extraFilter: { homestayRoomId: String(roomId) },
+        });
+        if (conflict) throw conflictError('All rooms are already booked for the selected dates');
+        return Booking.create({
+          customer: req.user._id,
+          vendor: homestay.vendor,
+          type: BOOKING_TYPES.HOMESTAY,
+          homestay: homestayId,
+          homestayRoomId: String(roomId),
+          checkIn,
+          checkOut,
+          guests: { adults, children },
+          guestRegistration: registration,
+          ...pricing,
+          commission: Math.round(pricing.subtotal * ((homestay.commissionRate || 10) / 100)),
+        });
+      }
+    );
+    return success(res, booking, 'Homestay/Villa booking created', 201);
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Booking failed', err.statusCode || 500);
+  }
 };
 
 export const createHorseBooking = async (req, res) => {
@@ -622,15 +688,6 @@ export const createHorseBooking = async (req, res) => {
   const resolvedRouteId = routeId || guestRegistration?.horseDetails?.routeId;
   const route = (horse.routes || []).find((r) => String(r._id) === String(resolvedRouteId));
   if (!route) return error(res, 'Route not found', 404);
-
-  const conflict = await hasBookingConflict({
-    type: BOOKING_TYPES.HORSE,
-    listingField: 'horse',
-    listingId: horseId,
-    checkIn,
-    capacity: horse.availability?.slotsPerDay || 8,
-  });
-  if (conflict) return error(res, 'No slots available on selected date', 400);
 
   const pricing = await calculateTotalAsync(route.price);
 
@@ -667,6 +724,7 @@ export const createHorseBooking = async (req, res) => {
         acceptedTermsAt: guestRegistration?.acceptedTermsAt
           ? new Date(guestRegistration.acceptedTermsAt)
           : new Date(),
+        customFields: pickCustomFields(guestRegistration),
         horseDetails: {
           routeId: String(resolvedRouteId),
           routeName: route.name,
@@ -683,19 +741,34 @@ export const createHorseBooking = async (req, res) => {
 
   const adults = Number(guestRegistration?.adults ?? registration?.horseDetails?.riderCount ?? 1) || 1;
 
-  const booking = await Booking.create({
-    customer: req.user._id,
-    vendor: horse.operator,
-    type: BOOKING_TYPES.HORSE,
-    horse: horseId,
-    horseRouteId: String(resolvedRouteId),
-    checkIn,
-    guests: { adults, children: 0 },
-    ...(registration ? { guestRegistration: registration } : {}),
-    ...pricing,
-    commission: Math.round(pricing.subtotal * ((horse.commissionRate || 10) / 100)),
-  });
-  return success(res, booking, 'Horse booking created', 201);
+  try {
+    const booking = await withBookingLocks(horseDayLockKeys(horseId, checkIn), async () => {
+      const conflict = await hasBookingConflict({
+        type: BOOKING_TYPES.HORSE,
+        listingField: 'horse',
+        listingId: horseId,
+        checkIn,
+        capacity: horse.availability?.slotsPerDay || 8,
+      });
+      if (conflict) throw conflictError('No slots available on selected date');
+      return Booking.create({
+        customer: req.user._id,
+        vendor: horse.operator,
+        type: BOOKING_TYPES.HORSE,
+        horse: horseId,
+        horseRouteId: String(resolvedRouteId),
+        checkIn,
+        guests: { adults, children: 0 },
+        ...(registration ? { guestRegistration: registration } : {}),
+        ...pricing,
+        commission: Math.round(pricing.subtotal * ((horse.commissionRate || 10) / 100)),
+      });
+    });
+    return success(res, booking, 'Horse booking created', 201);
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Booking failed', err.statusCode || 500);
+  }
 };
 
 export const getMyBookings = async (req, res) => {
@@ -910,6 +983,7 @@ async function createOpenServiceBooking(req, res, serviceTenant) {
       ? guestRegistration.coTravellers
       : [],
     acceptedTermsAt: guestRegistration?.acceptedTermsAt ? new Date(guestRegistration.acceptedTermsAt) : new Date(),
+    customFields: pickCustomFields(guestRegistration),
     advanceAmount: guestRegistration?.advanceAmount != null ? Number(guestRegistration.advanceAmount) : pricing.total,
     paymentMode: guestRegistration?.paymentMode || 'ONLINE',
     ...(tenant === 'TENT'
@@ -965,30 +1039,63 @@ export const assignVendorToBooking = async (req, res) => {
     return error(res, `Vendor role does not match booking type (${booking.serviceTenant})`, 400);
   }
 
-  booking.vendor = vendorId;
-  booking.assignmentStatus = 'ASSIGNED';
-  booking.assignedAt = new Date();
-  booking.assignedBy = req.user._id;
+  let listingDoc = null;
+  let lockKeys = [];
 
   if (booking.serviceTenant === 'GUIDE' && listingId) {
-    const guide = await Guide.findById(listingId);
-    if (!guide || String(guide.user) !== String(vendorId)) return error(res, 'Invalid guide listing', 400);
-    booking.guide = listingId;
+    listingDoc = await Guide.findById(listingId);
+    if (!listingDoc || String(listingDoc.user) !== String(vendorId)) {
+      return error(res, 'Invalid guide listing', 400);
+    }
+    lockKeys = guideDayLockKeys(listingId, booking.checkIn);
   } else if ((booking.serviceTenant === 'TAXI' || booking.serviceTenant === 'DRIVER') && listingId) {
-    const driver = await Driver.findById(listingId);
-    if (!driver || String(driver.user) !== String(vendorId)) return error(res, 'Invalid driver listing', 400);
-    booking.driver = listingId;
+    listingDoc = await Driver.findById(listingId);
+    if (!listingDoc || String(listingDoc.user) !== String(vendorId)) {
+      return error(res, 'Invalid driver listing', 400);
+    }
+    lockKeys = driverDayLockKeys(listingId, booking.checkIn);
   } else if (booking.serviceTenant === 'HORSE' && listingId) {
-    const horse = await Horse.findById(listingId);
-    if (!horse || String(horse.operator) !== String(vendorId)) return error(res, 'Invalid horse listing', 400);
-    booking.horse = listingId;
+    listingDoc = await Horse.findById(listingId);
+    if (!listingDoc || String(listingDoc.operator) !== String(vendorId)) {
+      return error(res, 'Invalid horse listing', 400);
+    }
+    lockKeys = horseDayLockKeys(listingId, booking.checkIn);
   } else if (booking.serviceTenant === 'TENT' && listingId) {
-    const tent = await Tent.findById(listingId);
-    if (!tent || String(tent.operator) !== String(vendorId)) return error(res, 'Invalid tent listing', 400);
-    booking.tent = listingId;
+    listingDoc = await Tent.findById(listingId);
+    if (!listingDoc || String(listingDoc.operator) !== String(vendorId)) {
+      return error(res, 'Invalid tent listing', 400);
+    }
+    lockKeys = tentLockKeys(listingId, booking.checkIn, booking.checkOut || booking.checkIn);
   }
 
-  await booking.save();
+  try {
+    await withBookingLocks(lockKeys, async () => {
+      if (listingId && listingDoc) {
+        await assertListingFreeForAccept(
+          booking.serviceTenant,
+          listingDoc,
+          booking.checkIn,
+          booking.checkOut
+        );
+      }
+
+      booking.vendor = vendorId;
+      booking.assignmentStatus = 'ASSIGNED';
+      booking.assignedAt = new Date();
+      booking.assignedBy = req.user._id;
+
+      if (booking.serviceTenant === 'GUIDE' && listingId) booking.guide = listingId;
+      else if ((booking.serviceTenant === 'TAXI' || booking.serviceTenant === 'DRIVER') && listingId) {
+        booking.driver = listingId;
+      } else if (booking.serviceTenant === 'HORSE' && listingId) booking.horse = listingId;
+      else if (booking.serviceTenant === 'TENT' && listingId) booking.tent = listingId;
+
+      await booking.save();
+    });
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Assign failed', err.statusCode || 500);
+  }
 
   await createNotification({
     userId: vendorId,
@@ -1003,20 +1110,80 @@ export const assignVendorToBooking = async (req, res) => {
   return success(res, booking, 'Vendor assigned');
 };
 
-async function attachVendorListingForAccept(booking, vendorId, tenant) {
+async function resolveVendorListingForAccept(vendorId, tenant) {
   if (tenant === 'GUIDE') {
-    const guide = await Guide.findOne({ user: vendorId, isActive: { $ne: false } }).sort('-createdAt');
-    if (guide) booking.guide = guide._id;
-  } else if (tenant === 'TAXI' || tenant === 'DRIVER') {
-    const driver = await Driver.findOne({ user: vendorId, isActive: { $ne: false } }).sort('-createdAt');
-    if (driver) booking.driver = driver._id;
-  } else if (tenant === 'HORSE') {
-    const horse = await Horse.findOne({ operator: vendorId, isActive: { $ne: false } }).sort('-createdAt');
-    if (horse) booking.horse = horse._id;
-  } else if (tenant === 'TENT') {
-    const tent = await Tent.findOne({ operator: vendorId, isActive: { $ne: false } }).sort('-createdAt');
-    if (tent) booking.tent = tent._id;
+    return Guide.findOne({ user: vendorId, isActive: { $ne: false } }).sort('-createdAt');
   }
+  if (tenant === 'TAXI' || tenant === 'DRIVER') {
+    return Driver.findOne({ user: vendorId, isActive: { $ne: false } }).sort('-createdAt');
+  }
+  if (tenant === 'HORSE') {
+    return Horse.findOne({ operator: vendorId, isActive: { $ne: false } }).sort('-createdAt');
+  }
+  if (tenant === 'TENT') {
+    return Tent.findOne({ operator: vendorId, isActive: { $ne: false } }).sort('-createdAt');
+  }
+  return null;
+}
+
+function lockKeysForAccept(tenant, listing, checkIn, checkOut) {
+  if (!listing) return [];
+  if (tenant === 'GUIDE') return guideDayLockKeys(listing._id, checkIn);
+  if (tenant === 'TAXI' || tenant === 'DRIVER') return driverDayLockKeys(listing._id, checkIn);
+  if (tenant === 'HORSE') return horseDayLockKeys(listing._id, checkIn);
+  if (tenant === 'TENT') return tentLockKeys(listing._id, checkIn, checkOut || checkIn);
+  return [];
+}
+
+async function assertListingFreeForAccept(tenant, listing, checkIn, checkOut) {
+  if (!listing) return;
+  if (tenant === 'GUIDE') {
+    const conflict = await hasBookingConflict({
+      type: BOOKING_TYPES.GUIDE,
+      listingField: 'guide',
+      listingId: listing._id,
+      checkIn,
+      capacity: 1,
+    });
+    if (conflict) throw conflictError('You already have a booking on this date', 409);
+  } else if (tenant === 'TAXI' || tenant === 'DRIVER') {
+    const conflict = await hasBookingConflict({
+      type: BOOKING_TYPES.TAXI,
+      listingField: 'driver',
+      listingId: listing._id,
+      checkIn,
+      capacity: 1,
+    });
+    if (conflict) throw conflictError('You already have a booking on this date', 409);
+  } else if (tenant === 'HORSE') {
+    const conflict = await hasBookingConflict({
+      type: BOOKING_TYPES.HORSE,
+      listingField: 'horse',
+      listingId: listing._id,
+      checkIn,
+      capacity: listing.availability?.slotsPerDay || 8,
+    });
+    if (conflict) throw conflictError('No slots available on this date', 409);
+  } else if (tenant === 'TENT') {
+    const conflict = await hasBookingConflict({
+      type: BOOKING_TYPES.TENT,
+      listingField: 'tent',
+      listingId: listing._id,
+      checkIn,
+      checkOut: checkOut || checkIn,
+      capacity: listing.totalTents || 10,
+      quantity: 1,
+    });
+    if (conflict) throw conflictError('No tent availability for these dates', 409);
+  }
+}
+
+function attachListingToBooking(booking, tenant, listing) {
+  if (!listing) return;
+  if (tenant === 'GUIDE') booking.guide = listing._id;
+  else if (tenant === 'TAXI' || tenant === 'DRIVER') booking.driver = listing._id;
+  else if (tenant === 'HORSE') booking.horse = listing._id;
+  else if (tenant === 'TENT') booking.tent = listing._id;
 }
 
 export const getOpenServiceBookings = async (req, res) => {
@@ -1051,29 +1218,43 @@ export const acceptOpenServiceBooking = async (req, res) => {
     return error(res, gate.reason || 'Please recharge to take this booking', 403);
   }
 
-  const claimed = await Booking.findOneAndUpdate(
-    {
-      _id: req.params.id,
-      assignmentStatus: 'UNASSIGNED',
-      serviceTenant: tenant,
-      status: BOOKING_STATUS.PENDING,
-    },
-    {
-      vendor: req.user._id,
-      assignmentStatus: 'ASSIGNED',
-      assignedAt: new Date(),
-      status: BOOKING_STATUS.CONFIRMED,
-      notes: 'Accepted by vendor',
-    },
-    { new: true }
-  );
+  const listing = await resolveVendorListingForAccept(req.user._id, tenant);
+  const lockKeys = lockKeysForAccept(tenant, listing, existing.checkIn, existing.checkOut);
 
-  if (!claimed) {
-    return error(res, 'This booking was already accepted by another vendor', 409);
+  let claimed;
+  try {
+    claimed = await withBookingLocks(lockKeys, async () => {
+      await assertListingFreeForAccept(tenant, listing, existing.checkIn, existing.checkOut);
+
+      const updated = await Booking.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          assignmentStatus: 'UNASSIGNED',
+          serviceTenant: tenant,
+          status: BOOKING_STATUS.PENDING,
+        },
+        {
+          vendor: req.user._id,
+          assignmentStatus: 'ASSIGNED',
+          assignedAt: new Date(),
+          status: BOOKING_STATUS.CONFIRMED,
+          notes: 'Accepted by vendor',
+        },
+        { new: true }
+      );
+
+      if (!updated) {
+        throw conflictError('This booking was already accepted by another vendor', 409);
+      }
+
+      attachListingToBooking(updated, tenant, listing);
+      await updated.save();
+      return updated;
+    });
+  } catch (err) {
+    if (respondBookingLockError(res, err, error)) return;
+    return error(res, err.message || 'Accept failed', err.statusCode || 500);
   }
-
-  await attachVendorListingForAccept(claimed, req.user._id, tenant);
-  await claimed.save();
 
   if (gate.via === 'POINTS') {
     const deducted = await deductServicePointsForBooking(req.user._id, claimed);
@@ -1083,6 +1264,10 @@ export const acceptOpenServiceBooking = async (req, res) => {
         assignmentStatus: 'UNASSIGNED',
         status: BOOKING_STATUS.PENDING,
         notes: 'Awaiting vendor acceptance',
+        guide: undefined,
+        driver: undefined,
+        horse: undefined,
+        tent: undefined,
       });
       return error(res, deducted.reason || 'Please recharge to take this booking', 403);
     }

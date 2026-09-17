@@ -9,6 +9,7 @@ import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
+import { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId }) {
   const { t, i18n } = useTranslation();
@@ -16,6 +17,13 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   const navigate = useNavigate();
   const roomList = rooms?.length ? rooms : hotel?.rooms || [];
   const isResort = hotel?.type === 'RESORT';
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', isResort ? 'RESORT' : 'HOTEL');
   const [unavailable, setUnavailable] = useState([]);
   const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -137,6 +145,8 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) return t('stayGuestBooking.validation.idProof');
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -188,6 +198,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
         },
       });
       toast.success(t('stayGuestBooking.bookingCreated'));
@@ -227,6 +238,9 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       purposeName="hotelPurpose"
       idTypeName="hotelIdType"
       paymentModeName="hotelPaymentMode"
+      customSections={customSections}
+      customValues={customValues}
+      onCustomChange={setCustomField}
     />
   );
 }

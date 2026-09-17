@@ -7,6 +7,7 @@ import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import ImageUploadField from '../ui/ImageUploadField';
 import FormLanguageToggle from '../common/FormLanguageToggle';
+import ConfigurableFormSections from '../forms/ConfigurableFormSections';
 import { formatCurrency } from '../../utils/format';
 import { formatTime12 } from '../../utils/time12h';
 import { useAuth } from '../../context/AuthContext';
@@ -72,6 +73,9 @@ export default function StayGuestBookingFormCore({
   purposeName = 'purpose',
   idTypeName = 'idType',
   paymentModeName = 'paymentMode',
+  customSections = [],
+  customValues = {},
+  onCustomChange,
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -283,6 +287,12 @@ export default function StayGuestBookingFormCore({
             ))}
           </div>
         </Card>
+
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={onCustomChange || (() => {})}
+        />
 
         <Card className="space-y-4">
           <SectionTitle>{t('stayGuestBooking.sectionPayment')}</SectionTitle>

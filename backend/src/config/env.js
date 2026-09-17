@@ -52,6 +52,8 @@ export const env = {
   trustProxy: parseTrustProxy(),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX, 10) || (process.env.NODE_ENV === 'production' ? 100 : 200),
   publicApiUrl: process.env.PUBLIC_API_URL || '',
+  /** e.g. redis://127.0.0.1:6379 — required in multi-instance production for booking locks */
+  redisUrl: (process.env.REDIS_URL || '').trim(),
 };
 
 validateEnv({ nodeEnv: env.nodeEnv });

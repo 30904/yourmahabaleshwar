@@ -29,6 +29,7 @@ import BlogsPage from '../pages/cms/BlogsPage';
 import ServiceHubImagesPage from '../pages/cms/ServiceHubImagesPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import ServiceMonetizationPage from '../pages/settings/ServiceMonetizationPage';
+import FormSchemasPage from '../pages/settings/FormSchemasPage';
 import UploadCenterPage from '../pages/upload/UploadCenterPage';
 import KycPage from '../pages/kyc/KycPage';
 import DeleteReviewsPage from '../pages/customers/DeleteReviewsPage';
@@ -102,6 +103,8 @@ const adminRouteConfig = [
   { path: 'reports/destinations', element: <DomainToolsPage /> },
   { path: 'kyc', element: <KycPage /> },
   { path: 'settings', element: <AdminSuperRoute><SettingsPage /></AdminSuperRoute> },
+  { path: 'settings/customer-forms', element: <AdminSuperRoute><FormSchemasPage formKind="customer" /></AdminSuperRoute> },
+  { path: 'settings/vendor-forms', element: <AdminSuperRoute><FormSchemasPage formKind="vendor" /></AdminSuperRoute> },
   { path: 'settings/service-monetization', element: <AdminSuperRoute><ServiceMonetizationPage /></AdminSuperRoute> },
   { path: 'upload-center', element: <AdminSuperRoute><UploadCenterPage /></AdminSuperRoute> },
   { path: 'backups', element: <AdminSuperRoute><BackupsPage /></AdminSuperRoute> },

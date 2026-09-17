@@ -10,6 +10,7 @@ import * as canvasser from '../controllers/canvasserController.js';
 import * as phase4 from '../controllers/phase4Controller.js';
 import * as staySub from '../controllers/stayListingSubscriptionController.js';
 import * as serviceMon from '../controllers/serviceMonetizationController.js';
+import * as formSchema from '../controllers/formSchemaController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAdminActions } from '../middleware/audit.js';
 import { uploadBannerImageMemory, uploadBlogCoverMemory, uploadExcel } from '../middleware/upload.js';
@@ -27,6 +28,7 @@ router.get('/public/blogs', admin.getPublicBlogs);
 router.get('/public/destinations', domain.listDestinations);
 router.get('/public/document-requirements', domain.getDocumentRequirements);
 router.get('/public/service-hub-images', enterprise.getPublicServiceHubImages);
+router.get('/public/form-schemas', formSchema.getFormSchema);
 
 router.use(protect);
 router.use(auditAdminActions);
@@ -165,6 +167,10 @@ router.post('/notification-templates/seed', authorize(...adminOnly), domain.seed
 router.get('/document-requirements', authorize(...staffAndAdmin, ...VENDOR_ROLES), domain.getDocumentRequirements);
 router.put('/document-requirements', authorize(...adminOnly), domain.upsertDocumentRequirement);
 router.post('/document-requirements/seed', authorize(...adminOnly), domain.seedDocumentRequirements);
+
+router.get('/form-schemas', authorize(...adminOnly), formSchema.getFormSchema);
+router.put('/form-schemas', authorize(...adminOnly), formSchema.upsertFormSchema);
+router.post('/form-schemas/seed', authorize(...adminOnly), formSchema.seedFormSchemas);
 
 router.get('/payments', authorize(...adminOnly), domain.listPayments);
 router.get('/refunds', authorize(...adminOnly), domain.listRefunds);

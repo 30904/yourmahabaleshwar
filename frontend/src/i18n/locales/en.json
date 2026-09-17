@@ -32,6 +32,9 @@
     "favorites": "Favorites",
     "notifications": "Notifications",
     "comingSoon": "[coming soon]",
+    "enquireAboutProducts": "Enquire about products",
+    "enquireShopHint": "Call us on either number for shop enquiries.",
+    "closeEnquire": "Close",
     "markAllRead": "Mark all read",
     "noNotifications": "No unread notifications"
   },
@@ -1629,6 +1632,7 @@
       "bikeAddon": "Please select Yes or No for bike service",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "acceptTerms": "Please accept the Terms and Conditions",
       "unavailable": "Guide not available on selected date"
     }
@@ -1640,7 +1644,7 @@
     "section1": "1. Trip Details",
     "section2": "2. Customer Details",
     "section3": "3. Route & Destinations",
-    "section4": "4. Co-passengers",
+    "section4": "4. Payment & Fare",
     "section5": "5. Payment & Fare",
     "section6": "Terms & Conditions",
     "tripDate": "Trip date",
@@ -1685,14 +1689,22 @@
     "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "hotelOrPickupAddress": "Hotel/pickup address",
     "cityState": "City & State",
     "pinCode": "Pin Code",
     "emergencyName": "Emergency contact name",
     "emergencyMobile": "Emergency mobile",
     "pickupLocation": "Pickup location",
     "dropLocation": "Drop location",
+    "routeTripTypeLabel": "Type",
+    "routeTripTypes": {
+      "roundTrip": "Round trip",
+      "oneWay": "One way",
+      "drop": "Drop"
+    },
     "preferredDestinations": "Preferred destinations / route",
     "specialRequests": "Special instructions / notes",
+    "companyRateContactNote": "Company will contact you for the rate.",
     "guestFullName": "Passenger {{n}} full name",
     "age": "Age",
     "gender": "Gender",
@@ -1706,6 +1718,7 @@
     "subtotalLabel": "Subtotal",
     "gstLabel": "GST (12%)",
     "totalLabel": "Total",
+    "directDriverPaymentNote": "Direct payment will be done to the driver; platform will take no extra charge or fee.",
     "advanceAmount": "Advance amount (₹)",
     "paymentMode": "Payment mode",
     "payCash": "Cash",
@@ -1800,7 +1813,9 @@
       "tripDate": "Trip date is required",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "pickup": "Pickup location is required",
+      "drop": "Drop location is required for one way and drop trips",
       "acceptTerms": "Please accept the Terms and Conditions",
       "unavailable": "Driver partner not available on selected date"
     },
@@ -1816,7 +1831,7 @@
     "section1": "1. Trip Details",
     "section2": "2. Customer Details",
     "section3": "3. Route & Destinations",
-    "section4": "4. Co-passengers",
+    "section4": "4. Payment & Fare",
     "section5": "5. Payment & Fare",
     "section6": "Terms & Conditions",
     "tripDate": "Trip date",
@@ -1826,13 +1841,16 @@
     "hourly": "Hourly",
     "rateChartTitle": "Indicative fare chart",
     "openRateHint": "Rates are for 4-seater Non A/C as per S.M. Enterprises tariff. Toll, parking and extras are additional.",
-    "localToursTitle": "Local sightseeing tours (4-seater Non A/C)",
-    "localToursNote": "Duration and key points as per the official taxi rate chart.",
+    "localToursTitle": "Local sightseeing tours rate chart (4-seater Non A/C)",
+    "localToursNote": "Official S.M. Enterprises taxi tariff — duration and key points as listed.",
     "outstationTitle": "Out of Mahabaleshwar drop & pick-up",
-    "outstationNote": "Toll and parking charges are extra unless noted.",
-    "chartTour": "Tour",
+    "outstationNote": "Toll and parking charges are extra (Toll + Extra).",
+    "chartTour": "Tour name",
     "chartDuration": "Duration",
+    "chartKeyPoints": "Key points",
     "chartRoute": "Route",
+    "chartDrop": "Drop",
+    "chartReturn": "Return",
     "chartRate": "Rate",
     "selectedRouteLabel": "Selected tour / route",
     "routeCategoryLabel": "Trip category",
@@ -1846,30 +1864,102 @@
     },
     "selectedFareLabel": "Fare for selected route",
     "tollExtra": "(+ toll extra)",
+    "pointsCoveredTitle": "Points covered — {{tour}} ({{duration}})",
+    "pointsCoveredHint": "These sightseeing points are included for the tour you selected. Switch tour or route to compare.",
+    "tollExtraNote": "Toll, parking and other extras are charged separately where applicable (especially on outstation routes).",
+    "chartRows": {
+      "local5km": "Local up to 5 km",
+      "mapro": "Mapro Garden",
+      "panchganiWai": "Panchgani / Wai",
+      "satara": "Satara bus stand / railway station",
+      "pune": "Pune railway station / airport",
+      "poladpur": "Poladpur / Mahad",
+      "raigad": "Raigad Fort",
+      "khed": "Khed / Chiplun",
+      "coastal": "Alibag / Matheran / Ganpatipule",
+      "coastalRates": "₹15,000 / ₹17,500 / ₹16,000",
+      "mumbai": "Mumbai (Dadar, Vashi, city / airport)"
+    },
     "tours": {
       "mahabaleshwar1": {
-        "name": "Tour 1 — Mahabaleshwar Darshan",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 1: Mahabaleshwar Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Old Mahabaleshwar",
+          "Panchganga Temple",
+          "Shiva Temple",
+          "Arthur's Seat",
+          "Window Point",
+          "Tiger Spring",
+          "Hunting Point",
+          "Malkam",
+          "Elphinstone",
+          "Kate's Point",
+          "Needle Hole",
+          "Elephant Head",
+          "Strawberry Garden"
+        ]
       },
       "mahabaleshwar2": {
-        "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point route)",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 2: Mahabaleshwar Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Wilson Point",
+          "Ganesh Temple",
+          "Plato Point",
+          "King's Chair",
+          "Lingmala Waterfall",
+          "Venna Lake Mini Dam",
+          "Lodwick Point",
+          "Mumbai Point"
+        ]
       },
       "pratapgad": {
-        "name": "Tour 3 — Pratapgad Darshan",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 3: Pratapgad Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Pratapgad Fort",
+          "Bhavani Mata Temple",
+          "Pratap Garden",
+          "Shivaji Maharaj Statue",
+          "Kadelot Point",
+          "Afzal Khan's Tomb",
+          "Shivkalin Village"
+        ],
+        "note": "Extra cost: Shree Ramvardayini Temple Par"
       },
       "panchgani": {
-        "name": "Tour 4 — Panchgani Darshan",
-        "duration": "3 hr"
+        "name": "Tour No. 4: Panchgani Darshan",
+        "duration": "3.00 hours",
+        "points": [
+          "Parsi Point",
+          "Table Land (Caves)",
+          "Museum (Gurghar)",
+          "Bhilar Waterfall (in monsoon)",
+          "Edvis World Theme Park"
+        ],
+        "note": "Extra cost: Velocity, Mapro Garden"
       },
       "panchganiWai": {
-        "name": "Tour 5 — Panchgani / Wai Darshan",
-        "duration": "6 hr"
+        "name": "Tour No. 5: Panchgani / Wai Darshan",
+        "duration": "6.00 hours",
+        "points": [
+          "Sydney Point",
+          "Wai (Ganpati Temple & Kashivishweshwar Temple)",
+          "Dhom Dam",
+          "Nana Phadnavis Wada (Menavali)",
+          "Mapro Factory (Shendurjane Wai)"
+        ]
       },
       "tapola": {
-        "name": "Tour 6 — Tapola Darshan",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 6: Tapola Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Mini Kashmir",
+          "Water Sports",
+          "Shivsagar Darshan"
+        ],
+        "note": "Extra cost: Honey Village / Maghar Village"
       }
     },
     "routes": {
@@ -1892,22 +1982,22 @@
         "name": "Panchgani / Wai — Return"
       },
       "sataraDrop": {
-        "name": "Satara bus stand / railway — Drop"
+        "name": "Satara bus stand / railway station — Drop"
       },
       "sataraReturn": {
-        "name": "Satara bus stand / railway — Return"
+        "name": "Satara bus stand / railway station — Return"
       },
       "puneDrop": {
-        "name": "Pune railway / airport — Drop"
+        "name": "Pune railway station / airport — Drop"
       },
       "puneReturn": {
-        "name": "Pune railway / airport — Return"
+        "name": "Pune railway station / airport — Return"
       },
       "mumbaiDrop": {
-        "name": "Mumbai (Dadar / W.T. / airport) — Drop"
+        "name": "Mumbai (Dadar, Vashi, city / airport) — Drop"
       },
       "mumbaiReturn": {
-        "name": "Mumbai (Dadar / W.T. / airport) — Return"
+        "name": "Mumbai (Dadar, Vashi, city / airport) — Return"
       },
       "poladpurDrop": {
         "name": "Poladpur / Mahad — Drop"
@@ -1927,8 +2017,11 @@
       "alibag": {
         "name": "Alibag"
       },
+      "matheran": {
+        "name": "Matheran"
+      },
       "murud": {
-        "name": "Murud"
+        "name": "Matheran"
       },
       "ganpatipule": {
         "name": "Ganpatipule"
@@ -1941,12 +2034,19 @@
     "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "hotelOrPickupAddress": "Hotel/pickup address",
     "cityState": "City & State",
     "pinCode": "Pin Code",
     "emergencyName": "Emergency contact name",
     "emergencyMobile": "Emergency mobile",
     "pickupLocation": "Pickup location",
     "dropLocation": "Drop location",
+    "routeTripTypeLabel": "Type",
+    "routeTripTypes": {
+      "roundTrip": "Round trip",
+      "oneWay": "One way",
+      "drop": "Drop"
+    },
     "preferredDestinations": "Preferred destinations / route",
     "specialRequests": "Special instructions / notes",
     "guestFullName": "Passenger {{n}} full name",
@@ -1962,6 +2062,7 @@
     "subtotalLabel": "Subtotal",
     "gstLabel": "GST (12%)",
     "totalLabel": "Total",
+    "directDriverPaymentNote": "Direct payment will be done to the taxi driver; platform will take no extra charge or fee.",
     "advanceAmount": "Advance amount (₹)",
     "paymentMode": "Payment mode",
     "payCash": "Cash",
@@ -2064,6 +2165,7 @@
       "tripDate": "Trip date is required",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "pickup": "Pickup location is required",
       "drop": "Drop location is required for per-trip bookings",
       "acceptTerms": "Please accept the Terms and Conditions",
@@ -2112,7 +2214,7 @@
     "formDate": "Date",
     "section1": "1. Ride Details",
     "section2": "2. Customer Details",
-    "section3": "3. Meeting Point & Notes",
+    "section3": "3. Notes",
     "section4": "4. Additional Riders",
     "section5": "5. Payment & Fare",
     "section6": "Terms & Safety",
@@ -2156,6 +2258,7 @@
     "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "hotelOrPickupAddress": "Hotel/pickup address",
     "cityState": "City & State",
     "pinCode": "Pin Code",
     "emergencyName": "Emergency contact name",
@@ -2234,6 +2337,7 @@
       "route": "Please select a route",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "acceptSafety": "Please confirm safety requirements",
       "acceptTerms": "Please accept the Terms and Conditions",
       "unavailable": "No slots available on selected date"
@@ -2264,6 +2368,15 @@
   },
   "serviceBooking": {
     "bookNow": "Book now",
+    "enquireAboutHorse": "Enquire about horse",
+    "enquireHorseHint": "Call us on either number for horse ride enquiries.",
+    "enquireAboutGuide": "Enquire about guide",
+    "enquireGuideHint": "Call us on either number for guide enquiries.",
+    "enquireAboutTaxi": "Enquire about taxi",
+    "enquireTaxiHint": "Call us on either number for taxi enquiries.",
+    "enquireAboutDriver": "Enquire about driver",
+    "enquireDriverHint": "Call us on either number for driver enquiries.",
+    "closeEnquire": "Close",
     "browseListings": "Browse listings",
     "openFormSubtitle": "Fill in your details — our team will assign the best available partner and confirm your booking.",
     "requestSubmitted": "Request submitted! Admin will assign a vendor shortly.",

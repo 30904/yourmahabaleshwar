@@ -43,6 +43,7 @@ import HorseRegistrationFields from './HorseRegistrationFields';
 import FormLanguageToggle from '../../components/common/FormLanguageToggle';
 import ListingImageField from './ListingImageField';
 import { listingStatusBadgeColor, listingStatusI18nKey, listingStatusOf, canVendorEditListing } from '../../utils/listingStatus';
+import ConfigurableFormSections, { useConfigurableForm } from '../../components/forms/ConfigurableFormSections';
 
 const VENDOR_LISTINGS_PATH = '/dashboard/vendor/listings';
 const ADMIN_LISTINGS_BASE = '/admin/listings';
@@ -61,6 +62,16 @@ export default function VendorListingForm({ adminMode = false } = {}) {
   const requested = String(verticalParam || searchParams.get('type') || ROLE_DEFAULT_VERTICAL[user?.role] || '')
     .toUpperCase();
   const vertical = allowedVerticals.includes(requested) ? requested : allowedVerticals[0];
+  const formTenant = ['HOTEL', 'RESORT', 'HOMESTAY', 'GUIDE', 'TAXI', 'DRIVER', 'TENT', 'HORSE'].includes(vertical)
+    ? vertical
+    : null;
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('vendor', formTenant);
 
   const [form, setForm] = useState(() => defaultsFor(vertical));
   const [loading, setLoading] = useState(isEdit);
@@ -166,9 +177,14 @@ export default function VendorListingForm({ adminMode = false } = {}) {
       toast.error(errorMessage);
       return;
     }
+    const customErr = validateCustom();
+    if (customErr) {
+      toast.error(customErr);
+      return;
+    }
     setSaving(true);
     try {
-      const payload = toPayload(saveVertical, form);
+      const payload = { ...toPayload(saveVertical, form), customFormData: customPayload };
       if (isEdit) {
         await updateVendorListing(vertical, id, payload);
         toast.success(t('vendor.listingUpdated'));
@@ -500,6 +516,12 @@ export default function VendorListingForm({ adminMode = false } = {}) {
             </div>
           </Card>
         )}
+
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
 
         <div className="flex flex-wrap gap-3">
           <Button type="submit" disabled={saving}>{saving ? t('common.loading') : t('common.save')}</Button>

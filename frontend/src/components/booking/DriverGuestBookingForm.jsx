@@ -14,6 +14,7 @@ import { createTaxiBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 import {
   DEFAULT_DRIVER_PACKAGE_ID,
   DRIVER_EXTRA_CHARGES,
@@ -21,9 +22,6 @@ import {
   driverPackageById,
   driverPackagePrice,
 } from '../../constants/driverClientRateChart';
-import { useGroupMemberSync } from '../../hooks/useCoTravellerSync';
-
-const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: '' });
 
 function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-slate-900">{children}</h3>;
@@ -66,11 +64,13 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
   const [unavailable, setUnavailable] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
-
-  const tripDestinations = useMemo(() => {
-    const spots = t('driverGuestBooking.tripDestinations', { returnObjects: true });
-    return Array.isArray(spots) ? spots : [];
-  }, [t, i18n.language]);
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'DRIVER');
 
   const termsSummary = useMemo(() => {
     const lines = t('driverGuestBooking.termsSummary', { returnObjects: true });
@@ -90,8 +90,6 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
     hours: 4,
     passengerCount: 2,
     leadFullName: user?.name || '',
-    leadAge: '',
-    leadGender: '',
     leadMobile: user?.phone || '',
     leadEmail: user?.email || '',
     leadAddress: '',
@@ -101,31 +99,14 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
     emergencyMobile: '',
     pickupLocation: '',
     dropLocation: '',
-    preferredDestinations: [],
+    routeTripType: 'ROUND_TRIP',
     specialRequests: '',
-    groupMembers: [],
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
   }));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
-  const setMember = (index, key, value) => {
-    setForm((prev) => {
-      const next = [...(prev.groupMembers || [])];
-      next[index] = { ...next[index], [key]: value };
-      return { ...prev, groupMembers: next };
-    });
-  };
-
-  const toggleDestination = (value) => {
-    setForm((prev) => {
-      const selected = prev.preferredDestinations || [];
-      const next = selected.includes(value) ? selected.filter((s) => s !== value) : [...selected, value];
-      return { ...prev, preferredDestinations: next };
-    });
-  };
 
   const perTripRate = item?.perTripPrice || 0;
   const hourlyRate = item?.hourlyRate || 0;
@@ -152,15 +133,21 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
       .catch(() => setUnavailable([]));
   }, [openMode, item?._id, form.tripDate]);
 
-  useGroupMemberSync(form.passengerCount, setForm, emptyMember);
+  const needsDropLocation = form.routeTripType === 'ONE_WAY' || form.routeTripType === 'DROP';
 
   const validate = () => {
     if (!form.tripDate) return t('driverGuestBooking.validation.tripDate');
     if (dateBlocked) return t('driverGuestBooking.validation.unavailable');
     if (!String(form.leadFullName || '').trim()) return t('driverGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('driverGuestBooking.validation.mobile');
+    if (!String(form.leadEmail || '').trim()) return t('driverGuestBooking.validation.email');
     if (!String(form.pickupLocation || '').trim()) return t('driverGuestBooking.validation.pickup');
+    if (needsDropLocation && !String(form.dropLocation || '').trim()) {
+      return t('driverGuestBooking.validation.drop');
+    }
     if (!form.acceptTerms) return t('driverGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -191,22 +178,21 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
           adults: Number(form.passengerCount) || 1,
           leadGuest: {
             fullName: form.leadFullName,
-            age: form.leadAge ? Number(form.leadAge) : undefined,
-            gender: form.leadGender || '',
             mobile: form.leadMobile,
             email: form.leadEmail,
             address: form.leadAddress,
             cityState: form.leadCityState,
             pincode: form.leadPincode,
             comingFrom: form.pickupLocation,
-            goingTo: form.dropLocation,
+            goingTo: needsDropLocation ? form.dropLocation : '',
             purpose: 'TOURISM',
           },
-          coTravellers: (form.groupMembers || []).filter((m) => String(m.fullName || '').trim()),
+          coTravellers: [],
           advanceAmount: form.advanceAmount !== '' ? Number(form.advanceAmount) : total,
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
           taxiDetails: {
             tripType: openMode ? 'PACKAGE' : form.taxiType,
             packageId: openMode ? form.selectedPackageId : undefined,
@@ -215,8 +201,9 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
             startTime: form.pickupTime,
             passengerCount: Number(form.passengerCount) || 1,
             pickupLocation: form.pickupLocation,
-            dropLocation: form.dropLocation,
-            preferredDestinations: form.preferredDestinations || [],
+            dropLocation: needsDropLocation ? form.dropLocation : '',
+            routeTripType: form.routeTripType,
+            preferredDestinations: [],
             specialRequests,
             tripPrice,
             hourlyRate: openMode ? 0 : item?.hourlyRate || 0,
@@ -396,21 +383,11 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('leadFullName', e.target.value)}
               required
             />
-            <Input label={t('driverGuestBooking.age')} type="number" min="1" value={form.leadAge} onChange={(e) => setField('leadAge', e.target.value)} />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('driverGuestBooking.gender')}</label>
-              <select className="input-field" value={form.leadGender} onChange={(e) => setField('leadGender', e.target.value)}>
-                <option value="">{t('driverGuestBooking.selectGender')}</option>
-                <option value="M">{t('driverGuestBooking.genderMale')}</option>
-                <option value="F">{t('driverGuestBooking.genderFemale')}</option>
-                <option value="OTHER">{t('driverGuestBooking.genderOther')}</option>
-              </select>
-            </div>
             <Input label={t('driverGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
-            <Input label={t('driverGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
+            <Input label={t('driverGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"
-              label={t('driverGuestBooking.address')}
+              label={t('driverGuestBooking.hotelOrPickupAddress')}
               value={form.leadAddress}
               onChange={(e) => setField('leadAddress', e.target.value)}
             />
@@ -423,32 +400,39 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('driverGuestBooking.section3')}</SectionTitle>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('driverGuestBooking.routeTripTypeLabel')}</label>
+            <select
+              className="input-field"
+              value={form.routeTripType}
+              onChange={(e) => {
+                const nextType = e.target.value;
+                setForm((prev) => ({
+                  ...prev,
+                  routeTripType: nextType,
+                  dropLocation: nextType === 'ROUND_TRIP' ? '' : prev.dropLocation,
+                }));
+              }}
+            >
+              <option value="ROUND_TRIP">{t('driverGuestBooking.routeTripTypes.roundTrip')}</option>
+              <option value="ONE_WAY">{t('driverGuestBooking.routeTripTypes.oneWay')}</option>
+              <option value="DROP">{t('driverGuestBooking.routeTripTypes.drop')}</option>
+            </select>
+          </div>
           <Input
             label={t('driverGuestBooking.pickupLocation')}
             value={form.pickupLocation}
             onChange={(e) => setField('pickupLocation', e.target.value)}
             required
           />
-          <Input
-            label={t('driverGuestBooking.dropLocation')}
-            value={form.dropLocation}
-            onChange={(e) => setField('dropLocation', e.target.value)}
-          />
-          <div>
-            <p className="mb-2 text-sm font-medium text-slate-700">{t('driverGuestBooking.preferredDestinations')}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {tripDestinations.map((spot) => (
-                <label key={spot.value} className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={(form.preferredDestinations || []).includes(spot.value)}
-                    onChange={() => toggleDestination(spot.value)}
-                  />
-                  {spot.label}
-                </label>
-              ))}
-            </div>
-          </div>
+          {needsDropLocation && (
+            <Input
+              label={t('driverGuestBooking.dropLocation')}
+              value={form.dropLocation}
+              onChange={(e) => setField('dropLocation', e.target.value)}
+              required
+            />
+          )}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('driverGuestBooking.specialRequests')}</label>
             <textarea
@@ -457,44 +441,17 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('specialRequests', e.target.value)}
             />
           </div>
+          <p className="text-xs leading-relaxed text-slate-600">{t('driverGuestBooking.companyRateContactNote')}</p>
         </Card>
 
-        {(form.groupMembers || []).length > 0 && (
-          <Card className="space-y-4">
-            <SectionTitle>{t('driverGuestBooking.section4')}</SectionTitle>
-            <div className="space-y-3">
-              {(form.groupMembers || []).map((member, index) => (
-                <div key={index} className="grid gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-4">
-                  <Input
-                    className="sm:col-span-2"
-                    label={t('driverGuestBooking.guestFullName', { n: index + 2 })}
-                    value={member.fullName}
-                    onChange={(e) => setMember(index, 'fullName', e.target.value)}
-                  />
-                  <Input label={t('driverGuestBooking.age')} type="number" min="0" value={member.age} onChange={(e) => setMember(index, 'age', e.target.value)} />
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('driverGuestBooking.gender')}</label>
-                    <select className="input-field" value={member.gender} onChange={(e) => setMember(index, 'gender', e.target.value)}>
-                      <option value="">{t('driverGuestBooking.selectGender')}</option>
-                      <option value="M">{t('driverGuestBooking.genderMale')}</option>
-                      <option value="F">{t('driverGuestBooking.genderFemale')}</option>
-                      <option value="OTHER">{t('driverGuestBooking.genderOther')}</option>
-                    </select>
-                  </div>
-                  <Input
-                    className="sm:col-span-2"
-                    label={t('driverGuestBooking.relationship')}
-                    value={member.relationship}
-                    onChange={(e) => setMember(index, 'relationship', e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
 
         <Card className="space-y-4">
-          <SectionTitle>{t('driverGuestBooking.section5')}</SectionTitle>
+          <SectionTitle>{t('driverGuestBooking.section4')}</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl bg-slate-50 p-3 text-sm">
               <p className="text-slate-500">{t('driverGuestBooking.fareSummary')}</p>
@@ -555,6 +512,7 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
               <span>{formatCurrency(total)}</span>
             </div>
           </div>
+          <p className="text-xs leading-relaxed text-slate-600">{t('driverGuestBooking.directDriverPaymentNote')}</p>
         </Card>
 
         <Card className="space-y-4">

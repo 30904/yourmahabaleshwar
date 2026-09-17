@@ -254,6 +254,7 @@ export default function ServiceHubGallery({
   splitDescription,
   bookPath,
   bookLabel = 'Book now',
+  secondaryAction = null,
 }) {
   const items = useMemo(() => normalizeItems(images), [images]);
   const [lightboxIndex, setLightboxIndex] = useState(null);
@@ -273,10 +274,15 @@ export default function ServiceHubGallery({
           <div className="text-left">
             {splitTitle && <h2 className="text-2xl font-bold text-slate-900">{splitTitle}</h2>}
             {splitDescription && <p className="mt-3 text-slate-600">{splitDescription}</p>}
-            {bookPath && (
-              <Link to={bookPath} className="btn-primary mt-6 inline-flex px-8 py-3 text-base">
-                {bookLabel}
-              </Link>
+            {(bookPath || secondaryAction) && (
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                {bookPath && (
+                  <Link to={bookPath} className="btn-primary inline-flex px-8 py-3 text-base">
+                    {bookLabel}
+                  </Link>
+                )}
+                {secondaryAction}
+              </div>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">

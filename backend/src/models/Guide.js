@@ -53,6 +53,7 @@ const guideSchema = new mongoose.Schema(
     bankDetails: { type: bankDetailsSchema, default: () => ({}) },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isActive: { type: Boolean, default: true },
+    customFormData: { type: mongoose.Schema.Types.Mixed, default: {} },
     approvalStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' },
     isFeatured: { type: Boolean, default: false },
     commissionRate: { type: Number, default: 12 },

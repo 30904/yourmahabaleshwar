@@ -14,6 +14,7 @@ import { createHorseBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 import {
   DEFAULT_HORSE_PACKAGE_ID,
   HORSE_CLIENT_PACKAGES,
@@ -68,6 +69,13 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
   const [unavailable, setUnavailable] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'HORSE');
 
   const openModeRoutes = useMemo(() => openHorseRoutesForI18n(t), [t, i18n.language]);
 
@@ -99,7 +107,6 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     leadPincode: '',
     emergencyName: '',
     emergencyMobile: '',
-    meetingPoint: '',
     specialRequests: '',
     groupMembers: [],
     paymentMode: 'ONLINE',
@@ -151,8 +158,11 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     if (!form.routeId) return t('horseGuestBooking.validation.route');
     if (!String(form.leadFullName || '').trim()) return t('horseGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('horseGuestBooking.validation.mobile');
+    if (!String(form.leadEmail || '').trim()) return t('horseGuestBooking.validation.email');
     if (!form.acceptSafety) return t('horseGuestBooking.validation.acceptSafety');
     if (!form.acceptTerms) return t('horseGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -197,13 +207,14 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
           horseDetails: {
             routeId: form.routeId,
             routeName: selectedRoute?.name || '',
             durationMinutes: selectedRoute?.durationMinutes || 30,
             startTime: form.startTime,
             riderCount: Number(form.riderCount) || 1,
-            meetingPoint: form.meetingPoint,
+            meetingPoint: '',
             specialRequests,
             safetyAcknowledged: !!form.acceptSafety,
             routePrice: subtotal,
@@ -356,10 +367,10 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               </select>
             </div>
             <Input label={t('horseGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
-            <Input label={t('horseGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
+            <Input label={t('horseGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"
-              label={t('horseGuestBooking.address')}
+              label={t('horseGuestBooking.hotelOrPickupAddress')}
               value={form.leadAddress}
               onChange={(e) => setField('leadAddress', e.target.value)}
             />
@@ -372,12 +383,6 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('horseGuestBooking.section3')}</SectionTitle>
-          <Input
-            label={t('horseGuestBooking.meetingPoint')}
-            value={form.meetingPoint}
-            onChange={(e) => setField('meetingPoint', e.target.value)}
-            placeholder={item?.location || 'Mahabaleshwar'}
-          />
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('horseGuestBooking.specialRequests')}</label>
             <textarea
@@ -421,6 +426,12 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
             </div>
           </Card>
         )}
+
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
 
         <Card className="space-y-4">
           <SectionTitle>{t('horseGuestBooking.section5')}</SectionTitle>
