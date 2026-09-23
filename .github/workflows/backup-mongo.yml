@@ -1,0 +1,64 @@
+name: Backup MongoDB
+
+# Daily mongodump of the production Atlas database, uploaded to a Google
+# Drive folder via rclone (service-account auth). Runs on GitHub's infra
+# (not the app droplet) so backups don't depend on the VM being healthy.
+# Old backups are pruned by scripts/backup-mongo.sh itself - Drive has no
+# native lifecycle/expiry rules the way object storage does.
+#
+# Required repo secrets:
+#   MONGO_URI_PROD              Atlas connection string for production.
+#                               TODO(interim): currently the app's own
+#                               read-write credential, reused as a shortcut.
+#                               Should be swapped for a dedicated Atlas
+#                               database user scoped to `read` on just this
+#                               database (Security > Database Access) so a
+#                               leaked secret can't modify/delete prod data -
+#                               see PR/task tracking this follow-up.
+#   GDRIVE_CLIENT_ID             OAuth client ID (Desktop app type, GCP
+#                               Credentials)
+#   GDRIVE_CLIENT_SECRET          OAuth client secret
+#   GDRIVE_OAUTH_TOKEN_JSON        Token JSON from running, once, locally:
+#                               rclone authorize "drive" --drive-scope drive.file \
+#                                 <client_id> <client_secret>
+#                               Authenticates as a real Google account rather
+#                               than a service account - service accounts
+#                               have no storage quota on personal/non-
+#                               Workspace Drive and fail on upload.
+#
+# Atlas Network Access must allow connections from anywhere (0.0.0.0/0),
+# since GitHub-hosted runners don't have static IPs.
+
+on:
+  schedule:
+    - cron: "30 18 * * *" # 18:30 UTC daily = 00:00 (midnight) IST
+  workflow_dispatch:
+
+jobs:
+  backup-production:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MongoDB Database Tools
+        run: |
+          wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+          echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-database-tools
+
+      - name: Install rclone
+        run: curl https://rclone.org/install.sh | sudo bash
+
+      - name: Run backup
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI_PROD }}
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_OAUTH_TOKEN_JSON: ${{ secrets.GDRIVE_OAUTH_TOKEN_JSON }}
+          BACKUP_ENV_LABEL: production
+          # Shared "Celeris Backups" root (org-wide GDRIVE_* secrets/account) -
+          # when cloning this workflow to another project, change only the
+          # last path segment to that project's name.
+          BACKUP_FOLDER_NAME: "Celeris Backups/sm-enterprises"
+        run: bash scripts/backup-mongo.sh
