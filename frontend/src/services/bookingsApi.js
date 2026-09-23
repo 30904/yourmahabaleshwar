@@ -20,6 +20,26 @@ export const updateBookingStatus = async (id, status, cancellationReason) => {
   return res.data.data;
 };
 
+export const vendorMarkArrived = async (id) => {
+  const res = await api.patch(`/bookings/${id}/vendor-arrived`);
+  return res.data.data;
+};
+
+export const confirmServiceArrival = async (id) => {
+  const res = await api.patch(`/bookings/${id}/confirm-arrival`);
+  return res.data.data;
+};
+
+export const vendorProposeEnd = async (id, { overtimeHours = 0 } = {}) => {
+  const res = await api.patch(`/bookings/${id}/propose-end`, { overtimeHours });
+  return res.data.data;
+};
+
+export const confirmServiceEnd = async (id) => {
+  const res = await api.patch(`/bookings/${id}/confirm-end`);
+  return res.data.data;
+};
+
 export const createHotelBooking = (payload) => api.post('/bookings/hotel', payload);
 export const createTentBooking = (payload) => api.post('/bookings/tent', payload);
 export const createGuideBooking = (payload) => api.post('/bookings/guide', payload);

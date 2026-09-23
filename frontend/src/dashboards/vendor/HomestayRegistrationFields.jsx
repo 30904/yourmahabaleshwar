@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import PincodeInput from '../../components/ui/PincodeInput';
+import TimePicker12h from '../../components/ui/TimePicker12h';
 import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 
@@ -71,7 +73,22 @@ export default function HomestayRegistrationFields({ form, setField, toggleAmeni
             onChange={(e) => setField('ownerName', e.target.value)}
             required
           />
-          <Input label={t('stayRegistration.pinCode')} value={form.pincode} onChange={(e) => setField('pincode', e.target.value)} />
+          <Input
+            label={t('stayRegistration.managerName')}
+            value={form.managerName}
+            onChange={(e) => setField('managerName', e.target.value)}
+          />
+          <Input
+            label={t('stayRegistration.managerNumber')}
+            value={form.managerNumber}
+            onChange={(e) => setField('managerNumber', e.target.value)}
+          />
+          <Input
+            label={t('stayRegistration.extraMobileNumber')}
+            value={form.extraMobileNumber}
+            onChange={(e) => setField('extraMobileNumber', e.target.value)}
+          />
+          <PincodeInput label={t('stayRegistration.pinCode')} value={form.pincode} onChange={(e) => setField('pincode', e.target.value)} />
           <Input
             className="sm:col-span-2"
             label={t('stayRegistration.fullAddress')}
@@ -200,18 +217,20 @@ export default function HomestayRegistrationFields({ form, setField, toggleAmeni
             value={form.priceRangeTo}
             onChange={(e) => setField('priceRangeTo', e.target.value)}
           />
-          <Input
-            label={t('stayRegistration.checkInTime')}
-            type="time"
-            value={form.checkInTime}
-            onChange={(e) => setField('checkInTime', e.target.value)}
-          />
-          <Input
-            label={t('stayRegistration.checkOutTime')}
-            type="time"
-            value={form.checkOutTime}
-            onChange={(e) => setField('checkOutTime', e.target.value)}
-          />
+          <div className="flex flex-wrap items-end gap-4 sm:col-span-2">
+            <TimePicker12h
+              label={t('stayRegistration.checkInTime')}
+              name="checkInTime"
+              value={form.checkInTime}
+              onChange={(v) => setField('checkInTime', v)}
+            />
+            <TimePicker12h
+              label={t('stayRegistration.checkOutTime')}
+              name="checkOutTime"
+              value={form.checkOutTime}
+              onChange={(v) => setField('checkOutTime', v)}
+            />
+          </div>
           <div className="sm:col-span-2">
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('stayRegistration.cancellationPolicy')}</label>
             <textarea

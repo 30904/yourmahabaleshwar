@@ -35,8 +35,11 @@ export const ROLE_CREATE_VERTICALS = {
   [ROLES.PRODUCT_VENDOR]: ['PRODUCT'],
 };
 
-/** These vendors may own only one listing. */
+/** These vendors may own only one listing. Admin create stays unlimited for demos. */
 export const SINGLE_LISTING_VENDOR_ROLES = [
+  ROLES.HOTEL_VENDOR,
+  ROLES.HOMESTAY_VENDOR,
+  ROLES.TENT_OPERATOR,
   ROLES.GUIDE,
   ROLES.TAXI_OPERATOR,
   ROLES.DRIVER,

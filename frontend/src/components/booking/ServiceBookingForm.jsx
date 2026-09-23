@@ -75,8 +75,11 @@ export default function ServiceBookingForm({ type, item }) {
     subtotal = taxiType === 'HOURLY' ? (item.hourlyRate || 0) * hours : item.perTripPrice || 0;
   }
 
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
   const dateBlocked = checkIn && unavailable.includes(checkIn);
 
   const onSubmit = async (data) => {
@@ -202,7 +205,9 @@ export default function ServiceBookingForm({ type, item }) {
         {dateBlocked && <p className="text-sm text-red-600">{t('booking.unavailable')}</p>}
         <div className="rounded-xl bg-slate-50 p-4 text-sm">
           <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
+          {/* GST temporarily disabled
           <div className="mt-1 flex justify-between"><span>GST (12%)</span><span>{formatCurrency(gst)}</span></div>
+          */}
           <div className="mt-2 flex justify-between font-bold text-primary">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>

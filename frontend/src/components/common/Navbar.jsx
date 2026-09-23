@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { Menu, X, HelpCircle, User, Bell, Heart, ChevronDown } from 'lucide-react';
+import { Menu, X, HelpCircle, User, Bell, Heart, ChevronDown, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import Logo from './Logo';
 import { fetchNotifications, markAllNotificationsRead } from '../../services/userApi';
+import { SUPPORT_PHONES } from '../../constants/site';
 
 const primaryLinks = [
   { to: '/hotels', key: 'stays' },
@@ -18,12 +20,60 @@ const primaryLinks = [
 ];
 
 const shopLinks = [
-  { to: '/strawberries', key: 'strawberries', comingSoon: true },
-  { to: '/mapro', key: 'mapro', comingSoon: true },
-  { to: '/combos', key: 'combos', comingSoon: true },
+  { key: 'strawberries' },
+  { key: 'mapro' },
+  { key: 'combos' },
 ];
 
-const allMobileLinks = [...primaryLinks, ...shopLinks];
+function ShopEnquireModal({ open, onClose, title, subtitle, closeLabel }) {
+  if (!open || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/45 p-4"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shop-enquire-title"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 id="shop-enquire-title" className="text-lg font-bold text-slate-900">
+              {title || 'Enquire about products'}
+            </h2>
+            {subtitle ? <p className="mt-1 text-sm text-slate-600">{subtitle}</p> : null}
+          </div>
+          <button
+            type="button"
+            className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            onClick={onClose}
+            aria-label={closeLabel || 'Close'}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="mt-5 space-y-3">
+          {SUPPORT_PHONES.map((phone) => (
+            <a
+              key={phone.href}
+              href={phone.href}
+              className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-primary transition hover:border-primary/40 hover:bg-primary/5"
+            >
+              <Phone size={18} className="shrink-0" />
+              <span className="font-semibold">{phone.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 export default function Navbar() {
   const { t, i18n } = useTranslation();
@@ -32,6 +82,7 @@ export default function Navbar() {
   const [shopOpen, setShopOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [enquireOpen, setEnquireOpen] = useState(false);
   const shopRef = useRef(null);
   const { user, logout, isAuthenticated } = useAuth();
   const dash =
@@ -43,11 +94,15 @@ export default function Navbar() {
         ? '/dashboard/vendor'
         : '/dashboard/customer';
 
-  const shopActive = shopLinks.some((l) => !l.comingSoon && location.pathname.startsWith(l.to));
-
   const switchLang = (lng) => {
     i18n.changeLanguage(lng);
     localStorage.setItem('lang', lng);
+  };
+
+  const openShopEnquire = () => {
+    setEnquireOpen(true);
+    setShopOpen(false);
+    setOpen(false);
   };
 
   useEffect(() => {
@@ -94,7 +149,7 @@ export default function Navbar() {
           <div className="nav-shop-wrap relative shrink-0" ref={shopRef}>
             <button
               type="button"
-              className={`nav-link inline-flex items-center gap-0.5 ${shopActive ? 'nav-link-active' : ''}`}
+              className="nav-link inline-flex items-center gap-0.5"
               onClick={() => setShopOpen((v) => !v)}
               aria-expanded={shopOpen}
             >
@@ -103,30 +158,17 @@ export default function Navbar() {
             </button>
             {shopOpen && (
               <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
-                {shopLinks.map((l) =>
-                  l.comingSoon ? (
-                    <span
-                      key={l.to}
-                      className="block cursor-not-allowed whitespace-nowrap px-3 py-2 text-[13px] font-medium text-slate-500"
-                      aria-disabled="true"
-                    >
-                      {t(`nav.${l.key}`)}{' '}
-                      <span className="text-red-500">{t('nav.comingSoon')}</span>
-                    </span>
-                  ) : (
-                    <NavLink
-                      key={l.to}
-                      to={l.to}
-                      className={({ isActive }) =>
-                        `block whitespace-nowrap px-3 py-2 text-[13px] font-medium ${
-                          isActive ? 'bg-blue-50 text-primary' : 'text-slate-700 hover:bg-slate-50'
-                        }`
-                      }
-                    >
-                      {t(`nav.${l.key}`)}
-                    </NavLink>
-                  )
-                )}
+                {shopLinks.map((l) => (
+                  <button
+                    key={l.key}
+                    type="button"
+                    className="block w-full whitespace-nowrap px-3 py-2 text-left text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+                    onClick={openShopEnquire}
+                  >
+                    {t(`nav.${l.key}`)}{' '}
+                    <span className="text-red-500">{t('nav.comingSoon')}</span>
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -244,32 +286,41 @@ export default function Navbar() {
 
       {open && (
         <div className="max-h-[70vh] overflow-y-auto border-t border-slate-100 bg-white px-4 py-4 xl:hidden">
-          {allMobileLinks.map((l) =>
-            l.comingSoon ? (
-              <span
-                key={l.to}
-                className="mb-1 block cursor-not-allowed rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500"
-                aria-disabled="true"
-              >
-                {t(`nav.${l.key}`)} <span className="text-red-500">{t('nav.comingSoon')}</span>
-              </span>
-            ) : (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  `mb-1 block rounded-lg px-3 py-2.5 text-sm font-medium ${
-                    isActive ? 'bg-blue-50 text-primary' : 'text-slate-700'
-                  }`
-                }
-              >
-                {t(`nav.${l.key}`)}
-              </NavLink>
-            )
-          )}
+          {primaryLinks.map((l) => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `mb-1 block rounded-lg px-3 py-2.5 text-sm font-medium ${
+                  isActive ? 'bg-blue-50 text-primary' : 'text-slate-700'
+                }`
+              }
+            >
+              {t(`nav.${l.key}`)}
+            </NavLink>
+          ))}
+          <p className="mb-1 mt-3 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{t('nav.shop')}</p>
+          {shopLinks.map((l) => (
+            <button
+              key={l.key}
+              type="button"
+              className="mb-1 block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-slate-700"
+              onClick={openShopEnquire}
+            >
+              {t(`nav.${l.key}`)} <span className="text-red-500">{t('nav.comingSoon')}</span>
+            </button>
+          ))}
         </div>
       )}
+
+      <ShopEnquireModal
+        open={enquireOpen}
+        onClose={() => setEnquireOpen(false)}
+        title={t('nav.enquireAboutProducts')}
+        subtitle={t('nav.enquireShopHint')}
+        closeLabel={t('nav.closeEnquire')}
+      />
     </header>
   );
 }

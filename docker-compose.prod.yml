@@ -16,6 +16,18 @@ services:
     environment:
       MONGO_INITDB_DATABASE: yourmahabaleshwar
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    command: ['redis-server', '--appendonly', 'yes']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -26,12 +38,14 @@ services:
     environment:
       NODE_ENV: production
       MONGODB_URI: mongodb://mongodb:27017/yourmahabaleshwar
+      REDIS_URL: redis://redis:6379
       CLIENT_URL: https://www.yourmahabaleshwar.com,https://yourmahabaleshwar.com
       PUBLIC_API_URL: https://www.yourmahabaleshwar.com
       TRUST_PROXY: '1'
       RATE_LIMIT_MAX: '100'
     depends_on:
       - mongodb
+      - redis
     volumes:
       - uploads_data:/app/src/uploads
     expose:
@@ -66,4 +80,5 @@ services:
 
 volumes:
   mongo_data:
+  redis_data:
   uploads_data:

@@ -3,17 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { calcGST } from '../../utils/format';
+import { clampTime24 } from '../../utils/time12h';
 import { createHomestayBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
+import { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'HOMESTAY');
   const [unavailable, setUnavailable] = useState([]);
+  const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
   const [form, setForm] = useState(() => ({
@@ -67,15 +77,30 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
     if (initialRoomId) setField('roomId', initialRoomId);
   }, [initialRoomId]);
 
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      checkInTime: item?.checkInTime || '14:00',
+      checkOutTime: item?.checkOutTime || '11:00',
+    }));
+  }, [item?.checkInTime, item?.checkOutTime]);
+
   const nights = useMemo(() => {
     if (!form.checkIn || !form.checkOut) return 1;
     return Math.max(1, Math.ceil((new Date(form.checkOut) - new Date(form.checkIn)) / 86400000));
   }, [form.checkIn, form.checkOut]);
 
   const subtotal = (room?.basePrice || item?.priceFrom || 0) * nights;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
-  const dateBlocked = form.checkIn && unavailable.includes(form.checkIn);
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
+  const dateBlocked = useMemo(() => {
+    if (!form.checkIn || !unavailable.length) return false;
+    const end = form.checkOut || form.checkIn;
+    return unavailable.some((d) => d >= form.checkIn && d < end);
+  }, [form.checkIn, form.checkOut, unavailable]);
 
   const termsSummary = useMemo(() => {
     const lines = t('homestayRegistration.termsSummary', { returnObjects: true });
@@ -88,21 +113,39 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   }, [t, i18n.language]);
 
   useEffect(() => {
-    if (!item?._id || !form.checkIn) return;
-    fetchAvailability('homestay', item._id, form.checkIn, form.checkOut || form.checkIn)
-      .then((d) => setUnavailable(d.unavailable || []))
-      .catch(() => setUnavailable([]));
-  }, [item?._id, form.checkIn, form.checkOut]);
+    const roomId = form.roomId || item?.rooms?.[0]?._id;
+    if (!item?._id || !form.checkIn || !roomId) {
+      setInventory(null);
+      setUnavailable([]);
+      return;
+    }
+    const to = form.checkOut || form.checkIn;
+    fetchAvailability('homestay', item._id, form.checkIn, to, { roomId })
+      .then((d) => {
+        setUnavailable(d.unavailable || []);
+        setInventory({
+          capacity: d.capacity ?? null,
+          booked: d.booked ?? 0,
+          remaining: d.remaining ?? null,
+        });
+      })
+      .catch(() => {
+        setUnavailable([]);
+        setInventory(null);
+      });
+  }, [item?._id, form.roomId, form.checkIn, form.checkOut, item?.rooms]);
 
   const validate = () => {
     if (!form.checkIn || !form.checkOut) return t('stayGuestBooking.validation.datesRequired');
-    if (dateBlocked) return t('booking.unavailable');
+    if (dateBlocked) return t('booking.allRoomsBooked');
     if (!form.roomId && !item?.rooms?.[0]?._id) return t('stayGuestBooking.validation.selectRoom');
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) return t('stayGuestBooking.validation.idProof');
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -123,8 +166,8 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
         guests: { adults: Number(form.adults) || 1, children: Number(form.children) || 0 },
         guestRegistration: {
           formDate: new Date().toISOString(),
-          checkInTime: form.checkInTime,
-          checkOutTime: form.checkOutTime,
+          checkInTime: clampTime24(form.checkInTime, item?.checkInTime || '14:00', '23:59'),
+          checkOutTime: clampTime24(form.checkOutTime, '00:00', item?.checkOutTime || '11:00'),
           adults: Number(form.adults) || 1,
           children: Number(form.children) || 0,
           leadGuest: {
@@ -154,6 +197,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
         },
       });
       toast.success(t('stayGuestBooking.bookingCreated'));
@@ -183,10 +227,16 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
       gst={gst}
       total={total}
       dateBlocked={dateBlocked}
+      inventory={inventory}
       submitting={submitting}
       legalOpen={legalOpen}
       setLegalOpen={setLegalOpen}
       onSubmit={onSubmit}
+      checkInTimeMin={item?.checkInTime || '14:00'}
+      checkOutTimeMax={item?.checkOutTime || '11:00'}
+      customSections={customSections}
+      customValues={customValues}
+      onCustomChange={setCustomField}
     />
   );
 }

@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { calcGST } from '../../utils/format';
+import { clampTime24 } from '../../utils/time12h';
 import { createHotelBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
+import { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId }) {
   const { t, i18n } = useTranslation();
@@ -15,7 +17,15 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   const navigate = useNavigate();
   const roomList = rooms?.length ? rooms : hotel?.rooms || [];
   const isResort = hotel?.type === 'RESORT';
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', isResort ? 'RESORT' : 'HOTEL');
   const [unavailable, setUnavailable] = useState([]);
+  const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
   const [form, setForm] = useState(() => ({
@@ -63,6 +73,14 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     if (initialRoomId) setField('roomId', initialRoomId);
   }, [initialRoomId]);
 
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      checkInTime: hotel?.checkInTime || '14:00',
+      checkOutTime: hotel?.checkOutTime || '11:00',
+    }));
+  }, [hotel?.checkInTime, hotel?.checkOutTime]);
+
   const room = useMemo(
     () => roomList.find((r) => String(r._id) === String(form.roomId)) || roomList[0],
     [roomList, form.roomId]
@@ -74,9 +92,16 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   }, [form.checkIn, form.checkOut]);
 
   const subtotal = (room?.basePrice || hotel?.priceFrom || 0) * nights;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
-  const dateBlocked = form.checkIn && unavailable.includes(form.checkIn);
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
+  const dateBlocked = useMemo(() => {
+    if (!form.checkIn || !unavailable.length) return false;
+    const end = form.checkOut || form.checkIn;
+    return unavailable.some((d) => d >= form.checkIn && d < end);
+  }, [form.checkIn, form.checkOut, unavailable]);
 
   const termsSummary = useMemo(() => {
     const lines = t('hotelGuestBooking.termsSummary', { returnObjects: true });
@@ -89,21 +114,39 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   }, [t, i18n.language]);
 
   useEffect(() => {
-    if (!hotel?._id || !form.checkIn) return;
-    fetchAvailability('hotel', hotel._id, form.checkIn, form.checkOut || form.checkIn)
-      .then((d) => setUnavailable(d.unavailable || []))
-      .catch(() => setUnavailable([]));
-  }, [hotel?._id, form.checkIn, form.checkOut]);
+    const roomId = form.roomId || roomList[0]?._id;
+    if (!roomId || !form.checkIn) {
+      setInventory(null);
+      setUnavailable([]);
+      return;
+    }
+    const to = form.checkOut || form.checkIn;
+    fetchAvailability('room', roomId, form.checkIn, to)
+      .then((d) => {
+        setUnavailable(d.unavailable || []);
+        setInventory({
+          capacity: d.capacity ?? null,
+          booked: d.booked ?? 0,
+          remaining: d.remaining ?? null,
+        });
+      })
+      .catch(() => {
+        setUnavailable([]);
+        setInventory(null);
+      });
+  }, [form.roomId, roomList, form.checkIn, form.checkOut]);
 
   const validate = () => {
     if (!form.checkIn || !form.checkOut) return t('stayGuestBooking.validation.datesRequired');
-    if (dateBlocked) return t('booking.unavailable');
+    if (dateBlocked) return t('booking.allRoomsBooked');
     if (!form.roomId && !roomList[0]?._id) return t('stayGuestBooking.validation.selectRoom');
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) return t('stayGuestBooking.validation.idProof');
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -124,8 +167,8 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
         guests: { adults: Number(form.adults) || 1, children: Number(form.children) || 0 },
         guestRegistration: {
           formDate: new Date().toISOString(),
-          checkInTime: form.checkInTime,
-          checkOutTime: form.checkOutTime,
+          checkInTime: clampTime24(form.checkInTime, hotel?.checkInTime || '14:00', '23:59'),
+          checkOutTime: clampTime24(form.checkOutTime, '00:00', hotel?.checkOutTime || '11:00'),
           adults: Number(form.adults) || 1,
           children: Number(form.children) || 0,
           leadGuest: {
@@ -155,6 +198,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
         },
       });
       toast.success(t('stayGuestBooking.bookingCreated'));
@@ -184,13 +228,19 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       gst={gst}
       total={total}
       dateBlocked={dateBlocked}
+      inventory={inventory}
       submitting={submitting}
       legalOpen={legalOpen}
       setLegalOpen={setLegalOpen}
       onSubmit={onSubmit}
+      checkInTimeMin={hotel?.checkInTime || '14:00'}
+      checkOutTimeMax={hotel?.checkOutTime || '11:00'}
       purposeName="hotelPurpose"
       idTypeName="hotelIdType"
       paymentModeName="hotelPaymentMode"
+      customSections={customSections}
+      customValues={customValues}
+      onCustomChange={setCustomField}
     />
   );
 }

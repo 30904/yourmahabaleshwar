@@ -1,6 +1,7 @@
 import { taxiRouteById } from '../constants/taxiClientRateChart';
 import { driverPackageById } from '../constants/driverClientRateChart';
 import { horsePackageById } from '../constants/horseClientRateChart';
+import { formatTime12 } from './time12h';
 
 function detailRow(label, value) {
   const text = value == null || value === '' ? null : String(value).trim();
@@ -10,7 +11,7 @@ function detailRow(label, value) {
 
 function formatTime(value) {
   if (!value) return null;
-  return value;
+  return formatTime12(value);
 }
 
 export function buildOpenBookingDetailRows(booking, t) {
@@ -49,7 +50,10 @@ export function buildOpenBookingDetailRows(booking, t) {
     if (taxi.preferredDestinations?.length) {
       push('openBookings.details.destinations', taxi.preferredDestinations.join(', '));
     }
-    push('openBookings.details.vehicle', reg.taxiDetails?.vehiclePreference);
+    push(
+      'openBookings.details.vehicle',
+      taxi.carTypeLabel || reg.taxiDetails?.vehiclePreference
+    );
     push('openBookings.details.specialRequests', taxi.specialRequests);
   }
 

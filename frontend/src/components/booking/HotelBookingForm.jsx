@@ -21,8 +21,11 @@ export default function HotelBookingForm({ hotelId, room, onSuccess }) {
         )
       : 1;
   const subtotal = (room?.basePrice || 0) * nights;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
 
   const onSubmit = async (data) => {
     try {
@@ -52,7 +55,9 @@ export default function HotelBookingForm({ hotelId, room, onSuccess }) {
         </div>
         <div className="rounded-xl bg-slate-50 p-4 text-sm">
           <div className="flex justify-between"><span>Subtotal ({nights} nights)</span><span>{formatCurrency(subtotal)}</span></div>
+          {/* GST temporarily disabled
           <div className="flex justify-between mt-1"><span>GST (12%)</span><span>{formatCurrency(gst)}</span></div>
+          */}
           <div className="flex justify-between mt-2 font-bold text-primary"><span>Total</span><span>{formatCurrency(total)}</span></div>
         </div>
         <Button type="submit" className="w-full">Confirm Booking</Button>

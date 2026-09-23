@@ -42,6 +42,9 @@ const homestaySchema = new mongoose.Schema(
     slug: { type: String, unique: true, lowercase: true },
     description: { type: String },
     ownerName: { type: String },
+    managerName: { type: String },
+    managerNumber: { type: String },
+    extraMobileNumber: { type: String },
     location: { type: String, default: 'Mahabaleshwar' },
     address: {
       line1: String,
@@ -79,6 +82,7 @@ const homestaySchema = new mongoose.Schema(
     contactPhone: { type: String },
     contactEmail: { type: String },
     isActive: { type: Boolean, default: true },
+    customFormData: { type: mongoose.Schema.Types.Mixed, default: {} },
     approvalStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' },
     isFeatured: { type: Boolean, default: false },
     commissionRate: { type: Number, default: 10 },

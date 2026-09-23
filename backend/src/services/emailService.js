@@ -15,7 +15,7 @@ const getTransporter = () => {
   return transporter;
 };
 
-export const sendEmail = async ({ to, subject, html, text }) => {
+export const sendEmail = async ({ to, subject, html, text, attachments }) => {
   const transport = getTransporter();
   if (!transport) {
     console.log(`[Email Mock] To: ${to} | Subject: ${subject}`);
@@ -27,5 +27,6 @@ export const sendEmail = async ({ to, subject, html, text }) => {
     subject,
     html,
     text,
+    ...(attachments?.length ? { attachments } : {}),
   });
 };

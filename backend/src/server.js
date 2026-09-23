@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import http from 'http';
 import connectDB from './config/db.js';
 import { env, knownSiteOrigins } from './config/env.js';
+import { ensureRedis, isRedisReady } from './config/redis.js';
 import routes from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { startScheduledJobs } from './jobs/scheduler.js';
@@ -25,6 +26,7 @@ if (env.trustProxy) {
 }
 
 connectDB();
+ensureRedis().catch(() => {});
 startScheduledJobs();
 ensureHomepageHeroPackageSeeded().catch(() => {});
 
@@ -100,6 +102,7 @@ app.get('/healthz', (req, res) => {
     ok: true,
     env: env.nodeEnv,
     time: new Date().toISOString(),
+    redis: env.redisUrl ? (isRedisReady() ? 'ready' : 'connecting') : 'disabled',
   });
 });
 

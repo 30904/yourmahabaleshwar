@@ -2,10 +2,14 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import PincodeInput from '../ui/PincodeInput';
+import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import ImageUploadField from '../ui/ImageUploadField';
 import FormLanguageToggle from '../common/FormLanguageToggle';
+import ConfigurableFormSections from '../forms/ConfigurableFormSections';
 import { formatCurrency } from '../../utils/format';
+import { formatTime12 } from '../../utils/time12h';
 import { useAuth } from '../../context/AuthContext';
 
 function SectionTitle({ children }) {
@@ -59,13 +63,19 @@ export default function StayGuestBookingFormCore({
   gst,
   total,
   dateBlocked,
+  inventory = null,
   submitting,
   legalOpen,
   setLegalOpen,
   onSubmit,
+  checkInTimeMin = '14:00',
+  checkOutTimeMax = '11:00',
   purposeName = 'purpose',
   idTypeName = 'idType',
   paymentModeName = 'paymentMode',
+  customSections = [],
+  customValues = {},
+  onCustomChange,
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -116,12 +126,26 @@ export default function StayGuestBookingFormCore({
 
         <Card className="space-y-4">
           <SectionTitle>{t('stayGuestBooking.sectionStayDates')}</SectionTitle>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] lg:items-end">
             <Input label={t('stayGuestBooking.checkInDate')} type="date" value={form.checkIn} onChange={(e) => setField('checkIn', e.target.value)} required />
-            <Input label={t('stayGuestBooking.checkInTime')} type="time" value={form.checkInTime} onChange={(e) => setField('checkInTime', e.target.value)} />
+            <TimePicker12h
+              label={t('stayGuestBooking.checkInTime')}
+              name="checkInTime"
+              value={form.checkInTime}
+              onChange={(v) => setField('checkInTime', v)}
+              minTime={checkInTimeMin}
+              maxTime="23:59"
+            />
             <Input label={t('stayGuestBooking.checkOutDate')} type="date" value={form.checkOut} onChange={(e) => setField('checkOut', e.target.value)} required />
-            <Input label={t('stayGuestBooking.checkOutTime')} type="time" value={form.checkOutTime} onChange={(e) => setField('checkOutTime', e.target.value)} />
-            <div className="sm:col-span-2">
+            <TimePicker12h
+              label={t('stayGuestBooking.checkOutTime')}
+              name="checkOutTime"
+              value={form.checkOutTime}
+              onChange={(v) => setField('checkOutTime', v)}
+              minTime="00:00"
+              maxTime={checkOutTimeMax}
+            />
+            <div className="min-w-0 sm:col-span-2 lg:col-span-4">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('stayGuestBooking.room')}</label>
               <select className="input-field" value={form.roomId} onChange={(e) => setField('roomId', e.target.value)}>
                 {roomList.map((r) => (
@@ -132,7 +156,29 @@ export default function StayGuestBookingFormCore({
               </select>
             </div>
           </div>
-          {dateBlocked && <p className="text-sm text-red-600">{t('booking.unavailable')}</p>}
+          <p className="text-xs text-slate-500">
+            {t('stayGuestBooking.timesRangeHint', {
+              checkIn: formatTime12(checkInTimeMin),
+              checkOut: formatTime12(checkOutTimeMax),
+            })}
+          </p>
+          {form.checkIn && inventory?.capacity != null && (
+            <p
+              className={`text-sm font-medium ${
+                inventory.remaining <= 0
+                  ? 'text-red-600'
+                  : inventory.remaining <= 2
+                    ? 'text-amber-700'
+                    : 'text-emerald-700'
+              }`}
+            >
+              {t('booking.roomsRemaining', {
+                remaining: inventory.remaining,
+                capacity: inventory.capacity,
+              })}
+            </p>
+          )}
+          {dateBlocked && <p className="text-sm text-red-600">{t('booking.allRoomsBooked')}</p>}
         </Card>
 
         <Card className="space-y-4">
@@ -153,7 +199,7 @@ export default function StayGuestBookingFormCore({
             <Input label={t('stayGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
             <Input className="sm:col-span-2" label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChange={(e) => setField('leadAddress', e.target.value)} />
             <Input label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
-            <Input label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
+            <PincodeInput label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('stayGuestBooking.comingFrom')} value={form.comingFrom} onChange={(e) => setField('comingFrom', e.target.value)} />
             <Input label={t('stayGuestBooking.goingTo')} value={form.goingTo} onChange={(e) => setField('goingTo', e.target.value)} />
             <div className="sm:col-span-2">
@@ -242,6 +288,12 @@ export default function StayGuestBookingFormCore({
           </div>
         </Card>
 
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={onCustomChange || (() => {})}
+        />
+
         <Card className="space-y-4">
           <SectionTitle>{t('stayGuestBooking.sectionPayment')}</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -283,10 +335,12 @@ export default function StayGuestBookingFormCore({
               <span>{t('stayGuestBooking.subtotalNights', { count: nights })}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {/* GST temporarily disabled
             <div className="mt-1 flex justify-between">
               <span>{t('stayGuestBooking.gstLabel')}</span>
               <span>{formatCurrency(gst)}</span>
             </div>
+            */}
             <div className="mt-2 flex justify-between font-bold text-primary">
               <span>{t('stayGuestBooking.totalLabel')}</span>
               <span>{formatCurrency(total)}</span>

@@ -30,6 +30,7 @@ import HotelDetailPage from './pages/public/HotelDetailPage';
 import EnquiryPage from './pages/public/EnquiryPage';
 import SearchPage from './pages/public/SearchPage';
 import ContactPage from './pages/public/ContactPage';
+import AboutUsPage from './pages/public/AboutUsPage';
 import FaqPage from './pages/public/FaqPage';
 import BlogsPage from './pages/public/BlogsPage';
 import GuideBookingPage from './pages/public/GuideBookingPage';
@@ -131,6 +132,8 @@ export default function App() {
         <Route path="hourly-enquiry" element={<EnquiryPage type="HOURLY" />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="contact" element={<ContactPage />} />
+        <Route path="about-us" element={<AboutUsPage />} />
+        <Route path="about" element={<Navigate to="/about-us" replace />} />
         <Route path="faq" element={<FaqPage />} />
         <Route path="blogs" element={<BlogsPage />} />
         <Route path="about-mahabaleshwar" element={

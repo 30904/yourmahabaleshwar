@@ -10,6 +10,7 @@ import * as canvasser from '../controllers/canvasserController.js';
 import * as phase4 from '../controllers/phase4Controller.js';
 import * as staySub from '../controllers/stayListingSubscriptionController.js';
 import * as serviceMon from '../controllers/serviceMonetizationController.js';
+import * as formSchema from '../controllers/formSchemaController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAdminActions } from '../middleware/audit.js';
 import { uploadBannerImageMemory, uploadBlogCoverMemory, uploadExcel } from '../middleware/upload.js';
@@ -26,6 +27,8 @@ router.get('/public/faqs', admin.getPublicFaqs);
 router.get('/public/blogs', admin.getPublicBlogs);
 router.get('/public/destinations', domain.listDestinations);
 router.get('/public/document-requirements', domain.getDocumentRequirements);
+router.get('/public/service-hub-images', enterprise.getPublicServiceHubImages);
+router.get('/public/form-schemas', formSchema.getFormSchema);
 
 router.use(protect);
 router.use(auditAdminActions);
@@ -39,6 +42,10 @@ router.get('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise
 router.post('/enterprise/properties', authorize(...staffAndAdmin), enterprise.createAdminProperty);
 router.put('/enterprise/properties/:id', authorize(...staffAndAdmin), enterprise.updateAdminProperty);
 router.get('/enterprise/bookings', authorize(...staffAndAdmin), enterprise.getAdminBookings);
+router.post('/enterprise/bookings', authorize(...staffAndAdmin), enterprise.createAdminBooking);
+router.patch('/enterprise/bookings/:id/confirm-arrival', authorize(...staffAndAdmin), enterprise.adminConfirmArrival);
+router.patch('/enterprise/bookings/:id/confirm-end', authorize(...staffAndAdmin), enterprise.adminConfirmEnd);
+router.post('/enterprise/bookings/:id/email-invoice', authorize(...staffAndAdmin), enterprise.adminEmailInvoice);
 router.get('/enterprise/guides', authorize(...staffAndAdmin), enterprise.getAdminGuides);
 router.get('/enterprise/drivers', authorize(...staffAndAdmin), enterprise.getAdminDrivers);
 router.get('/enterprise/vendors', authorize(...staffAndAdmin), enterprise.getAdminVendors);
@@ -49,6 +56,8 @@ router.post('/enterprise/coupons', authorize(...adminOnly), enterprise.createCou
 router.patch('/enterprise/coupons/:id', authorize(...adminOnly), enterprise.updateCoupon);
 router.get('/enterprise/settings', authorize(...adminOnly), enterprise.getPlatformSettings);
 router.put('/enterprise/settings', authorize(...adminOnly), enterprise.updatePlatformSettings);
+router.get('/enterprise/service-hub-images', authorize(...staffAndAdmin), enterprise.getServiceHubImages);
+router.put('/enterprise/service-hub-images', authorize(...staffAndAdmin), enterprise.updateServiceHubImages);
 router.get('/enterprise/finance', authorize(...adminOnly), enterprise.getFinanceSummary);
 router.get('/upload-center/types', authorize(...adminOnly), uploadCenter.getUploadTypes);
 router.get('/upload-center/templates/:type', authorize(...adminOnly), uploadCenter.downloadTemplate);
@@ -158,6 +167,10 @@ router.post('/notification-templates/seed', authorize(...adminOnly), domain.seed
 router.get('/document-requirements', authorize(...staffAndAdmin, ...VENDOR_ROLES), domain.getDocumentRequirements);
 router.put('/document-requirements', authorize(...adminOnly), domain.upsertDocumentRequirement);
 router.post('/document-requirements/seed', authorize(...adminOnly), domain.seedDocumentRequirements);
+
+router.get('/form-schemas', authorize(...adminOnly), formSchema.getFormSchema);
+router.put('/form-schemas', authorize(...adminOnly), formSchema.upsertFormSchema);
+router.post('/form-schemas/seed', authorize(...adminOnly), formSchema.seedFormSchemas);
 
 router.get('/payments', authorize(...adminOnly), domain.listPayments);
 router.get('/refunds', authorize(...adminOnly), domain.listRefunds);

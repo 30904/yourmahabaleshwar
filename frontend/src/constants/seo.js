@@ -145,6 +145,11 @@ export const ROUTE_SEO = [
     description: 'Travel tips, viewpoints, and guides for visiting Mahabaleshwar.',
   },
   {
+    test: /^\/about-us/,
+    title: 'About Us',
+    description: 'Sakharam Laxman Mane — 40 years of trust, experience, and hospitality in Mahabaleshwar.',
+  },
+  {
     test: /^\/about-mahabaleshwar/,
     title: 'About Mahabaleshwar',
     description: 'Learn about Mahabaleshwar — strawberries, viewpoints, and hill-station travel.',

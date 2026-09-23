@@ -41,6 +41,21 @@ const platformSettingsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: () => ({}),
     },
+    /** Marketing images on public service hub pages (GUIDE / TAXI / DRIVER / HORSE) */
+    serviceHubImages: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({ GUIDE: [], TAXI: [], DRIVER: [], HORSE: [] }),
+    },
+    /** Layout mode per service hub page */
+    serviceHubLayouts: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({
+        GUIDE: 'collage',
+        TAXI: 'collage',
+        DRIVER: 'collage',
+        HORSE: 'collage',
+      }),
+    },
   },
   { timestamps: true }
 );

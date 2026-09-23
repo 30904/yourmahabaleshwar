@@ -32,6 +32,9 @@
     "favorites": "Favorites",
     "notifications": "Notifications",
     "comingSoon": "[coming soon]",
+    "enquireAboutProducts": "Enquire about products",
+    "enquireShopHint": "Call us on either number for shop enquiries.",
+    "closeEnquire": "Close",
     "markAllRead": "Mark all read",
     "noNotifications": "No unread notifications"
   },
@@ -63,7 +66,8 @@
     "accountCreated": "Account created!",
     "registerFailed": "Registration failed",
     "haveAccount": "Have an account?",
-    "mismatch": "Passwords do not match"
+    "mismatch": "Passwords do not match",
+    "passwordMin": "Password must be at least 6 characters"
   },
   "booking": {
     "confirm": "Confirm Booking",
@@ -76,6 +80,9 @@
     "myBookings": "My Bookings",
     "favorites": "Favorites",
     "unavailable": "Selected dates unavailable",
+    "allRoomsBooked": "All rooms for this listing are already booked for the selected dates",
+    "roomsRemaining": "{{remaining}}/{{capacity}} rooms remaining for these dates",
+    "tentsRemaining": "{{remaining}}/{{capacity}} tents remaining for these dates",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
     "guests": "Guests",
@@ -83,7 +90,51 @@
     "pending": "Pending",
     "confirmed": "Confirmed",
     "cancelled": "Cancelled",
-    "noBookings": "No bookings yet"
+    "noBookings": "No bookings yet",
+    "guideReachedButton": "Guide has reached",
+    "guideReachedConfirmAsk": "Confirm that the guide has reached you?",
+    "guideReachedSuccess": "Guide arrival confirmed. Admin has been notified.",
+    "guideReachedFailed": "Could not confirm guide arrival",
+    "guideReachedConfirmed": "Guide arrival confirmed",
+    "endGuideButton": "End booking",
+    "endGuideTitle": "End guide booking",
+    "endGuideOvertimeHint": "If the tour ran past the package duration, enter overtime hours ({{rate}}/hr).",
+    "overtimeHours": "Overtime hours",
+    "overtimeChargePreview": "Overtime charge: {{amount}}",
+    "endGuideConfirm": "Confirm end booking",
+    "endGuideConfirmAsk": "End this guide booking with no overtime?",
+    "endGuideConfirmWithOvertime": "End booking with {{hours}} hr overtime ({{amount}})? This will update the invoice.",
+    "endGuideSuccess": "Booking ended. You can download the invoice now.",
+    "endGuideFailed": "Could not end booking",
+    "guideEnded": "Booking ended",
+    "overtimeSummary": "Overtime {{hours}} hr ({{amount}})",
+    "close": "Cancel",
+    "vendorArrivedButton": "I have arrived",
+    "vendorArrivedAsk": "Mark that you have reached the customer?",
+    "vendorArrivedSuccess": "Arrival marked. Waiting for customer confirmation.",
+    "vendorArrivedFailed": "Could not mark arrival",
+    "confirmArrivalButton": "Confirm partner arrived",
+    "confirmArrivalAsk": "Confirm that your partner has reached you?",
+    "confirmArrivalSuccess": "Arrival confirmed.",
+    "confirmArrivalFailed": "Could not confirm arrival",
+    "proposeEndButton": "End booking",
+    "proposeEndTitle": "End booking & overtime",
+    "proposeEndOvertimeHint": "If the trip ran past the package duration, enter overtime hours ({{rate}}/hr). Customer must confirm.",
+    "proposeEndConfirm": "Send end request",
+    "proposeEndAsk": "Propose ending this booking with no overtime?",
+    "proposeEndWithOvertime": "Propose ending with {{hours}} hr overtime ({{amount}})? Customer must confirm.",
+    "proposeEndSuccess": "End request sent. Waiting for customer confirmation.",
+    "proposeEndFailed": "Could not propose ending",
+    "confirmEndButton": "Confirm end booking",
+    "confirmEndAsk": "Confirm ending this booking with no overtime?",
+    "confirmEndWithOvertime": "Confirm ending with {{hours}} hr overtime ({{amount}})? Invoice will be generated.",
+    "confirmEndSuccess": "Booking ended. You can download the invoice now.",
+    "confirmEndFailed": "Could not confirm end",
+    "statusVendorArrived": "Partner arrived — waiting for your confirmation",
+    "statusArrivalConfirmed": "Arrival confirmed",
+    "statusEndProposed": "End requested — waiting for your confirmation",
+    "statusEnded": "Booking ended",
+    "noOvertime": "No overtime"
   },
   "home": {
     "headline": "Discover Mahabaleshwar",
@@ -584,7 +635,8 @@
     "section5": "5. Documents Required",
     "section6": "6. Bank Details (For Payment Settlement)",
     "section7": "7. Terms & Partner Agreement",
-    "section8": "8. Declaration",
+    "section8": "8. Rules & Regulations",
+    "section9": "9. Declaration",
     "fullName": "Full Name",
     "gender": "Gender",
     "selectGender": "Select gender",
@@ -624,6 +676,9 @@
     "termsTitle": "Driver Partner Terms & Conditions",
     "readFullTerms": "Read full Terms & Conditions",
     "readPartnerAgreement": "Read Partner Agreement",
+    "readRules": "Read Rules & Regulations",
+    "rulesIntro": "Strict taxi and driver booking rules of S.M. Enterprises. Click below to read the full Rules & Regulations.",
+    "acceptRules": "I have read and agree to the Rules & Regulations of S.M. Enterprises for taxi and driver partners.",
     "acceptTerms": "I have read and agree to the Driver Partner Terms and Conditions of S.M. Enterprises.",
     "acceptAgreement": "I have read the Driver Partner Registration Agreement and agree to abide by it.",
     "partnerAgreementTitle": "Driver Partner Registration Agreement",
@@ -717,7 +772,8 @@
     "section5": "5. Documents Required",
     "section6": "6. Bank Details (For Payment Settlement)",
     "section7": "7. Terms & Partner Agreement",
-    "section8": "8. Declaration",
+    "section8": "8. Rules & Regulations",
+    "section9": "9. Declaration",
     "fleetBusinessName": "Fleet / Business Name",
     "proprietorName": "Proprietor / Owner Full Name",
     "gender": "Gender",
@@ -759,6 +815,9 @@
     "termsTitle": "Taxi Operator Partner Terms & Conditions",
     "readFullTerms": "Read full Terms & Conditions",
     "readPartnerAgreement": "Read Partner Agreement",
+    "readRules": "Read Rules & Regulations",
+    "rulesIntro": "Strict taxi and driver booking rules of S.M. Enterprises. Click below to read the full Rules & Regulations.",
+    "acceptRules": "I have read and agree to the Rules & Regulations of S.M. Enterprises for taxi and driver partners.",
     "acceptTerms": "I have read and agree to the Taxi Operator Partner Terms and Conditions of S.M. Enterprises.",
     "acceptAgreement": "I have read the Taxi Operator Partner Registration Agreement and agree to abide by it.",
     "partnerAgreementTitle": "Taxi Operator Partner Registration Agreement",
@@ -970,6 +1029,9 @@
     "section4": "4. Bank Details (For Payment Settlement)",
     "section6": "6. Declaration",
     "ownerName": "Owner/Partner Name",
+    "managerName": "Manager Name",
+    "managerNumber": "Manager Number",
+    "extraMobileNumber": "Extra Mobile Number",
     "pinCode": "Pin Code",
     "fullAddress": "Full Address",
     "cityDistrict": "City/District",
@@ -1157,6 +1219,8 @@
     "checkInTime": "Check-in time",
     "checkOutDate": "Check-out date",
     "checkOutTime": "Check-out time",
+    "timesFixedHint": "Fixed by the property — you cannot change these times.",
+    "timesRangeHint": "Check-in from {{checkIn}} or later · Check-out by {{checkOut}} or earlier.",
     "room": "Room",
     "perNight": "/ night",
     "fullName": "Full Name",
@@ -1293,9 +1357,10 @@
     "formDate": "Date",
     "section1": "1. Tour Details",
     "section2": "2. Customer Details",
-    "section3": "3. Tour Plan & Spots",
-    "section4": "4. Group Members",
-    "section5": "5. Payment & Fare",
+    "section3": "3. Notes",
+    "sectionGroupMembers": "Group Members",
+    "section4": "4. Payment & Fare",
+    "section5": "5. Terms & Conditions",
     "section6": "Terms & Conditions",
     "tourDate": "Tour date",
     "startTime": "Tour start time",
@@ -1304,12 +1369,21 @@
     "package12hr": "12 hours",
     "rateChartTitle": "Official package rate chart",
     "rateChartNote": "Rates as per S.M. Enterprises guide booking form (4-seater sightseeing).",
-    "openRateHint": "Spot entry fees, parking and personal expenses are extra. GST is added at checkout.",
+    "sightseeingTitle": "Tour sightseeing breakdown: 4 hours vs 8 hours",
+    "sightseeingNote": "Points covered under each package as per the official S.M. Enterprises guide form.",
+    "openRateHint": "Spot entry fees, parking and personal expenses are extra.",
+    "overtimeNote": "Overtime: if the guided tour extends beyond the selected package duration, {{rate}}/hr will be charged.",
     "chartPackage": "Package",
     "chartDuration": "Duration",
     "chartGuideOnly": "Guide only",
     "chartGuideBike": "Guide + bike",
+    "chartTourType": "Tour type",
+    "chartFourHour": "4 hours package (half day)",
+    "chartEightHour": "8 hours package (full day with extended points)",
+    "chartSixHourPackage": "6 hours package",
     "tourLocationLabel": "Tour location",
+    "pointsCoveredTitle": "Points covered — {{tour}} ({{package}})",
+    "pointsCoveredHint": "These sightseeing points are included for the package you selected. Switch package or tour to compare.",
     "packages": {
       "fourHour": {
         "name": "4-hour package",
@@ -1322,31 +1396,133 @@
     },
     "tours": {
       "mahabaleshwar1": {
-        "name": "Tour 1 — Mahabaleshwar Darshan"
+        "name": "Tour 1 — Mahabaleshwar Darshan",
+        "fourHourSpots": [
+          "Old Mahabaleshwar",
+          "Panchganga Temple",
+          "Gupt Mandir",
+          "Arthur Seat",
+          "Widow Point",
+          "Tiger Spring",
+          "Strawberry Garden"
+        ],
+        "eightHourSpots": [
+          "Old Mahabaleshwar",
+          "Panchganga Temple",
+          "Gupt Mandir",
+          "Arthur Seat",
+          "Widow Point",
+          "Tiger Spring",
+          "Hunting Point",
+          "Malcolm Point",
+          "Elphinstone Point",
+          "Kate's Point",
+          "Sydenham Hole",
+          "Elphin's Head",
+          "Strawberry Garden"
+        ]
       },
       "mahabaleshwar2": {
-        "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point)"
+        "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point)",
+        "fourHourSpots": [
+          "Wilson Point",
+          "Ganesh Temple",
+          "Plato Point",
+          "Lingmala Waterfall",
+          "Venna Lake",
+          "Mumbai Point"
+        ],
+        "eightHourSpots": [
+          "Wilson Point",
+          "Ganesh Temple",
+          "Plato Point",
+          "King's Chair",
+          "Lingmala Waterfall",
+          "Venna Lake",
+          "Kimi Dam",
+          "Lodwick Point",
+          "Mumbai Point"
+        ]
       },
       "pratapgad": {
-        "name": "Tour 3 — Pratapgad Darshan"
+        "name": "Tour 3 — Pratapgad Darshan",
+        "fourHourSpots": [
+          "Pratapgad Fort",
+          "Bhavani Mata Temple",
+          "Pratap Garden",
+          "Shivaji Maharaj Statue",
+          "Kadelot Point"
+        ],
+        "eightHourSpots": [
+          "Pratapgad Fort",
+          "Bhavani Mata Temple",
+          "Pratap Garden",
+          "Shivaji Maharaj Statue",
+          "Kadelot Point",
+          "Afzal Khan Tomb",
+          "Shivkalin Village and peaceful exploration of the entire premises"
+        ],
+        "note": "Additional expense may apply for Shri Ramvaradayini Temple premises."
       },
       "panchgani": {
-        "name": "Tour 4 — Panchgani Darshan"
+        "name": "Tour 4 — Panchgani Darshan",
+        "fourHourSpots": [
+          "Parsi Point",
+          "Table Land (Caves)",
+          "Museum (Gureghar)",
+          "Bhilar Waterfall (during monsoon season)"
+        ],
+        "eightHourSpots": [
+          "Parsi Point",
+          "Table Land (Caves)",
+          "Museum (Gureghar)",
+          "Bhilar Waterfall (monsoon)",
+          "Devrai Art Village / On Wheels Theme Park"
+        ],
+        "note": "Additional expense may apply for Velocity / Mapro Garden."
       },
       "panchganiWai": {
-        "name": "Tour 5 — Panchgani / Wai Darshan"
+        "name": "Tour 5 — Panchgani / Wai Darshan",
+        "fourHourSpots": [
+          "Sydney Point",
+          "Wai (Ganpati Temple & Kashi Vishveshwar Temple)",
+          "Dhom Dam"
+        ],
+        "eightHourSpots": [
+          "Sydney Point",
+          "Wai (Ganpati Temple & Kashi Vishveshwar Temple)",
+          "Dhom Dam",
+          "Nana Fadnavis Wada (Menavli)",
+          "Mapro Factory (Sendurjane Wai)"
+        ]
       },
       "tapola": {
-        "name": "Tour 6 — Tapola Darshan"
+        "name": "Tour 6 — Tapola Darshan",
+        "fourHourSpots": [
+          "Mini Kashmir",
+          "Shivsagar Darshan"
+        ],
+        "eightHourSpots": [
+          "Mini Kashmir",
+          "Water Sports",
+          "Shivsagar Darshan (extended scenic points up to 8 hours)"
+        ]
       }
     },
     "bikeAddon": "Bike add-on",
     "bikeAddonHint": "Add bike service (+{{price}})",
+    "bikeAddonLabel": "Add bike service (+{{price}})",
+    "bikeAddonYes": "Yes",
+    "bikeAddonNo": "No",
+    "bikeAddonAskYes": "Are you sure you want to add bike service?\n(+{{price}})",
+    "bikeAddonAskNo": "Are you sure you don't want to add bike service?",
+    "bikeAddonConfirm": "Confirm",
     "touristCount": "Number of tourists",
     "fullName": "Full Name",
     "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "hotelOrPickupAddress": "Hotel name / pickup address",
     "cityState": "City & State",
     "pinCode": "Pin Code",
     "emergencyName": "Emergency contact name",
@@ -1354,6 +1530,7 @@
     "pickupLocation": "Pickup / meeting point",
     "preferredSpots": "Preferred sightseeing spots",
     "specialRequests": "Special instructions / notes",
+    "notes": "Notes",
     "guestFullName": "Guest {{n}} full name",
     "age": "Age",
     "gender": "Gender",
@@ -1382,6 +1559,7 @@
       "Bookings are subject to guide availability on the selected date.",
       "Accepted tour timings and pickup point must be confirmed with the guide.",
       "Package rates are as listed; bike add-on is optional and charged separately.",
+      "Overtime beyond the selected package duration is charged at ₹150/hr.",
       "Cancellation within 1–2 hours of tour start may not be permitted as per guide policy.",
       "Follow local tourism rules and guide instructions during the tour."
     ],
@@ -1392,7 +1570,7 @@
       },
       {
         "heading": "2. Packages & Pricing",
-        "body": "6-hour and 12-hour packages are charged as per the guide listing. Optional bike add-on, if selected, is added to the package price. GST is calculated at checkout."
+        "body": "6-hour and 12-hour packages are charged as per the guide listing. Optional bike add-on, if selected, is added to the package price. Overtime beyond the selected package duration is charged at ₹150/hr."
       },
       {
         "heading": "3. Pickup & Itinerary",
@@ -1451,8 +1629,10 @@
     ],
     "validation": {
       "tourDate": "Tour date is required",
+      "bikeAddon": "Please select Yes or No for bike service",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "acceptTerms": "Please accept the Terms and Conditions",
       "unavailable": "Guide not available on selected date"
     }
@@ -1464,7 +1644,7 @@
     "section1": "1. Trip Details",
     "section2": "2. Customer Details",
     "section3": "3. Route & Destinations",
-    "section4": "4. Co-passengers",
+    "section4": "4. Payment & Fare",
     "section5": "5. Payment & Fare",
     "section6": "Terms & Conditions",
     "tripDate": "Trip date",
@@ -1473,7 +1653,7 @@
     "perTrip": "Per trip",
     "hourly": "Hourly",
     "rateChartTitle": "Indicative fare chart",
-    "openRateHint": "Outstation drop / one-way is quoted separately. GST is added at checkout.",
+    "openRateHint": "Outstation drop / one-way is quoted separately.",
     "selectedPackageLabel": "Selected driver package",
     "chartPackage": "Package",
     "chartDetails": "Details",
@@ -1509,14 +1689,22 @@
     "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "hotelOrPickupAddress": "Hotel/pickup address",
     "cityState": "City & State",
     "pinCode": "Pin Code",
     "emergencyName": "Emergency contact name",
     "emergencyMobile": "Emergency mobile",
     "pickupLocation": "Pickup location",
     "dropLocation": "Drop location",
+    "routeTripTypeLabel": "Type",
+    "routeTripTypes": {
+      "roundTrip": "Round trip",
+      "oneWay": "One way",
+      "drop": "Drop"
+    },
     "preferredDestinations": "Preferred destinations / route",
     "specialRequests": "Special instructions / notes",
+    "companyRateContactNote": "Company will contact you for the rate.",
     "guestFullName": "Passenger {{n}} full name",
     "age": "Age",
     "gender": "Gender",
@@ -1530,6 +1718,7 @@
     "subtotalLabel": "Subtotal",
     "gstLabel": "GST (12%)",
     "totalLabel": "Total",
+    "directDriverPaymentNote": "Direct payment will be done to the driver; platform will take no extra charge or fee.",
     "advanceAmount": "Advance amount (₹)",
     "paymentMode": "Payment mode",
     "payCash": "Cash",
@@ -1555,7 +1744,7 @@
       },
       {
         "heading": "2. Trip Types & Pricing",
-        "body": "Per trip and hourly packages are charged as per the driver listing. For hourly bookings, the minimum hours and rate shown apply. GST is calculated at checkout."
+        "body": "Per trip and hourly packages are charged as per the driver listing. For hourly bookings, the minimum hours and rate shown apply."
       },
       {
         "heading": "3. Pickup & Route",
@@ -1624,7 +1813,9 @@
       "tripDate": "Trip date is required",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "pickup": "Pickup location is required",
+      "drop": "Drop location is required for one way and drop trips",
       "acceptTerms": "Please accept the Terms and Conditions",
       "unavailable": "Driver partner not available on selected date"
     },
@@ -1640,7 +1831,7 @@
     "section1": "1. Trip Details",
     "section2": "2. Customer Details",
     "section3": "3. Route & Destinations",
-    "section4": "4. Co-passengers",
+    "section4": "4. Payment & Fare",
     "section5": "5. Payment & Fare",
     "section6": "Terms & Conditions",
     "tripDate": "Trip date",
@@ -1649,43 +1840,126 @@
     "perTrip": "Per trip",
     "hourly": "Hourly",
     "rateChartTitle": "Indicative fare chart",
-    "openRateHint": "Rates are for 4-seater Non A/C as per S.M. Enterprises tariff. Toll, parking and extras are additional. GST is added at checkout.",
-    "localToursTitle": "Local sightseeing tours (4-seater Non A/C)",
-    "localToursNote": "Duration and key points as per the official taxi rate chart.",
+    "openRateHint": "Rates are for 4-seater Non A/C as per S.M. Enterprises tariff. Toll, parking and extras are additional.",
+    "localToursTitle": "Local sightseeing tours rate chart (4-seater Non A/C)",
+    "localToursNote": "Official S.M. Enterprises taxi tariff — duration and key points as listed.",
     "outstationTitle": "Out of Mahabaleshwar drop & pick-up",
-    "outstationNote": "Toll and parking charges are extra unless noted.",
-    "chartTour": "Tour",
+    "outstationNote": "Toll and parking charges are extra (Toll + Extra).",
+    "chartTour": "Tour name",
     "chartDuration": "Duration",
+    "chartKeyPoints": "Key points",
     "chartRoute": "Route",
+    "chartDrop": "Drop",
+    "chartReturn": "Return",
     "chartRate": "Rate",
     "selectedRouteLabel": "Selected tour / route",
     "routeCategoryLabel": "Trip category",
+    "carTypeLabel": "Car type",
+    "carTypes": {
+      "ac4": "AC 4 seater",
+      "ac7": "AC 7 seater",
+      "nonAc4": "NON AC 4 seater",
+      "nonAc7": "NON AC 7 seater",
+      "miniTravels19": "Mini Travels 19 seater"
+    },
     "selectedFareLabel": "Fare for selected route",
     "tollExtra": "(+ toll extra)",
+    "pointsCoveredTitle": "Points covered — {{tour}} ({{duration}})",
+    "pointsCoveredHint": "These sightseeing points are included for the tour you selected. Switch tour or route to compare.",
+    "tollExtraNote": "Toll, parking and other extras are charged separately where applicable (especially on outstation routes).",
+    "chartRows": {
+      "local5km": "Local up to 5 km",
+      "mapro": "Mapro Garden",
+      "panchganiWai": "Panchgani / Wai",
+      "satara": "Satara bus stand / railway station",
+      "pune": "Pune railway station / airport",
+      "poladpur": "Poladpur / Mahad",
+      "raigad": "Raigad Fort",
+      "khed": "Khed / Chiplun",
+      "coastal": "Alibag / Matheran / Ganpatipule",
+      "coastalRates": "₹15,000 / ₹17,500 / ₹16,000",
+      "mumbai": "Mumbai (Dadar, Vashi, city / airport)"
+    },
     "tours": {
       "mahabaleshwar1": {
-        "name": "Tour 1 — Mahabaleshwar Darshan",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 1: Mahabaleshwar Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Old Mahabaleshwar",
+          "Panchganga Temple",
+          "Shiva Temple",
+          "Arthur's Seat",
+          "Window Point",
+          "Tiger Spring",
+          "Hunting Point",
+          "Malkam",
+          "Elphinstone",
+          "Kate's Point",
+          "Needle Hole",
+          "Elephant Head",
+          "Strawberry Garden"
+        ]
       },
       "mahabaleshwar2": {
-        "name": "Tour 2 — Mahabaleshwar Darshan (Wilson Point route)",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 2: Mahabaleshwar Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Wilson Point",
+          "Ganesh Temple",
+          "Plato Point",
+          "King's Chair",
+          "Lingmala Waterfall",
+          "Venna Lake Mini Dam",
+          "Lodwick Point",
+          "Mumbai Point"
+        ]
       },
       "pratapgad": {
-        "name": "Tour 3 — Pratapgad Darshan",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 3: Pratapgad Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Pratapgad Fort",
+          "Bhavani Mata Temple",
+          "Pratap Garden",
+          "Shivaji Maharaj Statue",
+          "Kadelot Point",
+          "Afzal Khan's Tomb",
+          "Shivkalin Village"
+        ],
+        "note": "Extra cost: Shree Ramvardayini Temple Par"
       },
       "panchgani": {
-        "name": "Tour 4 — Panchgani Darshan",
-        "duration": "3 hr"
+        "name": "Tour No. 4: Panchgani Darshan",
+        "duration": "3.00 hours",
+        "points": [
+          "Parsi Point",
+          "Table Land (Caves)",
+          "Museum (Gurghar)",
+          "Bhilar Waterfall (in monsoon)",
+          "Edvis World Theme Park"
+        ],
+        "note": "Extra cost: Velocity, Mapro Garden"
       },
       "panchganiWai": {
-        "name": "Tour 5 — Panchgani / Wai Darshan",
-        "duration": "6 hr"
+        "name": "Tour No. 5: Panchgani / Wai Darshan",
+        "duration": "6.00 hours",
+        "points": [
+          "Sydney Point",
+          "Wai (Ganpati Temple & Kashivishweshwar Temple)",
+          "Dhom Dam",
+          "Nana Phadnavis Wada (Menavali)",
+          "Mapro Factory (Shendurjane Wai)"
+        ]
       },
       "tapola": {
-        "name": "Tour 6 — Tapola Darshan",
-        "duration": "3 hr 30 min"
+        "name": "Tour No. 6: Tapola Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Mini Kashmir",
+          "Water Sports",
+          "Shivsagar Darshan"
+        ],
+        "note": "Extra cost: Honey Village / Maghar Village"
       }
     },
     "routes": {
@@ -1708,22 +1982,22 @@
         "name": "Panchgani / Wai — Return"
       },
       "sataraDrop": {
-        "name": "Satara bus stand / railway — Drop"
+        "name": "Satara bus stand / railway station — Drop"
       },
       "sataraReturn": {
-        "name": "Satara bus stand / railway — Return"
+        "name": "Satara bus stand / railway station — Return"
       },
       "puneDrop": {
-        "name": "Pune railway / airport — Drop"
+        "name": "Pune railway station / airport — Drop"
       },
       "puneReturn": {
-        "name": "Pune railway / airport — Return"
+        "name": "Pune railway station / airport — Return"
       },
       "mumbaiDrop": {
-        "name": "Mumbai (Dadar / W.T. / airport) — Drop"
+        "name": "Mumbai (Dadar, Vashi, city / airport) — Drop"
       },
       "mumbaiReturn": {
-        "name": "Mumbai (Dadar / W.T. / airport) — Return"
+        "name": "Mumbai (Dadar, Vashi, city / airport) — Return"
       },
       "poladpurDrop": {
         "name": "Poladpur / Mahad — Drop"
@@ -1743,8 +2017,11 @@
       "alibag": {
         "name": "Alibag"
       },
+      "matheran": {
+        "name": "Matheran"
+      },
       "murud": {
-        "name": "Murud"
+        "name": "Matheran"
       },
       "ganpatipule": {
         "name": "Ganpatipule"
@@ -1757,12 +2034,19 @@
     "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "hotelOrPickupAddress": "Hotel/pickup address",
     "cityState": "City & State",
     "pinCode": "Pin Code",
     "emergencyName": "Emergency contact name",
     "emergencyMobile": "Emergency mobile",
     "pickupLocation": "Pickup location",
     "dropLocation": "Drop location",
+    "routeTripTypeLabel": "Type",
+    "routeTripTypes": {
+      "roundTrip": "Round trip",
+      "oneWay": "One way",
+      "drop": "Drop"
+    },
     "preferredDestinations": "Preferred destinations / route",
     "specialRequests": "Special instructions / notes",
     "guestFullName": "Passenger {{n}} full name",
@@ -1778,6 +2062,7 @@
     "subtotalLabel": "Subtotal",
     "gstLabel": "GST (12%)",
     "totalLabel": "Total",
+    "directDriverPaymentNote": "Direct payment will be done to the taxi driver; platform will take no extra charge or fee.",
     "advanceAmount": "Advance amount (₹)",
     "paymentMode": "Payment mode",
     "payCash": "Cash",
@@ -1803,7 +2088,7 @@
       },
       {
         "heading": "2. Trip Types & Pricing",
-        "body": "Per trip and hourly packages are charged as per the taxi listing. For hourly bookings, the minimum hours and rate shown apply. GST is calculated at checkout."
+        "body": "Per trip and hourly packages are charged as per the taxi listing. For hourly bookings, the minimum hours and rate shown apply."
       },
       {
         "heading": "3. Pickup, Drop & Route",
@@ -1880,6 +2165,7 @@
       "tripDate": "Trip date is required",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "pickup": "Pickup location is required",
       "drop": "Drop location is required for per-trip bookings",
       "acceptTerms": "Please accept the Terms and Conditions",
@@ -1896,7 +2182,7 @@
     "perTrip": "Per trip",
     "hourly": "Hourly",
     "rateChartTitle": "Indicative fare chart",
-    "openRateHint": "Final fare may vary slightly based on vehicle assigned and route. GST is added at checkout.",
+    "openRateHint": "Final fare may vary slightly based on vehicle assigned and route.",
     "fromLabel": "From",
     "priceNote": "per trip · incl. taxes at checkout",
     "completeFormHint": "Complete the taxi booking form below.",
@@ -1912,7 +2198,7 @@
     "perTrip": "Per trip",
     "hourly": "Hourly",
     "rateChartTitle": "Indicative fare chart",
-    "openRateHint": "Final fare may vary slightly based on vehicle assigned and route. GST is added at checkout.",
+    "openRateHint": "Final fare may vary slightly based on vehicle assigned and route.",
     "fromLabel": "From",
     "priceNote": "per trip · incl. taxes at checkout",
     "completeFormHint": "Complete the driver booking form below.",
@@ -1928,7 +2214,7 @@
     "formDate": "Date",
     "section1": "1. Ride Details",
     "section2": "2. Customer Details",
-    "section3": "3. Meeting Point & Notes",
+    "section3": "3. Notes",
     "section4": "4. Additional Riders",
     "section5": "5. Payment & Fare",
     "section6": "Terms & Safety",
@@ -1936,7 +2222,7 @@
     "startTime": "Preferred start time",
     "routeLabel": "Select route / trail",
     "rateChartTitle": "Official package rate chart",
-    "openRateHint": "Rates as per S.M. Enterprises horse riding form. GST is added at checkout.",
+    "openRateHint": "Rates as per S.M. Enterprises horse riding form.",
     "chartPackage": "Package",
     "chartDetails": "Details",
     "chartRate": "Rate",
@@ -1972,6 +2258,7 @@
     "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "hotelOrPickupAddress": "Hotel/pickup address",
     "cityState": "City & State",
     "pinCode": "Pin Code",
     "emergencyName": "Emergency contact name",
@@ -2030,7 +2317,7 @@
       },
       {
         "heading": "2. Routes & Pricing",
-        "body": "Each route/trail is charged as per the listing. Duration and fare shown apply to the selected route. GST is calculated at checkout."
+        "body": "Each route/trail is charged as per the listing. Duration and fare shown apply to the selected route."
       },
       {
         "heading": "3. Meeting Point & Conduct",
@@ -2050,6 +2337,7 @@
       "route": "Please select a route",
       "fullName": "Full name is required",
       "mobile": "Mobile number is required",
+      "email": "Email is required",
       "acceptSafety": "Please confirm safety requirements",
       "acceptTerms": "Please accept the Terms and Conditions",
       "unavailable": "No slots available on selected date"
@@ -2080,6 +2368,15 @@
   },
   "serviceBooking": {
     "bookNow": "Book now",
+    "enquireAboutHorse": "Enquire about horse",
+    "enquireHorseHint": "Call us on either number for horse ride enquiries.",
+    "enquireAboutGuide": "Enquire about guide",
+    "enquireGuideHint": "Call us on either number for guide enquiries.",
+    "enquireAboutTaxi": "Enquire about taxi",
+    "enquireTaxiHint": "Call us on either number for taxi enquiries.",
+    "enquireAboutDriver": "Enquire about driver",
+    "enquireDriverHint": "Call us on either number for driver enquiries.",
+    "closeEnquire": "Close",
     "browseListings": "Browse listings",
     "openFormSubtitle": "Fill in your details — our team will assign the best available partner and confirm your booking.",
     "requestSubmitted": "Request submitted! Admin will assign a vendor shortly.",

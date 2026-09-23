@@ -69,9 +69,20 @@ export const generateInvoicePdf = async ({ booking, customer, vendor, listingNam
   const filePath = path.join(invoicesDir, fileName);
 
   const sellerName = listingName || vendor?.name || 'Service Partner';
-  const subtotal = Number(booking.subtotal || 0);
-  const gst = Number(booking.gst || 0);
-  const total = Number(booking.total || subtotal + gst);
+  const overtimeAmount = Number(booking.overtimeAmount || 0);
+  const overtimeHours = Number(booking.overtimeHours || 0);
+  const overtimeRate = Number(booking.overtimeRatePerHour || 0);
+  const packageSubtotal = Number(
+    booking.packageSubtotal != null
+      ? booking.packageSubtotal
+      : Math.max(0, Number(booking.subtotal || 0) - overtimeAmount)
+  );
+  const subtotal = Number(booking.subtotal != null ? booking.subtotal : packageSubtotal + overtimeAmount);
+  // GST temporarily disabled
+  // const gst = Number(booking.gst || 0);
+  // const total = Number(booking.total || subtotal + gst);
+  const gst = 0;
+  const total = Number(booking.total != null ? booking.total : subtotal);
 
   await new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -192,6 +203,8 @@ export const generateInvoicePdf = async ({ booking, customer, vendor, listingNam
       .filter(Boolean)
       .join(' · ');
 
+    const packageAmount = overtimeAmount > 0 ? packageSubtotal : subtotal;
+
     doc.roundedRect(left, y, contentWidth, 36, 6).lineWidth(1).fillAndStroke('#ffffff', BRAND.line);
     doc
       .fillColor(BRAND.muted)
@@ -202,12 +215,29 @@ export const generateInvoicePdf = async ({ booking, customer, vendor, listingNam
       .font('Helvetica')
       .text(description, left + 40, y + 12, { width: contentWidth - 160 })
       .font('Helvetica-Bold')
-      .text(formatINR(subtotal), left, y + 12, { width: contentWidth - 16, align: 'right' });
+      .text(formatINR(packageAmount), left, y + 12, { width: contentWidth - 16, align: 'right' });
 
-    y += 56;
+    y += 42;
+    if (overtimeAmount > 0) {
+      const overtimeDesc = `Overtime (${overtimeHours} hr × ${formatINR(overtimeRate)}/hr)`;
+      doc.roundedRect(left, y, contentWidth, 36, 6).lineWidth(1).fillAndStroke('#ffffff', BRAND.line);
+      doc
+        .fillColor(BRAND.muted)
+        .font('Helvetica')
+        .fontSize(10)
+        .text('2', left + 12, y + 12)
+        .fillColor(BRAND.text)
+        .font('Helvetica')
+        .text(overtimeDesc, left + 40, y + 12, { width: contentWidth - 160 })
+        .font('Helvetica-Bold')
+        .text(formatINR(overtimeAmount), left, y + 12, { width: contentWidth - 16, align: 'right' });
+      y += 42;
+    }
+
+    y += 14;
     const boxW = 240;
     const boxX = right - boxW;
-    const boxH = 110;
+    const boxH = overtimeAmount > 0 ? 130 : 110;
     doc.roundedRect(boxX, y, boxW, boxH, 10).fill(BRAND.soft);
 
     const labelX = boxX + 16;
@@ -226,8 +256,13 @@ export const generateInvoicePdf = async ({ booking, customer, vendor, listingNam
       ty += bold ? 22 : 20;
     };
 
+    if (overtimeAmount > 0) {
+      row('Package', formatINR(packageAmount));
+      row('Overtime', formatINR(overtimeAmount));
+    }
     row('Subtotal', formatINR(subtotal));
-    row('GST (12%)', formatINR(gst));
+    // GST temporarily disabled
+    // row('GST (12%)', formatINR(gst));
     doc
       .strokeColor(BRAND.line)
       .moveTo(labelX, ty - 4)
@@ -293,8 +328,11 @@ export const generateSubscriptionInvoicePdf = async ({
   const filePath = path.join(invoicesDir, fileName);
   const logoPath = resolveLogoPath();
   const subtotal = Number(amount || 0);
-  const gst = Number(gstAmount || 0);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = Number(gstAmount || 0);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
 
   await new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -436,7 +474,8 @@ export const generateSubscriptionInvoicePdf = async ({
       ty += bold ? 22 : 18;
     };
     row('Subtotal', formatINR(subtotal));
-    if (gst > 0) row('GST', formatINR(gst));
+    // GST temporarily disabled
+    // if (gst > 0) row('GST', formatINR(gst));
     row('Grand Total', formatINR(total), true);
 
     y += 110;

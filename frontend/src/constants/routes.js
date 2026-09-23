@@ -1,6 +1,7 @@
 export const ROUTES = {
   HOME: '/',
-  ABOUT: '/about-mahabaleshwar',
+  ABOUT: '/about-us',
+  ABOUT_MAHABALESHWAR: '/about-mahabaleshwar',
   HOTELS: '/hotels',
   RESORTS: '/resorts',
   TENTS: '/tents',

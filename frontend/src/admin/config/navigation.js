@@ -172,6 +172,7 @@ export const adminNavGroups = [
       { to: '/admin/cms/banners', label: 'Banners', icon: Image },
       { to: '/admin/cms/blogs', label: 'Blogs', icon: FileText },
       { to: '/admin/cms/faqs', label: 'FAQs', icon: HelpCircle },
+      { to: '/admin/cms/service-images', label: 'Service page images', icon: Image },
       { to: '/admin/cms/seo', label: 'SEO Settings', icon: Globe },
     ],
   },
@@ -191,6 +192,8 @@ export const adminNavGroups = [
     items: [
       { to: '/admin/kyc', label: 'KYC Approvals', icon: Shield },
       { to: '/admin/settings', label: 'Platform Settings', icon: Settings, superAdminOnly: true },
+      { to: '/admin/settings/customer-forms', label: 'Customer Forms', icon: ClipboardList, superAdminOnly: true },
+      { to: '/admin/settings/vendor-forms', label: 'Vendor Forms', icon: FileText, superAdminOnly: true },
       { to: '/admin/settings/service-monetization', label: 'Service subscriptions', icon: CreditCard, superAdminOnly: true },
       { to: '/admin/upload-center', label: 'Upload Center', icon: Upload, superAdminOnly: true },
       { to: '/admin/backups', label: 'Backups', icon: HardDrive, superAdminOnly: true },

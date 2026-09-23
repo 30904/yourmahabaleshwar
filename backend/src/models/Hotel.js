@@ -30,6 +30,9 @@ const hotelSchema = new mongoose.Schema(
     description: { type: String },
     shortDescription: { type: String },
     ownerName: { type: String },
+    managerName: { type: String },
+    managerNumber: { type: String },
+    extraMobileNumber: { type: String },
     address: {
       line1: String,
       line2: String,
@@ -52,6 +55,7 @@ const hotelSchema = new mongoose.Schema(
     reviewCount: { type: Number, default: 0 },
     vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isActive: { type: Boolean, default: true },
+    customFormData: { type: mongoose.Schema.Types.Mixed, default: {} },
     approvalStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'APPROVED' },
     isFeatured: { type: Boolean, default: false },
     checkInTime: { type: String, default: '14:00' },

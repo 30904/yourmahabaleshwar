@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Images, Wifi, Car, Coffee, Tent } from 'lucide-react';
+import { MapPin, Images, Wifi, Car, Coffee, Tent, Flame, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchTentBySlug, fetchReviews } from '../../services/listingsApi';
 import ReviewScore from '../../components/property/ReviewScore';
@@ -12,9 +12,18 @@ import Seo from '../../components/seo/Seo';
 import { firstImageUrl, truncateMeta } from '../../constants/seo';
 import { resolveMediaUrls } from '../../utils/mediaUrl';
 import { formatCurrency } from '../../utils/format';
+import { formatTime12 } from '../../utils/time12h';
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200';
-const amenityIcons = { WiFi: Wifi, 'Free WiFi': Wifi, Parking: Car, 'Free parking': Car, Breakfast: Coffee };
+const amenityIcons = {
+  WiFi: Wifi,
+  'Free WiFi': Wifi,
+  Parking: Car,
+  'Free parking': Car,
+  Breakfast: Coffee,
+  Bonfire: Flame,
+  Stargazing: Sparkles,
+};
 
 export default function TentDetailPage() {
   const { slug } = useParams();
@@ -219,7 +228,7 @@ export default function TentDetailPage() {
                 <h3 className="font-bold">Most popular facilities</h3>
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {item.amenities.map((a) => {
-                    const Icon = amenityIcons[a] || Wifi;
+                    const Icon = amenityIcons[a] || Tent;
                     return (
                       <span key={a} className="flex items-center gap-2 text-sm">
                         <Icon size={18} className="text-primary" />
@@ -245,13 +254,13 @@ export default function TentDetailPage() {
         {tab === 'policies' && (
           <div className="mt-6 max-w-3xl card space-y-4 p-6 text-sm text-slate-600">
             <p>
-              <strong>Check-in:</strong> {item.checkInTime || '14:00'} · <strong>Check-out:</strong>{' '}
-              {item.checkOutTime || '11:00'}
+              <strong>Check-in:</strong> {formatTime12(item.checkInTime || '14:00')} · <strong>Check-out:</strong>{' '}
+              {formatTime12(item.checkOutTime || '11:00')}
             </p>
             <p>
               {item.cancellationPolicyText ||
                 item.cancellationPolicy ||
-                'Free cancellation available on select rates. GST 12% applicable.'}
+                'Free cancellation available on select rates.' /* GST 12% applicable. */}
             </p>
           </div>
         )}

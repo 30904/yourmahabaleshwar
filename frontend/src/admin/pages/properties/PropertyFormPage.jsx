@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -28,6 +28,8 @@ import {
   fetchRoomTypes,
 } from '../../../services/enterpriseAdminApi';
 import { formatCurrency } from '../../../utils/format';
+import TimePicker12h from '../../../components/ui/TimePicker12h';
+import { MAHABALESHWAR_PINCODE } from '../../../constants/site';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
 
@@ -76,7 +78,7 @@ export default function PropertyFormPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
 
-  const { register, handleSubmit, control, reset, watch, trigger, formState: { errors } } = useForm({
+  const { register, handleSubmit, control, reset, watch, trigger, setValue, formState: { errors } } = useForm({
     defaultValues,
   });
   const { fields: roomFields, append, remove } = useFieldArray({ control, name: 'rooms' });
@@ -302,7 +304,15 @@ export default function PropertyFormPage() {
                 <input className="admin-input" {...register('address.state')} />
               </label>
               <label className="admin-label">Pincode *
-                <input className="admin-input" {...register('address.pincode', { required: true })} />
+                <input
+                  className="admin-input"
+                  {...register('address.pincode', { required: true })}
+                  onFocus={(e) => {
+                    if (!String(e.target.value || '').trim()) {
+                      setValue('address.pincode', MAHABALESHWAR_PINCODE, { shouldDirty: true });
+                    }
+                  }}
+                />
               </label>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -332,15 +342,41 @@ export default function PropertyFormPage() {
               onChange={setAmenities}
               loading={catalogLoading}
             />
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="admin-label">
-                <Clock size={14} className="inline mr-1" /> Check-in
-                <input type="time" className="admin-input" {...register('checkInTime')} />
-              </label>
-              <label className="admin-label">
-                <Clock size={14} className="inline mr-1" /> Check-out
-                <input type="time" className="admin-input" {...register('checkOutTime')} />
-              </label>
+            <div className="mt-6 flex flex-wrap items-end gap-4">
+              <div>
+                <label className="admin-label mb-1.5 flex items-center gap-1">
+                  <Clock size={14} className="inline" /> Check-in
+                </label>
+                <Controller
+                  name="checkInTime"
+                  control={control}
+                  render={({ field }) => (
+                    <TimePicker12h
+                      name="checkInTime"
+                      value={field.value}
+                      onChange={field.onChange}
+                      selectClassName="admin-input"
+                    />
+                  )}
+                />
+              </div>
+              <div>
+                <label className="admin-label mb-1.5 flex items-center gap-1">
+                  <Clock size={14} className="inline" /> Check-out
+                </label>
+                <Controller
+                  name="checkOutTime"
+                  control={control}
+                  render={({ field }) => (
+                    <TimePicker12h
+                      name="checkOutTime"
+                      value={field.value}
+                      onChange={field.onChange}
+                      selectClassName="admin-input"
+                    />
+                  )}
+                />
+              </div>
             </div>
             <label className="admin-label mt-4">House rules & cancellation
               <textarea rows={4} className="admin-input" {...register('policies')} />

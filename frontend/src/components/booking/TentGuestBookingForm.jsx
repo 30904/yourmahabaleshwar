@@ -4,16 +4,19 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import PincodeInput from '../ui/PincodeInput';
+import TimePicker12h from '../ui/TimePicker12h';
 import ImageUploadField from '../ui/ImageUploadField';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
+import { clampTime24, formatTime12 } from '../../utils/time12h';
 import { createTentBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
-import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import { StayLegalModal } from './StayGuestBookingFormCore';
 import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 const OPEN_DEFAULT_PRICE_PER_NIGHT = 2000;
 
@@ -25,15 +28,23 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'TENT');
   const [unavailable, setUnavailable] = useState([]);
+  const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
 
   const [form, setForm] = useState(() => ({
     checkIn: '',
     checkOut: '',
-    checkInTime: '14:00',
-    checkOutTime: '11:00',
+    checkInTime: item?.checkInTime || '14:00',
+    checkOutTime: item?.checkOutTime || '11:00',
     tentQuantity: 1,
     adults: 2,
     children: 0,
@@ -61,6 +72,15 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  useEffect(() => {
+    if (openMode) return;
+    setForm((prev) => ({
+      ...prev,
+      checkInTime: item?.checkInTime || '14:00',
+      checkOutTime: item?.checkOutTime || '11:00',
+    }));
+  }, [item?.checkInTime, item?.checkOutTime, openMode]);
+
   const setTraveller = (index, key, value) => {
     setForm((prev) => {
       const next = [...(prev.coTravellers || [])];
@@ -71,6 +91,8 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
   const pricePerNight = openMode ? OPEN_DEFAULT_PRICE_PER_NIGHT : item?.pricePerNight || 0;
   const tentLabel = openMode ? t('tentGuestBooking.standardCamp') : item?.name || t('tentGuestBooking.standardCamp');
+  const checkInTimeMin = openMode ? '14:00' : item?.checkInTime || '14:00';
+  const checkOutTimeMax = openMode ? '11:00' : item?.checkOutTime || '11:00';
 
   const nights = useMemo(() => {
     if (!form.checkIn || !form.checkOut) return 1;
@@ -79,9 +101,16 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
   const tentQuantity = Number(form.tentQuantity) || 1;
   const subtotal = pricePerNight * nights * tentQuantity;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
-  const dateBlocked = form.checkIn && unavailable.includes(form.checkIn);
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
+  const dateBlocked = useMemo(() => {
+    if (!form.checkIn || !unavailable.length) return false;
+    const end = form.checkOut || form.checkIn;
+    return unavailable.some((d) => d >= form.checkIn && d < end);
+  }, [form.checkIn, form.checkOut, unavailable]);
 
   const termsSummary = useMemo(() => {
     const lines = t('tentGuestBooking.termsSummary', { returnObjects: true });
@@ -96,16 +125,36 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
   useCoTravellerSync(form.adults, form.children, setForm);
 
   useEffect(() => {
-    if (openMode || !item?._id || !form.checkIn) return;
+    if (openMode || !item?._id || !form.checkIn) {
+      setInventory(null);
+      setUnavailable([]);
+      return;
+    }
     fetchAvailability('tent', item._id, form.checkIn, form.checkOut || form.checkIn)
-      .then((d) => setUnavailable(d.unavailable || []))
-      .catch(() => setUnavailable([]));
+      .then((d) => {
+        setUnavailable(d.unavailable || []);
+        setInventory({
+          capacity: d.capacity ?? null,
+          booked: d.booked ?? 0,
+          remaining: d.remaining ?? null,
+        });
+      })
+      .catch(() => {
+        setUnavailable([]);
+        setInventory(null);
+      });
   }, [openMode, item?._id, form.checkIn, form.checkOut]);
 
   const validate = () => {
     if (!form.checkIn || !form.checkOut) return t('stayGuestBooking.validation.datesRequired');
-    if (dateBlocked) return t('booking.unavailable');
+    if (dateBlocked) return t('booking.allRoomsBooked');
     if (tentQuantity < 1) return t('tentGuestBooking.validation.tentQuantity');
+    if (!openMode && inventory?.remaining != null && tentQuantity > inventory.remaining) {
+      return t('booking.tentsRemaining', {
+        remaining: inventory.remaining,
+        capacity: inventory.capacity,
+      });
+    }
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) {
@@ -113,6 +162,8 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     }
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -125,7 +176,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     }
     setSubmitting(true);
     try {
-      const res = await createTentBooking({
+      await createTentBooking({
         open: openMode,
         tentId: openMode ? undefined : item._id,
         checkIn: form.checkIn,
@@ -133,8 +184,8 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
         tentQuantity,
         guestRegistration: {
           formDate: new Date().toISOString(),
-          checkInTime: form.checkInTime,
-          checkOutTime: form.checkOutTime,
+          checkInTime: clampTime24(form.checkInTime, checkInTimeMin, '23:59'),
+          checkOutTime: clampTime24(form.checkOutTime, '00:00', checkOutTimeMax),
           adults: Number(form.adults) || 1,
           children: Number(form.children) || 0,
           notes: form.specialRequests,
@@ -165,18 +216,10 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
         },
       });
-      const booking = res.data.data;
       toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('tentGuestBooking.bookingCreated'));
-      if (!openMode) {
-        try {
-          await payForBooking(booking, user);
-          toast.success(t('tentGuestBooking.paymentSuccess'));
-        } catch {
-          toast(t('tentGuestBooking.bookingSavedPayLater'));
-        }
-      }
       navigate('/dashboard/customer/bookings');
     } catch (error) {
       toast.error(error.response?.data?.message || t('tentGuestBooking.bookingFailed'));
@@ -226,7 +269,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('tentGuestBooking.sectionStay')}</SectionTitle>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-end">
             <Input
               label={t('stayGuestBooking.checkInDate')}
               type="date"
@@ -234,11 +277,13 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('checkIn', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('stayGuestBooking.checkInTime')}
-              type="time"
+              name="checkInTime"
               value={form.checkInTime}
-              onChange={(e) => setField('checkInTime', e.target.value)}
+              onChange={(v) => setField('checkInTime', v)}
+              minTime={checkInTimeMin}
+              maxTime="23:59"
             />
             <Input
               label={t('stayGuestBooking.checkOutDate')}
@@ -247,11 +292,13 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('checkOut', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('stayGuestBooking.checkOutTime')}
-              type="time"
+              name="checkOutTime"
               value={form.checkOutTime}
-              onChange={(e) => setField('checkOutTime', e.target.value)}
+              onChange={(v) => setField('checkOutTime', v)}
+              minTime="00:00"
+              maxTime={checkOutTimeMax}
             />
             <Input
               label={t('tentGuestBooking.tentQuantity')}
@@ -261,14 +308,37 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               value={form.tentQuantity}
               onChange={(e) => setField('tentQuantity', e.target.value)}
               required
+              className="min-w-0 sm:col-span-2 lg:col-span-1"
             />
             {openMode && (
-              <p className="sm:col-span-2 lg:col-span-3 text-sm text-slate-500">
+              <p className="sm:col-span-2 lg:col-span-5 text-sm text-slate-500">
                 {t('tentGuestBooking.openPriceHint', { price: formatCurrency(pricePerNight) })}
               </p>
             )}
           </div>
-          {dateBlocked && <p className="text-sm text-red-600">{t('booking.unavailable')}</p>}
+          <p className="text-xs text-slate-500">
+            {t('stayGuestBooking.timesRangeHint', {
+              checkIn: formatTime12(checkInTimeMin),
+              checkOut: formatTime12(checkOutTimeMax),
+            })}
+          </p>
+          {!openMode && form.checkIn && inventory?.capacity != null && (
+            <p
+              className={`text-sm font-medium ${
+                inventory.remaining <= 0
+                  ? 'text-red-600'
+                  : inventory.remaining <= 2
+                    ? 'text-amber-700'
+                    : 'text-emerald-700'
+              }`}
+            >
+              {t('booking.tentsRemaining', {
+                remaining: inventory.remaining,
+                capacity: inventory.capacity,
+              })}
+            </p>
+          )}
+          {dateBlocked && <p className="text-sm text-red-600">{t('booking.allRoomsBooked')}</p>}
         </Card>
 
         <Card className="space-y-4">
@@ -295,7 +365,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
             <Input label={t('stayGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
             <Input className="sm:col-span-2" label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChange={(e) => setField('leadAddress', e.target.value)} />
             <Input label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
-            <Input label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
+            <PincodeInput label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('stayGuestBooking.comingFrom')} value={form.comingFrom} onChange={(e) => setField('comingFrom', e.target.value)} />
             <Input label={t('stayGuestBooking.goingTo')} value={form.goingTo} onChange={(e) => setField('goingTo', e.target.value)} />
             <div className="sm:col-span-2">
@@ -392,6 +462,12 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
           </div>
         </Card>
 
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
+
         <Card className="space-y-4">
           <SectionTitle>{t('tentGuestBooking.sectionPayment')}</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -438,10 +514,12 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               <span>{t('stayGuestBooking.subtotalNights', { count: nights })} × {tentQuantity}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {/* GST temporarily disabled
             <div className="mt-1 flex justify-between">
               <span>{t('stayGuestBooking.gstLabel')}</span>
               <span>{formatCurrency(gst)}</span>
             </div>
+            */}
             <div className="mt-2 flex justify-between font-bold text-primary">
               <span>{t('stayGuestBooking.totalLabel')}</span>
               <span>{formatCurrency(total)}</span>

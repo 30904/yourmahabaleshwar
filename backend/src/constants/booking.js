@@ -19,6 +19,13 @@ export const BOOKING_TYPES = {
   ENQUIRY: 'ENQUIRY',
 };
 
+/** How the booking entered the system */
+export const BOOKING_SOURCE = {
+  WEBSITE: 'WEBSITE',
+  CALL: 'CALL',
+  WALK_IN: 'WALK_IN',
+};
+
 export const GST_RATE = 0.12;
 
 export const REFUND_STATUS = {

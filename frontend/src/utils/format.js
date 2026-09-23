@@ -29,4 +29,6 @@ export const formatDate = (date) =>
     year: 'numeric',
   });
 
-export const calcGST = (subtotal, rate = 0.12) => Math.round(subtotal * rate);
+// GST temporarily disabled — restore by uncommenting the original return
+// export const calcGST = (subtotal, rate = 0.12) => Math.round(subtotal * rate);
+export const calcGST = (subtotal, rate = 0.12) => 0;

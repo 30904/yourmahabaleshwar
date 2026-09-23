@@ -17,6 +17,7 @@ export const GUIDE_GUEST_BOOKING_TERMS = [
   'Bookings are subject to guide availability on the selected date.',
   'Accepted tour timings and pickup point must be confirmed with the guide.',
   'Package rates are as listed; bike add-on is optional and charged separately.',
+  'Overtime beyond the selected package duration is charged at ₹150/hr.',
   'Cancellation within 1–2 hours of tour start may not be permitted as per guide policy.',
   'Follow local tourism rules and guide instructions during the tour.',
 ];
@@ -30,7 +31,7 @@ export const GUIDE_GUEST_TERMS_AND_CONDITIONS = {
     },
     {
       heading: '2. Packages & Pricing',
-      body: '6-hour and 12-hour packages are charged as per the guide listing. Optional bike add-on, if selected, is added to the package price. GST is calculated at checkout.',
+      body: '6-hour and 12-hour packages are charged as per the guide listing. Optional bike add-on, if selected, is added to the package price. Overtime beyond the selected package duration is charged at ₹150/hr.' /* GST is calculated at checkout. */,
     },
     {
       heading: '3. Pickup & Itinerary',

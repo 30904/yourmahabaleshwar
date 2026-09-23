@@ -74,13 +74,34 @@ export default function RegisterPage() {
           {step === 'form' ? (
             <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
               <Input label={t('auth.fullName')} {...reg('name', { required: true })} error={errors.name && t('common.required')} />
-              <Input label={t('auth.email')} type="email" {...reg('email', { required: true })} />
-              <Input label={t('auth.phone')} {...reg('phone', { required: true })} />
-              <Input label={t('auth.password')} type="password" {...reg('password', { required: true, minLength: 6 })} />
+              <Input label={t('auth.email')} type="email" {...reg('email', { required: true })} error={errors.email && t('common.required')} />
+              <Input label={t('auth.phone')} {...reg('phone', { required: true })} error={errors.phone && t('common.required')} />
+              <Input
+                label={t('auth.password')}
+                type="password"
+                {...reg('password', { required: true, minLength: 6 })}
+                error={
+                  errors.password
+                    ? errors.password.type === 'minLength'
+                      ? t('auth.passwordMin')
+                      : t('common.required')
+                    : undefined
+                }
+              />
               <Input
                 label={t('auth.confirmPassword')}
                 type="password"
-                {...reg('confirm', { validate: (v) => v === watch('password') || t('auth.mismatch') })}
+                {...reg('confirm', {
+                  required: true,
+                  validate: (v) => v === watch('password') || t('auth.mismatch'),
+                })}
+                error={
+                  errors.confirm
+                    ? errors.confirm.type === 'validate'
+                      ? t('auth.mismatch')
+                      : t('common.required')
+                    : undefined
+                }
               />
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t('auth.creating') : t('auth.register')}

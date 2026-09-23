@@ -69,6 +69,11 @@ export function buildObjectKey(category, meta = {}, originalName = 'file') {
       parts.push('cms', 'blogs', blogId, filename);
       break;
     }
+    case 'cms-service-hub': {
+      const tenant = sanitizeSegment(meta.tenant || meta.serviceTenant || 'guide', 'guide');
+      parts.push('cms', 'service-hub', tenant, filename);
+      break;
+    }
     case 'product-image': {
       const productId = sanitizeSegment(meta.productId || 'new', 'new');
       parts.push('products', productId, filename);
@@ -94,6 +99,7 @@ export const UPLOAD_CATEGORIES = [
   'booking-id-proof',
   'cms-banner',
   'cms-blog',
+  'cms-service-hub',
   'product-image',
   'staff-doc',
 ];

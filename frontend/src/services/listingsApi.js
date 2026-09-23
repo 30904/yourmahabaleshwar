@@ -82,8 +82,8 @@ export const fetchHorseBySlug = async (slug) => {
   return normalizeHorse(res.data.data);
 };
 
-export const fetchAvailability = async (type, id, from, to) => {
-  const res = await api.get(`/availability/${type}/${id}`, { params: { from, to } });
+export const fetchAvailability = async (type, id, from, to, extraParams = {}) => {
+  const res = await api.get(`/availability/${type}/${id}`, { params: { from, to, ...extraParams } });
   return res.data.data || { unavailable: [] };
 };
 
@@ -113,6 +113,16 @@ export const fetchPublicBlogs = async () => {
 export const fetchPublicBanners = async () => {
   const res = await api.get('/admin/public/banners');
   return res.data.data || [];
+};
+
+export const fetchPublicServiceHubImages = async () => {
+  const res = await api.get('/admin/public/service-hub-images');
+  return (
+    res.data.data || {
+      images: { GUIDE: [], TAXI: [], DRIVER: [], HORSE: [] },
+      layouts: { GUIDE: 'collage', TAXI: 'collage', DRIVER: 'collage', HORSE: 'collage' },
+    }
+  );
 };
 
 export const fetchReviews = async (listingType, listingId) => {

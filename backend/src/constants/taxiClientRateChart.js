@@ -20,16 +20,17 @@ export const TAXI_OUTSTATION_ROUTES = [
   { id: 'satara_return', price: 2300 },
   { id: 'pune_drop', price: 3400 },
   { id: 'pune_return', price: 4000 },
-  { id: 'mumbai_drop', price: 16000 },
-  { id: 'mumbai_return', price: 17000 },
   { id: 'poladpur_drop', price: 2000 },
   { id: 'poladpur_return', price: 2300 },
   { id: 'raigad', price: 3500 },
   { id: 'khed_drop', price: 3000 },
   { id: 'khed_return', price: 3500 },
   { id: 'alibag', price: 15000 },
-  { id: 'murud', price: 17500 },
+  { id: 'matheran', price: 17500 },
+  { id: 'murud', price: 17500 }, // legacy alias for Matheran
   { id: 'ganpatipule', price: 16000 },
+  { id: 'mumbai_drop', price: 16000 },
+  { id: 'mumbai_return', price: 17000 },
 ];
 
 export const TAXI_CLIENT_ROUTES = [...TAXI_LOCAL_TOURS, ...TAXI_OUTSTATION_ROUTES];

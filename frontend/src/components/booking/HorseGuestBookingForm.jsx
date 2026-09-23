@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import PincodeInput from '../ui/PincodeInput';
+import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
@@ -12,6 +14,7 @@ import { createHorseBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 import {
   DEFAULT_HORSE_PACKAGE_ID,
   HORSE_CLIENT_PACKAGES,
@@ -66,6 +69,13 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
   const [unavailable, setUnavailable] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'HORSE');
 
   const openModeRoutes = useMemo(() => openHorseRoutesForI18n(t), [t, i18n.language]);
 
@@ -97,7 +107,6 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     leadPincode: '',
     emergencyName: '',
     emergencyMobile: '',
-    meetingPoint: '',
     specialRequests: '',
     groupMembers: [],
     paymentMode: 'ONLINE',
@@ -122,8 +131,11 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
   }, [routes, form.routeId]);
 
   const subtotal = selectedRoute?.price || item?.priceFrom || 0;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
   const dateBlocked = form.rideDate && unavailable.includes(form.rideDate);
 
   useEffect(() => {
@@ -146,8 +158,11 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     if (!form.routeId) return t('horseGuestBooking.validation.route');
     if (!String(form.leadFullName || '').trim()) return t('horseGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('horseGuestBooking.validation.mobile');
+    if (!String(form.leadEmail || '').trim()) return t('horseGuestBooking.validation.email');
     if (!form.acceptSafety) return t('horseGuestBooking.validation.acceptSafety');
     if (!form.acceptTerms) return t('horseGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -192,13 +207,14 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
           horseDetails: {
             routeId: form.routeId,
             routeName: selectedRoute?.name || '',
             durationMinutes: selectedRoute?.durationMinutes || 30,
             startTime: form.startTime,
             riderCount: Number(form.riderCount) || 1,
-            meetingPoint: form.meetingPoint,
+            meetingPoint: '',
             specialRequests,
             safetyAcknowledged: !!form.acceptSafety,
             routePrice: subtotal,
@@ -282,7 +298,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               <p className="text-xs text-slate-600">{t('horseGuestBooking.openRateHint')}</p>
             </ServiceRateChartToggle>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.35fr)] lg:items-end">
             <Input
               label={t('horseGuestBooking.rideDate')}
               type="date"
@@ -290,13 +306,13 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('rideDate', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('horseGuestBooking.startTime')}
-              type="time"
+              name="startTime"
               value={form.startTime}
-              onChange={(e) => setField('startTime', e.target.value)}
+              onChange={(v) => setField('startTime', v)}
             />
-            <div>
+            <div className="min-w-0 sm:col-span-2 lg:col-span-1">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
                 {t('horseGuestBooking.routeLabel')}
               </label>
@@ -351,15 +367,15 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               </select>
             </div>
             <Input label={t('horseGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
-            <Input label={t('horseGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
+            <Input label={t('horseGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"
-              label={t('horseGuestBooking.address')}
+              label={t('horseGuestBooking.hotelOrPickupAddress')}
               value={form.leadAddress}
               onChange={(e) => setField('leadAddress', e.target.value)}
             />
             <Input label={t('horseGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
-            <Input label={t('horseGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
+            <PincodeInput label={t('horseGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('horseGuestBooking.emergencyName')} value={form.emergencyName} onChange={(e) => setField('emergencyName', e.target.value)} />
             <Input label={t('horseGuestBooking.emergencyMobile')} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', e.target.value)} />
           </div>
@@ -367,12 +383,6 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('horseGuestBooking.section3')}</SectionTitle>
-          <Input
-            label={t('horseGuestBooking.meetingPoint')}
-            value={form.meetingPoint}
-            onChange={(e) => setField('meetingPoint', e.target.value)}
-            placeholder={item?.location || 'Mahabaleshwar'}
-          />
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('horseGuestBooking.specialRequests')}</label>
             <textarea
@@ -416,6 +426,12 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
             </div>
           </Card>
         )}
+
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
 
         <Card className="space-y-4">
           <SectionTitle>{t('horseGuestBooking.section5')}</SectionTitle>
@@ -464,10 +480,12 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
               <span>{t('horseGuestBooking.subtotalLabel')}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {/* GST temporarily disabled
             <div className="mt-1 flex justify-between">
               <span>{t('horseGuestBooking.gstLabel')}</span>
               <span>{formatCurrency(gst)}</span>
             </div>
+            */}
             <div className="mt-2 flex justify-between font-bold text-primary">
               <span>{t('horseGuestBooking.totalLabel')}</span>
               <span>{formatCurrency(total)}</span>

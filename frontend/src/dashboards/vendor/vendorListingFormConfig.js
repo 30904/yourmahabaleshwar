@@ -110,6 +110,9 @@ export const defaultsFor = (vertical) => {
       name: '',
       type,
       ownerName: '',
+      managerName: '',
+      managerNumber: '',
+      extraMobileNumber: '',
       addressLine1: '',
       city: 'Mahabaleshwar',
       pincode: '',
@@ -148,6 +151,9 @@ export const defaultsFor = (vertical) => {
     return {
       name: '',
       ownerName: '',
+      managerName: '',
+      managerNumber: '',
+      extraMobileNumber: '',
       addressLine1: '',
       city: 'Mahabaleshwar',
       pincode: '',
@@ -185,9 +191,14 @@ export const defaultsFor = (vertical) => {
       name: '',
       description: '',
       location: 'Mahabaleshwar',
+      managerName: '',
+      managerNumber: '',
+      extraMobileNumber: '',
       capacity: 2,
       totalTents: 10,
       pricePerNight: 1500,
+      checkInTime: '14:00',
+      checkOutTime: '11:00',
       isActive: true,
       imageUrl: '',
       amenities: [],
@@ -263,6 +274,7 @@ export const defaultsFor = (vertical) => {
       ifsc: '',
       acceptTerms: false,
       acceptAgreement: false,
+      acceptRules: false,
       acceptDeclaration: false,
       isActive: true,
     };
@@ -297,6 +309,7 @@ export const defaultsFor = (vertical) => {
       ifsc: '',
       acceptTerms: false,
       acceptAgreement: false,
+      acceptRules: false,
       acceptDeclaration: false,
       isActive: true,
     };
@@ -361,6 +374,9 @@ export const toFormValues = (vertical, doc) => {
       name: doc.name || '',
       type: doc.type || type,
       ownerName: doc.ownerName || '',
+      managerName: doc.managerName || '',
+      managerNumber: doc.managerNumber || '',
+      extraMobileNumber: doc.extraMobileNumber || '',
       addressLine1: doc.address?.line1 || '',
       city: doc.address?.city || 'Mahabaleshwar',
       pincode: doc.address?.pincode || '',
@@ -419,6 +435,9 @@ export const toFormValues = (vertical, doc) => {
       ...base,
       name: doc.name || '',
       ownerName: doc.ownerName || '',
+      managerName: doc.managerName || '',
+      managerNumber: doc.managerNumber || '',
+      extraMobileNumber: doc.extraMobileNumber || '',
       addressLine1: doc.address?.line1 || '',
       city: doc.address?.city || doc.location || 'Mahabaleshwar',
       pincode: doc.address?.pincode || '',
@@ -474,9 +493,14 @@ export const toFormValues = (vertical, doc) => {
       name: doc.name || '',
       description: doc.description || '',
       location: doc.location || 'Mahabaleshwar',
+      managerName: doc.managerName || '',
+      managerNumber: doc.managerNumber || '',
+      extraMobileNumber: doc.extraMobileNumber || '',
       capacity: doc.capacity ?? 2,
       totalTents: doc.totalTents ?? 10,
       pricePerNight: doc.pricePerNight || 0,
+      checkInTime: doc.checkInTime || '14:00',
+      checkOutTime: doc.checkOutTime || '11:00',
       isActive: doc.isActive !== false,
       approvalStatus: doc.approvalStatus,
       imageUrl: doc.images?.[0] || '',
@@ -567,6 +591,7 @@ export const toFormValues = (vertical, doc) => {
       ifsc: bank.ifsc || '',
       acceptTerms: Boolean(doc.acceptedTermsAt),
       acceptAgreement: Boolean(doc.acceptedAgreementAt),
+      acceptRules: Boolean(doc.acceptedRulesAt),
       acceptDeclaration: Boolean(doc.declarationAcceptedAt),
       isActive: doc.isActive !== false,
       approvalStatus: doc.approvalStatus,
@@ -643,6 +668,9 @@ export const toPayload = (vertical, form) => {
       name: form.name.trim(),
       type,
       ownerName: form.ownerName?.trim(),
+      managerName: form.managerName?.trim() || undefined,
+      managerNumber: form.managerNumber?.trim() || undefined,
+      extraMobileNumber: form.extraMobileNumber?.trim() || undefined,
       description: form.description,
       address: {
         line1: form.addressLine1,
@@ -691,6 +719,9 @@ export const toPayload = (vertical, form) => {
     return {
       name: form.name.trim(),
       ownerName: form.ownerName?.trim(),
+      managerName: form.managerName?.trim() || undefined,
+      managerNumber: form.managerNumber?.trim() || undefined,
+      extraMobileNumber: form.extraMobileNumber?.trim() || undefined,
       description: form.description,
       location: form.city || 'Mahabaleshwar',
       address: {
@@ -747,9 +778,14 @@ export const toPayload = (vertical, form) => {
       name: form.name.trim(),
       description: form.description,
       location: form.location || 'Mahabaleshwar',
+      managerName: form.managerName?.trim() || undefined,
+      managerNumber: form.managerNumber?.trim() || undefined,
+      extraMobileNumber: form.extraMobileNumber?.trim() || undefined,
       capacity: num(form.capacity, 2),
       totalTents: num(form.totalTents, 1),
       pricePerNight: num(form.pricePerNight),
+      checkInTime: form.checkInTime || '14:00',
+      checkOutTime: form.checkOutTime || '11:00',
       amenities: form.amenities || [],
       isActive: form.isActive !== false,
       images,
@@ -849,6 +885,7 @@ export const toPayload = (vertical, form) => {
       },
       ...(form.acceptTerms ? { acceptedTermsAt: now } : {}),
       ...(form.acceptAgreement ? { acceptedAgreementAt: now } : {}),
+      ...(form.acceptRules ? { acceptedRulesAt: now } : {}),
       ...(form.acceptDeclaration ? { declarationAcceptedAt: now } : {}),
     };
   }
@@ -1005,6 +1042,7 @@ export const validateListingForm = (vertical, form, { isCreate = true } = {}) =>
     if (isCreate) {
       if (!form.acceptTerms) return 'Please accept the Terms and Conditions';
       if (!form.acceptAgreement) return 'Please accept the Partner Agreement';
+      if (!form.acceptRules) return 'Please accept the Rules & Regulations';
       if (!form.acceptDeclaration) return 'Please accept the declaration';
     }
     return null;
@@ -1029,6 +1067,7 @@ export const validateListingForm = (vertical, form, { isCreate = true } = {}) =>
     if (isCreate) {
       if (!form.acceptTerms) return 'Please accept the Terms and Conditions';
       if (!form.acceptAgreement) return 'Please accept the Partner Agreement';
+      if (!form.acceptRules) return 'Please accept the Rules & Regulations';
       if (!form.acceptDeclaration) return 'Please accept the declaration';
     }
     return null;

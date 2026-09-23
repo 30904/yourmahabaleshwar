@@ -18,6 +18,7 @@ import {
 import {
   getBookedDates,
   getUnavailableDates,
+  getRangeInventory,
   availabilityWindow,
   normalizeBlockedDates,
   applyBlockedDateAction,
@@ -28,9 +29,21 @@ import { ROLES } from '../constants/roles.js';
 import { denyIfNotOwner } from '../utils/vendorListingAccess.js';
 import { publicStaySubscriptionFilter } from '../services/stayListingSubscriptionService.js';
 
+const GENERIC_SEARCH_TERMS = new Set(['', 'mahabaleshwar', 'panchgani', 'satara']);
+
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildListingSearchFilter = (term, fields = ['name']) => {
+  const q = String(term || '').trim();
+  if (!q || GENERIC_SEARCH_TERMS.has(q.toLowerCase())) return {};
+  const regex = { $regex: escapeRegex(q), $options: 'i' };
+  if (fields.length === 1) return { [fields[0]]: regex };
+  return { $or: fields.map((field) => ({ [field]: regex })) };
+};
+
 const paginate = async (Model, filter, req, enrichFn) => {
   const { search, page = 1, limit = 12, featured } = req.query;
-  if (search) filter.name = { $regex: search, $options: 'i' };
+  if (search) Object.assign(filter, buildListingSearchFilter(search, ['name', 'description', 'location']));
   if (featured === 'true') filter.isFeatured = true;
   filter.isActive = { $ne: false };
   const skip = (page - 1) * limit;
@@ -233,13 +246,15 @@ export const getMyAvailability = async (req, res) => {
 
 export const getListingAvailability = async (req, res) => {
   const { type, id } = req.params;
-  const { from, to } = req.query;
+  const { from, to, roomId } = req.query;
   if (!from || !to) return error(res, 'from and to query params required', 400);
 
   let blockedDates = [];
   let capacity = 1;
   let listingField = type;
   let bookingType = type.toUpperCase();
+  let listingId = id;
+  let extraFilter = {};
 
   if (type === 'tent') {
     const tent = await Tent.findById(id);
@@ -252,9 +267,23 @@ export const getListingAvailability = async (req, res) => {
     const hs = await Homestay.findById(id);
     if (!hs) return error(res, 'Not found', 404);
     blockedDates = hs.blockedDates;
-    capacity = 1;
     listingField = 'homestay';
     bookingType = BOOKING_TYPES.HOMESTAY;
+    const selectedRoomId = roomId || req.query.homestayRoomId;
+    if (selectedRoomId) {
+      const room = (hs.rooms || []).find((r) => String(r._id) === String(selectedRoomId));
+      if (!room) return error(res, 'Room not found', 404);
+      capacity = room.totalRooms || 1;
+      extraFilter = { homestayRoomId: String(selectedRoomId) };
+    } else {
+      // Property-level: treat as sold out only when every bookable room unit is taken
+      capacity = Math.max(
+        1,
+        (hs.rooms || []).reduce((sum, r) => sum + (Number(r.totalRooms) || 1), 0) ||
+          hs.roomInventory?.totalRooms ||
+          1
+      );
+    }
   } else if (type === 'horse') {
     const horse = await Horse.findById(id);
     if (!horse) return error(res, 'Not found', 404);
@@ -268,7 +297,8 @@ export const getListingAvailability = async (req, res) => {
     blockedDates = room.blockedDates;
     capacity = room.totalRooms || 1;
     listingField = 'room';
-    bookingType = BOOKING_TYPES.HOTEL;
+    const hotel = await Hotel.findById(room.hotel).select('type');
+    bookingType = hotel?.type === 'RESORT' ? BOOKING_TYPES.RESORT : BOOKING_TYPES.HOTEL;
   } else if (type === 'guide') {
     listingField = 'guide';
     bookingType = BOOKING_TYPES.GUIDE;
@@ -286,14 +316,33 @@ export const getListingAvailability = async (req, res) => {
   const unavailable = await getUnavailableDates({
     type: bookingType,
     listingField,
-    listingId: id,
+    listingId,
     from,
     to,
     blockedDates,
     capacity,
+    extraFilter,
   });
 
-  return success(res, { unavailable, blockedDates, from, to });
+  const inventory = await getRangeInventory({
+    type: bookingType,
+    listingField,
+    listingId,
+    from,
+    to,
+    capacity,
+    extraFilter,
+  });
+
+  return success(res, {
+    unavailable,
+    blockedDates,
+    capacity: inventory.capacity,
+    booked: inventory.booked,
+    remaining: inventory.remaining,
+    from,
+    to,
+  });
 };
 
 export const updateBlockedDates = async (req, res) => {
@@ -346,15 +395,21 @@ export const updateBlockedDates = async (req, res) => {
 
 export const globalSearch = async (req, res) => {
   const { q = '', limit = 12 } = req.query;
-  const regex = { $regex: q || 'Mahabaleshwar', $options: 'i' };
+  const textFilter = buildListingSearchFilter(q, ['name', 'description', 'location', 'shortDescription']);
+  const hotelFilter = {
+    isActive: true,
+    ...publicStaySubscriptionFilter(),
+    ...textFilter,
+  };
+  const stayFilter = { isActive: { $ne: false }, ...textFilter };
   const cap = Number(limit);
   const [hotelsRaw, tentsRaw, guidesRaw, driversRaw, homestaysRaw, horsesRaw] = await Promise.all([
-    Hotel.find({ isActive: true, name: regex, ...publicStaySubscriptionFilter() }).limit(cap),
-    Tent.find({ isActive: { $ne: false }, name: regex }).limit(cap),
-    Guide.find({ isActive: { $ne: false }, name: regex }).limit(cap),
-    Driver.find({ isActive: { $ne: false }, name: regex }).limit(cap),
-    Homestay.find({ isActive: { $ne: false }, name: regex, ...publicStaySubscriptionFilter() }).limit(cap),
-    Horse.find({ isActive: { $ne: false }, name: regex }).limit(cap),
+    Hotel.find(hotelFilter).limit(cap),
+    Tent.find(stayFilter).limit(cap),
+    Guide.find(stayFilter).limit(cap),
+    Driver.find(stayFilter).limit(cap),
+    Homestay.find({ ...stayFilter, ...publicStaySubscriptionFilter() }).limit(cap),
+    Horse.find(stayFilter).limit(cap),
   ]);
   const hotels = await attachHotelPrices(hotelsRaw);
   return success(res, {

@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import PincodeInput from '../ui/PincodeInput';
+import TimePicker12h from '../ui/TimePicker12h';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
@@ -12,19 +14,34 @@ import { createGuideBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
+import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 import {
   DEFAULT_GUIDE_PACKAGE_ID,
   GUIDE_BIKE_ADDON,
+  GUIDE_OVERTIME_PER_HOUR,
   GUIDE_PACKAGES,
+  GUIDE_TOUR_BREAKDOWN,
   GUIDE_TOUR_LOCATIONS,
   guideOpenPrice,
 } from '../../constants/guideClientRateChart';
-import { useGroupMemberSync } from '../../hooks/useCoTravellerSync';
-
-const emptyMember = () => ({ fullName: '', age: '', gender: '', relationship: '' });
 
 function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-slate-900">{children}</h3>;
+}
+
+function SpotList({ spots }) {
+  const list = Array.isArray(spots) ? spots : [];
+  if (!list.length) return null;
+  return (
+    <ul className="space-y-1.5">
+      {list.map((spot) => (
+        <li key={spot} className="flex gap-2 text-xs leading-snug text-slate-700 sm:text-sm">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-primary" aria-hidden />
+          <span>{spot}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function LegalModal({ open, title, sections, closeLabel, onClose }) {
@@ -57,6 +74,31 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
   );
 }
 
+function BikeAddonConfirmModal({ open, message, confirmLabel, cancelLabel, onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4" onClick={onCancel} role="presentation">
+      <div
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={message}
+      >
+        <h2 className="whitespace-pre-line text-lg font-bold text-slate-900">{message}</h2>
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+          <Button type="button" onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function GuideGuestBookingForm({ item, openMode = false }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -64,11 +106,14 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
   const [unavailable, setUnavailable] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
-
-  const tourSpots = useMemo(() => {
-    const spots = t('guideGuestBooking.tourSpots', { returnObjects: true });
-    return Array.isArray(spots) ? spots : [];
-  }, [t, i18n.language]);
+  const {
+    sections: customSections,
+    values: customValues,
+    setField: setCustomField,
+    validate: validateCustom,
+    customPayload,
+  } = useConfigurableForm('customer', 'GUIDE');
+  const [bikeConfirmChoice, setBikeConfirmChoice] = useState(null);
 
   const termsSummary = useMemo(() => {
     const lines = t('guideGuestBooking.termsSummary', { returnObjects: true });
@@ -85,8 +130,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
     startTime: '09:00',
     guidePackage: openMode ? DEFAULT_GUIDE_PACKAGE_ID : '6HR',
     selectedTourId: GUIDE_TOUR_LOCATIONS[0]?.id || '',
-    bikeAddon: false,
-    touristCount: 2,
+    bikeAddon: '',
     leadFullName: user?.name || '',
     leadAge: '',
     leadGender: '',
@@ -116,28 +160,48 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
     });
   };
 
-  const toggleSpot = (value) => {
-    setForm((prev) => {
-      const selected = prev.preferredSpots || [];
-      const next = selected.includes(value) ? selected.filter((s) => s !== value) : [...selected, value];
-      return { ...prev, preferredSpots: next };
-    });
-  };
-
+  const wantsBike = form.bikeAddon === 'yes';
   const packagePrice = openMode
-    ? guideOpenPrice(form.guidePackage, form.bikeAddon)
+    ? guideOpenPrice(form.guidePackage, wantsBike)
     : form.guidePackage === '12HR' || form.guidePackage === '8HR'
       ? item?.package12hr || 1500
       : item?.package6hr || 900;
-  const bikePrice = form.bikeAddon
+  const bikePrice = wantsBike
     ? openMode
       ? GUIDE_BIKE_ADDON
       : item?.bikeAddonPrice || 200
     : 0;
   const subtotal = openMode ? packagePrice : packagePrice + bikePrice;
-  const gst = calcGST(subtotal);
-  const total = subtotal + gst;
+  // GST temporarily disabled
+  // const gst = calcGST(subtotal);
+  // const total = subtotal + gst;
+  const gst = 0;
+  const total = subtotal;
   const dateBlocked = form.tourDate && unavailable.includes(form.tourDate);
+
+  const selectedTourBreakdown = useMemo(
+    () => GUIDE_TOUR_BREAKDOWN.find((tour) => tour.id === form.selectedTourId) || GUIDE_TOUR_BREAKDOWN[0],
+    [form.selectedTourId]
+  );
+
+  const selectedTourSpots = useMemo(() => {
+    if (!openMode || !selectedTourBreakdown) return [];
+    const isEightHour = form.guidePackage === '8HR' || form.guidePackage === '12HR';
+    const spots = t(
+      isEightHour ? selectedTourBreakdown.eightHourSpotsKey : selectedTourBreakdown.fourHourSpotsKey,
+      { returnObjects: true }
+    );
+    return Array.isArray(spots) ? spots : [];
+  }, [openMode, selectedTourBreakdown, form.guidePackage, t, i18n.language]);
+
+  const selectedPackageLabel = useMemo(() => {
+    if (!openMode) return '';
+    if (form.guidePackage === '8HR' || form.guidePackage === '12HR') {
+      return t('guideGuestBooking.packages.eightHour.name');
+    }
+    if (selectedTourBreakdown?.halfDayLabelKey) return t(selectedTourBreakdown.halfDayLabelKey);
+    return t('guideGuestBooking.packages.fourHour.name');
+  }, [openMode, form.guidePackage, selectedTourBreakdown, t, i18n.language]);
 
   useEffect(() => {
     if (openMode || !item?._id || !form.tourDate) return;
@@ -146,14 +210,18 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
       .catch(() => setUnavailable([]));
   }, [item?._id, form.tourDate]);
 
-  useGroupMemberSync(form.touristCount, setForm, emptyMember);
-
   const validate = () => {
     if (!form.tourDate) return t('guideGuestBooking.validation.tourDate');
     if (dateBlocked) return t('guideGuestBooking.validation.unavailable');
+    if (form.bikeAddon !== 'yes' && form.bikeAddon !== 'no') {
+      return t('guideGuestBooking.validation.bikeAddon');
+    }
     if (!String(form.leadFullName || '').trim()) return t('guideGuestBooking.validation.fullName');
     if (!String(form.leadMobile || '').trim()) return t('guideGuestBooking.validation.mobile');
+    if (!String(form.leadEmail || '').trim()) return t('guideGuestBooking.validation.email');
     if (!form.acceptTerms) return t('guideGuestBooking.validation.acceptTerms');
+    const customErr = validateCustom();
+    if (customErr) return customErr;
     return null;
   };
 
@@ -175,12 +243,12 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
         open: openMode,
         guideId: openMode ? undefined : item._id,
         guidePackage: form.guidePackage,
-        bikeAddon: !!form.bikeAddon,
+        bikeAddon: wantsBike,
         checkIn: form.tourDate,
         guestRegistration: {
           formDate: new Date().toISOString(),
           checkInTime: form.startTime,
-          adults: Number(form.touristCount) || 1,
+          adults: Math.max(1, 1 + (form.groupMembers || []).filter((m) => String(m.fullName || '').trim()).length),
           leadGuest: {
             fullName: form.leadFullName,
             age: form.leadAge ? Number(form.leadAge) : undefined,
@@ -199,12 +267,13 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
           paymentMode: form.paymentMode || 'ONLINE',
           acceptTerms: true,
           acceptedTermsAt: new Date().toISOString(),
+          customFields: customPayload,
           tourDetails: {
             packageType: form.guidePackage,
             tourLocationId: openMode ? form.selectedTourId : undefined,
-            bikeAddon: !!form.bikeAddon,
+            bikeAddon: wantsBike,
             startTime: form.startTime,
-            touristCount: Number(form.touristCount) || 1,
+            touristCount: Math.max(1, 1 + (form.groupMembers || []).filter((m) => String(m.fullName || '').trim()).length),
             pickupLocation: form.pickupLocation,
             preferredSpots: form.preferredSpots || [],
             specialRequests,
@@ -258,36 +327,87 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               seeLabel={t('serviceBooking.seeRateChart')}
               hideLabel={t('serviceBooking.hideRateChart')}
             >
-              <div>
-                <p className="font-semibold text-slate-900">{t('guideGuestBooking.rateChartTitle')}</p>
-                <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.rateChartNote')}</p>
-                <div className="mt-3 overflow-x-auto">
-                  <table className="min-w-full text-left text-xs sm:text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-600">
-                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartPackage')}</th>
-                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartDuration')}</th>
-                        <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartGuideOnly')}</th>
-                        <th className="py-2 font-medium">{t('guideGuestBooking.chartGuideBike')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {GUIDE_PACKAGES.map((pkg) => (
-                        <tr key={pkg.id} className="border-b border-slate-100">
-                          <td className="py-2 pr-3">{t(pkg.nameKey)}</td>
-                          <td className="py-2 pr-3">{t(pkg.durationKey)}</td>
-                          <td className="py-2 pr-3 font-semibold">{formatCurrency(pkg.guideOnly)}</td>
-                          <td className="py-2 font-semibold">{formatCurrency(pkg.withBike)}</td>
+              <div className="space-y-5">
+                <div>
+                  <p className="font-semibold text-slate-900">{t('guideGuestBooking.rateChartTitle')}</p>
+                  <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.rateChartNote')}</p>
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="min-w-full text-left text-xs sm:text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-600">
+                          <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartPackage')}</th>
+                          <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartDuration')}</th>
+                          <th className="py-2 pr-3 font-medium">{t('guideGuestBooking.chartGuideOnly')}</th>
+                          <th className="py-2 font-medium">{t('guideGuestBooking.chartGuideBike')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {GUIDE_PACKAGES.map((pkg) => (
+                          <tr key={pkg.id} className="border-b border-slate-100">
+                            <td className="py-2 pr-3">{t(pkg.nameKey)}</td>
+                            <td className="py-2 pr-3">{t(pkg.durationKey)}</td>
+                            <td className="py-2 pr-3 font-semibold">{formatCurrency(pkg.guideOnly)}</td>
+                            <td className="py-2 font-semibold">{formatCurrency(pkg.withBike)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-slate-900">{t('guideGuestBooking.sightseeingTitle')}</p>
+                  <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.sightseeingNote')}</p>
+                  <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="min-w-[720px] w-full text-left text-xs sm:text-sm">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          <th className="px-3 py-3 font-semibold">{t('guideGuestBooking.chartTourType')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('guideGuestBooking.chartFourHour')}</th>
+                          <th className="px-3 py-3 font-semibold">{t('guideGuestBooking.chartEightHour')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {GUIDE_TOUR_BREAKDOWN.map((tour) => {
+                          const fourSpots = t(tour.fourHourSpotsKey, { returnObjects: true });
+                          const eightSpots = t(tour.eightHourSpotsKey, { returnObjects: true });
+                          return (
+                            <tr key={tour.id} className="border-t border-slate-200 align-top odd:bg-white even:bg-slate-50">
+                              <td className="px-3 py-3 font-semibold text-slate-900">
+                                {t(tour.nameKey)}
+                              </td>
+                              <td className="px-3 py-3">
+                                {tour.halfDayLabelKey ? (
+                                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                                    {t(tour.halfDayLabelKey)}
+                                  </p>
+                                ) : null}
+                                <SpotList spots={fourSpots} />
+                                {tour.noteKey ? (
+                                  <p className="mt-2 text-[11px] italic text-slate-500">{t(tour.noteKey)}</p>
+                                ) : null}
+                              </td>
+                              <td className="px-3 py-3">
+                                <SpotList spots={eightSpots} />
+                                {tour.noteKey ? (
+                                  <p className="mt-2 text-[11px] italic text-slate-500">{t(tour.noteKey)}</p>
+                                ) : null}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-slate-600">{t('guideGuestBooking.openRateHint')}</p>
+              <p className="text-xs font-medium text-slate-700">
+                {t('guideGuestBooking.overtimeNote', { rate: formatCurrency(GUIDE_OVERTIME_PER_HOUR) })}
+              </p>
             </ServiceRateChartToggle>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.35fr)] lg:items-end">
             <Input
               label={t('guideGuestBooking.tourDate')}
               type="date"
@@ -295,13 +415,13 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('tourDate', e.target.value)}
               required
             />
-            <Input
+            <TimePicker12h
               label={t('guideGuestBooking.startTime')}
-              type="time"
+              name="startTime"
               value={form.startTime}
-              onChange={(e) => setField('startTime', e.target.value)}
+              onChange={(v) => setField('startTime', v)}
             />
-            <div>
+            <div className="min-w-0 sm:col-span-2 lg:col-span-1">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
                 {t('guideGuestBooking.packageLabel')}
               </label>
@@ -313,7 +433,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
                 {openMode
                   ? GUIDE_PACKAGES.map((pkg) => (
                       <option key={pkg.id} value={pkg.id}>
-                        {t(pkg.nameKey)} — {formatCurrency(form.bikeAddon ? pkg.withBike : pkg.guideOnly)}
+                        {t(pkg.nameKey)} — {formatCurrency(wantsBike ? pkg.withBike : pkg.guideOnly)}
                       </option>
                     ))
                   : (
@@ -329,43 +449,83 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               </select>
             </div>
             {openMode && (
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  {t('guideGuestBooking.tourLocationLabel')}
-                </label>
-                <select
-                  className="input-field"
-                  value={form.selectedTourId}
-                  onChange={(e) => setField('selectedTourId', e.target.value)}
-                >
-                  {GUIDE_TOUR_LOCATIONS.map((tour) => (
-                    <option key={tour.id} value={tour.id}>
-                      {t(tour.nameKey)}
-                    </option>
-                  ))}
-                </select>
+              <div className="sm:col-span-2 lg:col-span-3 space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    {t('guideGuestBooking.tourLocationLabel')}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={form.selectedTourId}
+                    onChange={(e) => setField('selectedTourId', e.target.value)}
+                  >
+                    {GUIDE_TOUR_LOCATIONS.map((tour) => (
+                      <option key={tour.id} value={tour.id}>
+                        {t(tour.nameKey)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {selectedTourSpots.length > 0 && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {t('guideGuestBooking.pointsCoveredTitle', {
+                        tour: t(selectedTourBreakdown.nameKey),
+                        package: selectedPackageLabel,
+                      })}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">{t('guideGuestBooking.pointsCoveredHint')}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {selectedTourSpots.map((spot) => (
+                        <div key={spot} className="flex gap-2 text-sm text-slate-700">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-sm bg-primary" aria-hidden />
+                          <span>{spot}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedTourBreakdown?.noteKey ? (
+                      <p className="mt-3 text-xs italic text-slate-500">{t(selectedTourBreakdown.noteKey)}</p>
+                    ) : null}
+                  </div>
+                )}
               </div>
             )}
-            <Input
-              label={t('guideGuestBooking.touristCount')}
-              type="number"
-              min="1"
-              value={form.touristCount}
-              onChange={(e) => setField('touristCount', e.target.value)}
-            />
-            <div className="sm:col-span-2 flex items-end">
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={form.bikeAddon}
-                  onChange={(e) => setField('bikeAddon', e.target.checked)}
-                />
-                {t('guideGuestBooking.bikeAddonHint', {
+            <div>
+              <p className="mb-1.5 block text-sm font-medium text-slate-700">
+                {t('guideGuestBooking.bikeAddonLabel', {
                   price: formatCurrency(openMode ? GUIDE_BIKE_ADDON : item?.bikeAddonPrice || 0),
                 })}
-              </label>
+                <span className="text-red-500"> *</span>
+              </p>
+              <div className="flex flex-wrap gap-4 text-sm text-slate-700">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="guideBikeAddon"
+                    value="yes"
+                    checked={form.bikeAddon === 'yes'}
+                    onChange={() => setBikeConfirmChoice('yes')}
+                    required
+                  />
+                  {t('guideGuestBooking.bikeAddonYes')}
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="guideBikeAddon"
+                    value="no"
+                    checked={form.bikeAddon === 'no'}
+                    onChange={() => setBikeConfirmChoice('no')}
+                    required
+                  />
+                  {t('guideGuestBooking.bikeAddonNo')}
+                </label>
+              </div>
             </div>
           </div>
+          <p className="rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2.5 text-sm text-slate-700">
+            {t('guideGuestBooking.overtimeNote', { rate: formatCurrency(GUIDE_OVERTIME_PER_HOUR) })}
+          </p>
           {dateBlocked && <p className="text-sm text-red-600">{t('guideGuestBooking.validation.unavailable')}</p>}
         </Card>
 
@@ -379,26 +539,16 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('leadFullName', e.target.value)}
               required
             />
-            <Input label={t('guideGuestBooking.age')} type="number" min="1" value={form.leadAge} onChange={(e) => setField('leadAge', e.target.value)} />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('guideGuestBooking.gender')}</label>
-              <select className="input-field" value={form.leadGender} onChange={(e) => setField('leadGender', e.target.value)}>
-                <option value="">{t('guideGuestBooking.selectGender')}</option>
-                <option value="M">{t('guideGuestBooking.genderMale')}</option>
-                <option value="F">{t('guideGuestBooking.genderFemale')}</option>
-                <option value="OTHER">{t('guideGuestBooking.genderOther')}</option>
-              </select>
-            </div>
             <Input label={t('guideGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
-            <Input label={t('guideGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
+            <Input label={t('guideGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"
-              label={t('guideGuestBooking.address')}
+              label={t('guideGuestBooking.hotelOrPickupAddress')}
               value={form.leadAddress}
               onChange={(e) => setField('leadAddress', e.target.value)}
             />
             <Input label={t('guideGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
-            <Input label={t('guideGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
+            <PincodeInput label={t('guideGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('guideGuestBooking.emergencyName')} value={form.emergencyName} onChange={(e) => setField('emergencyName', e.target.value)} />
             <Input label={t('guideGuestBooking.emergencyMobile')} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', e.target.value)} />
           </div>
@@ -406,22 +556,6 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('guideGuestBooking.section3')}</SectionTitle>
-          <Input
-            label={t('guideGuestBooking.pickupLocation')}
-            value={form.pickupLocation}
-            onChange={(e) => setField('pickupLocation', e.target.value)}
-          />
-          <div>
-            <p className="mb-2 text-sm font-medium text-slate-700">{t('guideGuestBooking.preferredSpots')}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {tourSpots.map((spot) => (
-                <label key={spot.value} className="flex items-center gap-2 text-sm text-slate-700">
-                  <input type="checkbox" checked={(form.preferredSpots || []).includes(spot.value)} onChange={() => toggleSpot(spot.value)} />
-                  {spot.label}
-                </label>
-              ))}
-            </div>
-          </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('guideGuestBooking.specialRequests')}</label>
             <textarea
@@ -434,7 +568,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
 
         {(form.groupMembers || []).length > 0 && (
           <Card className="space-y-4">
-            <SectionTitle>{t('guideGuestBooking.section4')}</SectionTitle>
+            <SectionTitle>{t('guideGuestBooking.sectionGroupMembers')}</SectionTitle>
             <div className="space-y-3">
               {(form.groupMembers || []).map((member, index) => (
                 <div key={index} className="grid gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-4">
@@ -467,13 +601,13 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
         )}
 
         <Card className="space-y-4">
-          <SectionTitle>{t('guideGuestBooking.section5')}</SectionTitle>
+          <SectionTitle>{t('guideGuestBooking.section4')}</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl bg-slate-50 p-3 text-sm">
               <p className="text-slate-500">{t('guideGuestBooking.packageSummary')}</p>
               <p className="font-semibold text-slate-900">{formatCurrency(packagePrice)}</p>
             </div>
-            {form.bikeAddon && (
+            {wantsBike && (
               <div className="rounded-xl bg-slate-50 p-3 text-sm">
                 <p className="text-slate-500">{t('guideGuestBooking.bikeSummary')}</p>
                 <p className="font-semibold text-slate-900">{formatCurrency(bikePrice)}</p>
@@ -514,10 +648,12 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               <span>{t('guideGuestBooking.subtotalLabel')}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {/* GST temporarily disabled
             <div className="mt-1 flex justify-between">
               <span>{t('guideGuestBooking.gstLabel')}</span>
               <span>{formatCurrency(gst)}</span>
             </div>
+            */}
             <div className="mt-2 flex justify-between font-bold text-primary">
               <span>{t('guideGuestBooking.totalLabel')}</span>
               <span>{formatCurrency(total)}</span>
@@ -525,8 +661,14 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
           </div>
         </Card>
 
+        <ConfigurableFormSections
+          sections={customSections}
+          values={customValues}
+          onChange={setCustomField}
+        />
+
         <Card className="space-y-4">
-          <SectionTitle>{t('guideGuestBooking.section6')}</SectionTitle>
+          <SectionTitle>{t('guideGuestBooking.section5')}</SectionTitle>
           <ul className="list-disc space-y-2 pl-5 text-sm text-slate-600">
             {termsSummary.map((line) => (
               <li key={line}>{line}</li>
@@ -557,6 +699,25 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
         sections={fullTermsSections}
         closeLabel={t('guideGuestBooking.close')}
         onClose={() => setLegalOpen(false)}
+      />
+      <BikeAddonConfirmModal
+        open={bikeConfirmChoice === 'yes' || bikeConfirmChoice === 'no'}
+        message={
+          bikeConfirmChoice === 'yes'
+            ? t('guideGuestBooking.bikeAddonAskYes', {
+                price: formatCurrency(openMode ? GUIDE_BIKE_ADDON : item?.bikeAddonPrice || 0),
+              })
+            : t('guideGuestBooking.bikeAddonAskNo')
+        }
+        confirmLabel={t('guideGuestBooking.bikeAddonConfirm')}
+        cancelLabel={t('common.cancel')}
+        onCancel={() => setBikeConfirmChoice(null)}
+        onConfirm={() => {
+          if (bikeConfirmChoice === 'yes' || bikeConfirmChoice === 'no') {
+            setField('bikeAddon', bikeConfirmChoice);
+          }
+          setBikeConfirmChoice(null);
+        }}
       />
     </>
   );

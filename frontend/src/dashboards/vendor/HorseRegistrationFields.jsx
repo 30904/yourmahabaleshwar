@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import PincodeInput from '../../components/ui/PincodeInput';
 import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -104,7 +105,7 @@ export default function HorseRegistrationFields({
             onChange={(e) => setField('dateOfBirth', e.target.value)}
             required
           />
-          <Input
+          <PincodeInput
             label={t('horseRegistration.pinCode')}
             value={form.pincode}
             onChange={(e) => setField('pincode', e.target.value)}
