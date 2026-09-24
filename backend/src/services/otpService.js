@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import Otp from '../models/Otp.js';
 import { sendSMS } from './smsService.js';
 import { sendEmail } from './emailService.js';
+import { sendWhatsAppOtp } from './whatsappService.js';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 
@@ -37,7 +38,14 @@ export const createAndSendOtp = async ({
   const message = `Your YOURMAHABALESHWAR OTP is ${code}. Valid for 10 minutes. Do not share.`;
 
   if (channel === 'PHONE') {
-    await sendSMS({ phone: phone || normalized, message, userId });
+    const targetPhone = phone || normalized;
+    // SMS remains primary; WhatsApp OTP is best-effort when template is configured
+    await sendSMS({ phone: targetPhone, message, userId });
+    try {
+      await sendWhatsAppOtp({ phone: targetPhone, code });
+    } catch (err) {
+      console.error('[otp] WhatsApp OTP send failed:', err?.message || err);
+    }
   } else {
     await sendEmail({
       to: email || normalized,

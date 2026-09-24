@@ -1,0 +1,33 @@
+---
+description: Pending client service setup follow-ups (AWS CloudFront + WhatsApp OTP template)
+alwaysApply: true
+---
+
+# Pending setup follow-ups (as of 24 Sep 2026)
+
+When the user starts a session or asks what to do next, **proactively remind** them of these unfinished client setup items until marked done:
+
+## 1) AWS CloudFront (blocked)
+- S3 bucket `yourmahabaleshwar-uploads` + IAM keys are done.
+- CloudFront create failed: AWS account must be verified (support case raised).
+- When AWS unlocks: create CloudFront distribution for that S3 bucket (OAC, no WAF), then set:
+  - `CLOUDFRONT_DOMAIN=https://dxxxx.cloudfront.net`
+- Also update bucket policy if AWS prompts after distribution create.
+
+## 2) WhatsApp OTP template (blocked on Meta)
+- WhatsApp connected via Fast2SMS; `whatsappService.js` already supports Meta/Fast2SMS auth OTP format.
+- Meta **Business verification = In review** (~2 working days). Template create is blocked until **Verified**.
+- After Verified:
+  1. Create Authentication template `ymb_otp_auth` (Copy code, 10 min expiry)
+  2. Wait until **Approved**
+  3. Set in backend `.env`:
+     - `WHATSAPP_OTP_TEMPLATE=ymb_otp_auth`
+     - `WHATSAPP_OTP_LANGUAGE=en_US` (or `en` if that matches the template)
+  4. Restart API
+- Until then leave `WHATSAPP_OTP_TEMPLATE` empty; SMS OTP still works.
+
+## Do not
+- Keep retrying Fast2SMS/Meta template create while business is Unverified/In review.
+- Forget CloudFront after AWS support replies.
+
+When both items are completed, ask the user to delete or update this rule.
