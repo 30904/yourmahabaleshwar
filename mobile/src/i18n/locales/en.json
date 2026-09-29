@@ -7,6 +7,7 @@
     "cancel": "Cancel",
     "continue": "Continue",
     "submit": "Submit",
+    "empty": "Nothing here yet",
     "rupees": "₹{{amount}}"
   },
   "nav": {

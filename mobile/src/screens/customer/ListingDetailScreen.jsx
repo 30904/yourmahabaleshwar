@@ -114,6 +114,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             {images.length > 1 ? <Muted>{photoIndex + 1}/{images.length}</Muted> : null}
           </Pressable>) : null}
         <Title>{item.name}</Title>
+        {(type === 'HOTEL' || type === 'RESORT') && (<Muted>{type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels')}</Muted>)}
         <Muted>{listingPlace(item)}</Muted>
         {nightPrice != null ? <Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>{formatCurrency(nightPrice)}</Text> : null}
         {item.description ? <Muted>{item.description}</Muted> : null}

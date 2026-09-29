@@ -22,7 +22,7 @@ export default function CatalogScreen({ route, navigation }) {
         return <Loading />;
     return (<Screen style={{ paddingTop: 8 }}>
       <Title>{title}</Title>
-      <FlatList data={items} keyExtractor={(item) => item._id || item.slug} ListEmptyComponent={<Muted>{t('common.error')}</Muted>} renderItem={({ item }) => (<Pressable onPress={() => navigation.navigate('ListingDetail', {
+      <FlatList data={items} keyExtractor={(item) => item._id || item.slug} ListEmptyComponent={<Muted>{t('common.empty')}</Muted>} renderItem={({ item }) => (<Pressable onPress={() => navigation.navigate('ListingDetail', {
                 path,
                 slug: item.slug,
                 type,
