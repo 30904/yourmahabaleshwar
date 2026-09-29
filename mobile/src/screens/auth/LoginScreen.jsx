@@ -3,7 +3,7 @@ import { Alert, ScrollView, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Field, Screen, Title, Muted, Card } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
+import { COLORS, VENDOR_ROLES } from '../../constants/theme';
 export default function LoginScreen({ navigation }) {
     const { t } = useTranslation();
     const { login, verifyOtp, resendOtp, pendingOtp } = useAuth();
@@ -13,7 +13,13 @@ export default function LoginScreen({ navigation }) {
     const [step, setStep] = useState('form');
     const [devHint, setDevHint] = useState('');
     const [loading, setLoading] = useState(false);
+    const finishLogin = (user) => {
+        const screen = user && VENDOR_ROLES.includes(user.role) ? 'VendorTab' : 'HomeTab';
+        navigation.getParent()?.navigate('MainTabs', { screen });
+    };
     const onLogin = async () => {
+        if (!email.trim() || !password)
+            return Alert.alert(t('common.error'), t('auth.needCredentials'));
         setLoading(true);
         try {
             const res = await login(email.trim(), password);
@@ -21,6 +27,10 @@ export default function LoginScreen({ navigation }) {
                 setStep('otp');
                 if (res.devCode)
                     setDevHint(res.devCode);
+                Alert.alert(t('auth.otpSent'), t('auth.otpHint'));
+            }
+            else if (res.user) {
+                finishLogin(res.user);
             }
         }
         catch (e) {
@@ -31,15 +41,29 @@ export default function LoginScreen({ navigation }) {
         }
     };
     const onVerify = async () => {
+        if (!otp.trim())
+            return Alert.alert(t('common.error'), t('auth.otp'));
         setLoading(true);
         try {
-            await verifyOtp(otp.trim());
+            const user = await verifyOtp(otp.trim());
+            finishLogin(user);
         }
         catch (e) {
             Alert.alert(t('common.error'), e.response?.data?.message || e.message);
         }
         finally {
             setLoading(false);
+        }
+    };
+    const onResend = async () => {
+        try {
+            const r = await resendOtp();
+            if (r.devCode)
+                setDevHint(r.devCode);
+            Alert.alert(t('auth.otpSent'), t('auth.otpHint'));
+        }
+        catch (e) {
+            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
         }
     };
     return (<Screen>
@@ -59,13 +83,9 @@ export default function LoginScreen({ navigation }) {
           </Card>) : (<Card>
             <Muted>{t('auth.otpHint')}</Muted>
             {(devHint || pendingOtp?.devCode) && (<Text style={{ marginTop: 8, color: COLORS.accent }}>Dev OTP: {devHint || pendingOtp?.devCode}</Text>)}
-            <Field label={t('auth.otp')} value={otp} onChangeText={setOtp} keyboardType="numeric"/>
+            <Field label={t('auth.otp')} value={otp} onChangeText={setOtp} keyboardType="numeric" maxLength={6}/>
             <Button title={t('auth.verify')} onPress={onVerify} loading={loading}/>
-            <Button title="Resend OTP" variant="outline" onPress={async () => {
-                const r = await resendOtp();
-                if (r.devCode)
-                    setDevHint(r.devCode);
-            }}/>
+            <Button title={t('auth.resendOtp')} variant="outline" onPress={onResend}/>
           </Card>)}
       </ScrollView>
     </Screen>);

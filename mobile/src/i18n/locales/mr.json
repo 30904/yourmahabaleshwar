@@ -38,6 +38,9 @@
     "name": "पूर्ण नाव",
     "otp": "OTP कोड",
     "otpHint": "फोन किंवा ईमेलवर पाठवलेला OTP टाका",
+    "needCredentials": "ईमेल आणि पासवर्ड टाका",
+    "otpSent": "OTP पाठवला",
+    "resendOtp": "OTP पुन्हा पाठवा",
     "verify": "OTP पडताळा",
     "logout": "साइन आउट",
     "welcome": "YOURMAHABALESHWAR मध्ये स्वागत"

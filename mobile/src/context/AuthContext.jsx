@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
         setUser(payload.user);
         setPendingOtp(null);
         registerForPushNotifications(payload.user.role).catch(() => { });
+        return payload.user;
     };
     useEffect(() => {
         (async () => {
@@ -46,8 +47,8 @@ export function AuthProvider({ children }) {
             });
             return { requiresOtp: true, devCode: data.devCode };
         }
-        await persistSession(data);
-        return {};
+        const user = await persistSession(data);
+        return { user };
     }, []);
     const register = useCallback(async (payload) => {
         const data = await registerApi(payload);
@@ -86,7 +87,7 @@ export function AuthProvider({ children }) {
             code,
             purpose: pendingOtp.purpose,
         });
-        await persistSession(data);
+        return persistSession(data);
     }, [pendingOtp]);
     const resendOtp = useCallback(async () => {
         if (!pendingOtp)

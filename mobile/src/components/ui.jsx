@@ -23,10 +23,10 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       {loading ? (<ActivityIndicator color={variant === 'outline' ? COLORS.primary : '#fff'}/>) : (<Text style={[styles.btnText, variant === 'outline' && { color: COLORS.primary }]}>{title}</Text>)}
     </Pressable>);
 }
-export function Field({ label, value, onChangeText, secureTextEntry, keyboardType, placeholder, }) {
+export function Field({ label, value, onChangeText, secureTextEntry, keyboardType, placeholder, maxLength, }) {
     return (<View style={{ marginBottom: 12 }}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput value={value} onChangeText={onChangeText} secureTextEntry={secureTextEntry} keyboardType={keyboardType} placeholder={placeholder} autoCapitalize="none" style={styles.input} placeholderTextColor={COLORS.muted}/>
+      <TextInput value={value} onChangeText={onChangeText} secureTextEntry={secureTextEntry} keyboardType={keyboardType} placeholder={placeholder} maxLength={maxLength} autoCapitalize="none" style={styles.input} placeholderTextColor={COLORS.muted}/>
     </View>);
 }
 export function Loading() {

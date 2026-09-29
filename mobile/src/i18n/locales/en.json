@@ -38,6 +38,9 @@
     "name": "Full name",
     "otp": "OTP code",
     "otpHint": "Enter the OTP sent to your phone or email",
+    "needCredentials": "Enter your email and password",
+    "otpSent": "OTP sent",
+    "resendOtp": "Resend OTP",
     "verify": "Verify OTP",
     "logout": "Sign out",
     "welcome": "Welcome to YOURMAHABALESHWAR"

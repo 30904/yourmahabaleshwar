@@ -43,10 +43,11 @@ function MainTabs() {
             title: t('nav.bookings'),
             tabBarIcon: ({ color }) => <Text style={{ color }}>☰</Text>,
         }}/>
-      {isVendor && (<Tab.Screen name="VendorTab" component={VendorHubScreen} options={{
-                title: t('nav.vendor'),
-                tabBarIcon: ({ color }) => <Text style={{ color }}>◆</Text>,
-            }}/>)}
+      <Tab.Screen name="VendorTab" component={VendorHubScreen} options={{
+            title: t('nav.vendor'),
+            tabBarIcon: ({ color }) => <Text style={{ color }}>◆</Text>,
+            tabBarButton: isVendor ? undefined : () => null,
+        }}/>
       <Tab.Screen name="Account" component={AccountScreen} options={{
             title: t('nav.account'),
             tabBarIcon: ({ color }) => <Text style={{ color }}>●</Text>,

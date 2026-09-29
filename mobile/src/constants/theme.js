@@ -18,6 +18,7 @@ export const VENDOR_ROLES = [
     'TAXI_OPERATOR',
     'DRIVER',
     'HORSE_OPERATOR',
+    'PRODUCT_VENDOR',
 ];
 export const CATEGORIES = [
     { key: 'hotels', path: '/hotels', labelKey: 'nav.hotels', type: 'HOTEL' },
