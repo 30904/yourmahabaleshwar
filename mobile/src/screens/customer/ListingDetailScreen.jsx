@@ -123,23 +123,27 @@ export default function ListingDetailScreen({ route, navigation }) {
         <Title>{item.name}</Title>
         {(type === 'HOTEL' || type === 'RESORT') && (<Muted>{type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels')}</Muted>)}
         {type === 'HOMESTAY' && <Muted>{t('nav.homestays')}</Muted>}
+        {type === 'TENT' && <Muted>{t('nav.tents')}</Muted>}
         <Muted>{listingPlace(item)}</Muted>
+        {type === 'TENT' && (<Muted>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Muted>)}
         {nightPrice != null ? (<Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>
             {formatCurrency(nightPrice)}
-            {type === 'HOMESTAY' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('listing.perNight')}</Text> : null}
+            {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('listing.perNight')}</Text> : null}
           </Text>) : null}
-        {type === 'HOMESTAY' && item.amenities?.length > 0 && (<View style={{ marginTop: 10 }}>
+        {(type === 'HOMESTAY' || type === 'TENT') && item.amenities?.length > 0 && (<View style={{ marginTop: 10 }}>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('listing.amenities')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {item.amenities.map((amenity) => (<Text key={amenity} style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4, fontSize: 12, fontWeight: '600' }}>{amenity}</Text>))}
             </View>
           </View>)}
         {item.description ? <Muted>{item.description}</Muted> : null}
-        {type === 'HOMESTAY' && (<Card>
+        {(type === 'HOMESTAY' || type === 'TENT') && (<Card>
             <Muted>{t('listing.checkTimes', { in: formatTime12(item.checkInTime || '14:00'), out: formatTime12(item.checkOutTime || '11:00') })}</Muted>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.cancellation')}</Text>
-            <Muted>{item.cancellationPolicyText || t('listing.freeCancellation')}</Muted>
-            {item.houseRules?.length > 0 && (<>
+            <Muted>{(typeof item.cancellationPolicyText === 'string' && item.cancellationPolicyText)
+            || (typeof item.cancellationPolicy === 'string' && item.cancellationPolicy)
+            || t(type === 'TENT' ? 'listing.freeCancellationRates' : 'listing.freeCancellation')}</Muted>
+            {type === 'HOMESTAY' && item.houseRules?.length > 0 && (<>
                 <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.houseRules')}</Text>
                 {item.houseRules.map((rule) => <Muted key={rule}>{rule}</Muted>)}
               </>)}

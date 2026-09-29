@@ -67,7 +67,10 @@
     "houseRules": "House rules",
     "cancellation": "Cancellation",
     "checkTimes": "Check-in {{in}} · Check-out {{out}}",
-    "freeCancellation": "Free cancellation available on select room rates."
+    "freeCancellation": "Free cancellation available on select room rates.",
+    "freeCancellationRates": "Free cancellation available on select rates.",
+    "tentCapacity_one": "Capacity {{guests}} · {{count}} tent",
+    "tentCapacity_other": "Capacity {{guests}} · {{count}} tents"
   },
   "booking": {
     "bookNow": "Book now",
