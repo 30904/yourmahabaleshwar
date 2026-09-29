@@ -14,6 +14,7 @@ export default function CatalogScreen({ route, navigation }) {
     const { path, title, type, query } = route.params;
     const shopVertical = type === 'PRODUCT' ? query?.vertical : null;
     const isShop = shopVertical === 'STRAWBERRY' || shopVertical === 'MAPRO';
+    const isCombo = type === 'COMBO';
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
@@ -28,6 +29,7 @@ export default function CatalogScreen({ route, navigation }) {
     return (<Screen style={{ paddingTop: 8 }}>
       <Title>{title}</Title>
       {isShop ? <Muted>{t(shopVertical === 'MAPRO' ? 'shop.maproSub' : 'shop.strawberrySub')}</Muted> : null}
+      {isCombo ? <Muted>{t('shop.comboSub')}</Muted> : null}
       <FlatList data={items} keyExtractor={(item) => item._id || item.slug} ListHeaderComponent={type === 'TAXI' ? <TaxiRateChart /> : type === 'DRIVER' ? <DriverBookingIntro /> : type === 'HORSE' ? <HorseRateChart /> : null} ListEmptyComponent={<Muted>{t('common.empty')}</Muted>} renderItem={({ item }) => (<Pressable onPress={() => navigation.navigate('ListingDetail', {
                 path,
                 slug: item.slug,
@@ -36,8 +38,8 @@ export default function CatalogScreen({ route, navigation }) {
             <Card>
               {listingImage(item) ? (<Image source={{ uri: listingImage(item) }} style={{ height: 140, borderRadius: 10, marginBottom: 10 }}/>) : null}
               <Text style={{ fontWeight: '800', color: COLORS.text, fontSize: 16 }}>{item.name}</Text>
-              {isShop ? (item.shortDescription ? <Muted>{item.shortDescription}</Muted> : null) : <Muted>{listingPlace(item, type)}</Muted>}
-              {type === 'GUIDE' && item.package6hr != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.package6hr)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('guide.sixHourShort')}</Text></Text>) : type === 'TAXI' && item.perTripPrice != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.perTripPrice)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('taxi.perTripShort')}</Text></Text>) : type === 'HORSE' && listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('horse.perRoute')}</Text></Text>) : isShop && item.price != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.price)}{item.unit ? <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}> / {item.unit}</Text> : null}</Text>) : listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
+              {isShop ? (item.shortDescription ? <Muted>{item.shortDescription}</Muted> : null) : isCombo ? (item.description ? <Muted>{item.description}</Muted> : null) : <Muted>{listingPlace(item, type)}</Muted>}
+              {type === 'GUIDE' && item.package6hr != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.package6hr)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('guide.sixHourShort')}</Text></Text>) : type === 'TAXI' && item.perTripPrice != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.perTripPrice)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('taxi.perTripShort')}</Text></Text>) : type === 'HORSE' && listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('horse.perRoute')}</Text></Text>) : isShop && item.price != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.price)}{item.unit ? <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}> / {item.unit}</Text> : null}</Text>) : isCombo && item.comboPrice != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.comboPrice)}{item.originalPrice != null ? <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted, textDecorationLine: 'line-through' }}> {formatCurrency(item.originalPrice)}</Text> : null}{item.originalPrice > item.comboPrice ? <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.success }}> {t('shop.save')} {formatCurrency(item.originalPrice - item.comboPrice)}</Text> : null}</Text>) : listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
             </Card>
           </Pressable>)}/>
     </Screen>);

@@ -8,6 +8,10 @@ export const forgotPassword = (email) => api.post('/auth/forgot-password', { ema
 export const fetchMe = () => api.get('/auth/me').then((r) => r.data.data);
 export const logoutApi = () => api.post('/auth/logout').then((r) => r.data);
 export const listCatalog = (path, params) => api.get(path, { params }).then((r) => r.data.data);
+export const globalSearch = (q) => api.get('/search', { params: { q, limit: 20 } }).then((r) => r.data.data);
+export const publicFaqs = () => api.get('/admin/public/faqs').then((r) => r.data.data);
+export const publicBlogs = () => api.get('/admin/public/blogs').then((r) => r.data.data);
+export const sendEnquiry = (body) => api.post('/enquiries', body).then((r) => r.data);
 export const getBySlug = (path, slug) => api.get(`${path}/${slug}`).then((r) => r.data.data);
 export const createBooking = (type, body) => {
     const map = {

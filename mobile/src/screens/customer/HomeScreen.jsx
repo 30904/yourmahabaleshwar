@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { Screen, Title, Muted } from '../../components/ui';
+import { Button, Field, Screen, Title, Muted } from '../../components/ui';
 import { CATEGORIES, COLORS } from '../../constants/theme';
 export default function HomeScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
+    const [query, setQuery] = useState('');
     return (<Screen>
       <ScrollView>
         <Text style={styles.brand}>YOURMAHABALESHWAR</Text>
         <Title>{t('home.headline')}</Title>
         <Muted>{t('home.subhead')}</Muted>
+        <Field label={t('search.action')} value={query} onChangeText={setQuery} placeholder={t('search.placeholder')} autoCapitalize="sentences"/>
+        <Button title={t('search.action')} onPress={() => navigation.navigate('Search', { q: query.trim() })}/>
         <Text style={styles.section}>{t('home.browse')}</Text>
         <View style={styles.grid}>
           {CATEGORIES.map((c) => (<Pressable key={c.key} style={styles.tile} onPress={() => navigation.navigate('Catalog', {

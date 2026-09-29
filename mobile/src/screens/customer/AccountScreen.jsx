@@ -16,6 +16,7 @@ export default function AccountScreen() {
         <Muted>{t('auth.welcome')}</Muted>
         <Button title={t('auth.signIn')} onPress={() => navigation.navigate('Auth')}/>
         <Button title={t('auth.register')} variant="outline" onPress={() => navigation.navigate('Auth')}/>
+        <Button title={t('content.menu')} variant="outline" onPress={() => navigation.navigate('Content')}/>
       </Screen>);
     }
     return (<Screen>
@@ -30,6 +31,7 @@ export default function AccountScreen() {
         <Button title="English" variant={i18n.language === 'en' ? 'primary' : 'outline'} onPress={() => i18n.changeLanguage('en')}/>
         <Button title="मराठी" variant={i18n.language === 'mr' ? 'primary' : 'outline'} onPress={() => i18n.changeLanguage('mr')}/>
       </Card>
+      <Button title={t('content.menu')} variant="outline" onPress={() => navigation.navigate('Content')}/>
       {isVendor && <Button title={t('nav.vendor')} onPress={() => navigation.navigate('VendorHub')}/>}
       <Button title={t('auth.logout')} variant="danger" onPress={() => logout()}/>
     </Screen>);

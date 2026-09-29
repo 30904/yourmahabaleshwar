@@ -5,10 +5,15 @@ import { Card, Muted } from './ui';
 import { COLORS } from '../constants/theme';
 import { formatCurrency } from '../utils/format';
 
-const PACKAGES = [
+export const GUIDE_CHART_PACKAGES = [
     { id: '4HR', nameKey: 'guide.packages.fourHour.name', durationKey: 'guide.packages.fourHour.duration', guideOnly: 900, withBike: 1100 },
     { id: '8HR', nameKey: 'guide.packages.eightHour.name', durationKey: 'guide.packages.eightHour.duration', guideOnly: 1500, withBike: 1700 },
 ];
+
+export function guideChartPrice(packageId, withBike) {
+    const pkg = GUIDE_CHART_PACKAGES.find((item) => item.id === packageId) || GUIDE_CHART_PACKAGES[0];
+    return withBike ? pkg.withBike : pkg.guideOnly;
+}
 
 const TOURS = [
     { id: 'mahabaleshwar_1', nameKey: 'guide.tours.mahabaleshwar1.name', fourKey: 'guide.tours.mahabaleshwar1.fourHourSpots', eightKey: 'guide.tours.mahabaleshwar1.eightHourSpots' },
@@ -30,7 +35,7 @@ export default function GuideRateChart() {
       <Muted>{t('guide.rateChartNote')}</Muted>
       <View style={{ marginTop: 10 }}>
         <Text style={{ fontWeight: '700', color: COLORS.muted, fontSize: 12 }}>{t('guide.chartPackage')} · {t('guide.chartDuration')}</Text>
-        {PACKAGES.map((pkg) => (<View key={pkg.id} style={{ marginTop: 8 }}>
+        {GUIDE_CHART_PACKAGES.map((pkg) => (<View key={pkg.id} style={{ marginTop: 8 }}>
             <Text style={{ fontWeight: '700', color: COLORS.text }}>{t(pkg.nameKey)} · {t(pkg.durationKey)}</Text>
             <Muted>{t('guide.chartGuideOnly')}: {formatCurrency(pkg.guideOnly)}</Muted>
             <Muted>{t('guide.chartGuideBike')}: {formatCurrency(pkg.withBike)}</Muted>

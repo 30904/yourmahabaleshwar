@@ -12,6 +12,8 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import VendorRegisterScreen from '../screens/auth/VendorRegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import HomeScreen from '../screens/customer/HomeScreen';
+import SearchScreen from '../screens/customer/SearchScreen';
+import ContentScreen from '../screens/customer/ContentScreen';
 import CatalogScreen from '../screens/customer/CatalogScreen';
 import ListingDetailScreen from '../screens/customer/ListingDetailScreen';
 import BookingsScreen from '../screens/customer/BookingsScreen';
@@ -64,6 +66,8 @@ export default function RootNavigator() {
       <RootStack.Navigator>
         <RootStack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }}/>
         <RootStack.Screen name="Auth" component={AuthNavigator} options={{ headerShown: false, presentation: 'modal' }}/>
+        <RootStack.Screen name="Search" component={SearchScreen} options={{ title: 'Search' }}/>
+        <RootStack.Screen name="Content" component={ContentScreen} options={{ title: 'Info' }}/>
         <RootStack.Screen name="Catalog" component={CatalogScreen} options={{ title: 'Explore' }}/>
         <RootStack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: 'Details' }}/>
         <RootStack.Screen name="VendorHub" component={VendorHubScreen} options={{ title: 'Vendor' }}/>

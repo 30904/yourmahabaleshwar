@@ -40,6 +40,17 @@ const COASTAL = [
     { id: 'ganpatipule', price: 16000, nameKey: 'taxi.ganpatipule' },
 ];
 
+export function taxiChartPrice(routeId) {
+    const tour = TOURS.find((item) => item.id === routeId);
+    if (tour) return tour.price;
+    const coastal = COASTAL.find((item) => item.id === routeId);
+    if (coastal) return coastal.price;
+    const route = ROUTES.find((item) => item.dropId === routeId || item.returnId === routeId);
+    if (route?.dropId === routeId) return route.drop;
+    if (route?.returnId === routeId) return route.return;
+    return TOURS[0].price;
+}
+
 function spots(value) {
     return Array.isArray(value) ? value : [];
 }
