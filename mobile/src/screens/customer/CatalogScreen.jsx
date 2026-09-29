@@ -12,7 +12,8 @@ import { listingImage, listingPlace, listingPrice } from '../../utils/listing';
 export default function CatalogScreen({ route, navigation }) {
     const { t } = useTranslation();
     const { path, title, type, query } = route.params;
-    const isStrawberry = type === 'PRODUCT' && query?.vertical === 'STRAWBERRY';
+    const shopVertical = type === 'PRODUCT' ? query?.vertical : null;
+    const isShop = shopVertical === 'STRAWBERRY' || shopVertical === 'MAPRO';
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
@@ -26,7 +27,7 @@ export default function CatalogScreen({ route, navigation }) {
         return <Loading />;
     return (<Screen style={{ paddingTop: 8 }}>
       <Title>{title}</Title>
-      {isStrawberry ? <Muted>{t('shop.strawberrySub')}</Muted> : null}
+      {isShop ? <Muted>{t(shopVertical === 'MAPRO' ? 'shop.maproSub' : 'shop.strawberrySub')}</Muted> : null}
       <FlatList data={items} keyExtractor={(item) => item._id || item.slug} ListHeaderComponent={type === 'TAXI' ? <TaxiRateChart /> : type === 'DRIVER' ? <DriverBookingIntro /> : type === 'HORSE' ? <HorseRateChart /> : null} ListEmptyComponent={<Muted>{t('common.empty')}</Muted>} renderItem={({ item }) => (<Pressable onPress={() => navigation.navigate('ListingDetail', {
                 path,
                 slug: item.slug,
@@ -35,8 +36,8 @@ export default function CatalogScreen({ route, navigation }) {
             <Card>
               {listingImage(item) ? (<Image source={{ uri: listingImage(item) }} style={{ height: 140, borderRadius: 10, marginBottom: 10 }}/>) : null}
               <Text style={{ fontWeight: '800', color: COLORS.text, fontSize: 16 }}>{item.name}</Text>
-              {isStrawberry ? (item.shortDescription ? <Muted>{item.shortDescription}</Muted> : null) : <Muted>{listingPlace(item, type)}</Muted>}
-              {type === 'GUIDE' && item.package6hr != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.package6hr)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('guide.sixHourShort')}</Text></Text>) : type === 'TAXI' && item.perTripPrice != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.perTripPrice)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('taxi.perTripShort')}</Text></Text>) : type === 'HORSE' && listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('horse.perRoute')}</Text></Text>) : isStrawberry && item.price != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.price)}{item.unit ? <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}> / {item.unit}</Text> : null}</Text>) : listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
+              {isShop ? (item.shortDescription ? <Muted>{item.shortDescription}</Muted> : null) : <Muted>{listingPlace(item, type)}</Muted>}
+              {type === 'GUIDE' && item.package6hr != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.package6hr)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('guide.sixHourShort')}</Text></Text>) : type === 'TAXI' && item.perTripPrice != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.perTripPrice)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('taxi.perTripShort')}</Text></Text>) : type === 'HORSE' && listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('horse.perRoute')}</Text></Text>) : isShop && item.price != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.price)}{item.unit ? <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}> / {item.unit}</Text> : null}</Text>) : listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
             </Card>
           </Pressable>)}/>
     </Screen>);

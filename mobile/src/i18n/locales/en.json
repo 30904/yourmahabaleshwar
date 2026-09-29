@@ -299,7 +299,8 @@
     }
   },
   "shop": {
-    "strawberrySub": "Farm-fresh strawberries and homemade crush from Mahabaleshwar"
+    "strawberrySub": "Farm-fresh strawberries and homemade crush from Mahabaleshwar",
+    "maproSub": "Jams, syrups and gift packs inspired by Mapro"
   },
   "booking": {
     "bookNow": "Book now",
