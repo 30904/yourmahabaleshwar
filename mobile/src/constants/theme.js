@@ -21,7 +21,7 @@ export const VENDOR_ROLES = [
     'PRODUCT_VENDOR',
 ];
 export const CATEGORIES = [
-    { key: 'hotels', path: '/hotels', labelKey: 'nav.hotels', type: 'HOTEL' },
+    { key: 'hotels', path: '/hotels', labelKey: 'nav.hotels', type: 'HOTEL', query: { type: 'HOTEL' } },
     { key: 'resorts', path: '/hotels', labelKey: 'nav.resorts', type: 'RESORT', query: { type: 'RESORT' } },
     { key: 'homestays', path: '/homestays', labelKey: 'nav.homestays', type: 'HOMESTAY' },
     { key: 'tents', path: '/tents', labelKey: 'nav.tents', type: 'TENT' },

@@ -5,6 +5,7 @@ import { listCatalog } from '../../api/endpoints';
 import { Card, Loading, Muted, Screen, Title } from '../../components/ui';
 import { COLORS } from '../../constants/theme';
 import { formatCurrency } from '../../utils/format';
+import { listingImage, listingPlace, listingPrice } from '../../utils/listing';
 export default function CatalogScreen({ route, navigation }) {
     const { t } = useTranslation();
     const { path, title, type, query } = route.params;
@@ -27,14 +28,10 @@ export default function CatalogScreen({ route, navigation }) {
                 type,
             })}>
             <Card>
-              {item.images?.[0] ? (<Image source={{ uri: item.images[0] }} style={{ height: 140, borderRadius: 10, marginBottom: 10 }}/>) : null}
+              {listingImage(item) ? (<Image source={{ uri: listingImage(item) }} style={{ height: 140, borderRadius: 10, marginBottom: 10 }}/>) : null}
               <Text style={{ fontWeight: '800', color: COLORS.text, fontSize: 16 }}>{item.name}</Text>
-              <Muted>
-                {item.address?.city || item.location || item.vertical || 'Mahabaleshwar'}
-                {item.pricePerNight || item.pricePerRide || item.package6hr || item.price || item.comboPrice
-                ? ` · ${formatCurrency(item.pricePerNight || item.pricePerRide || item.package6hr || item.price || item.comboPrice)}`
-                : ''}
-              </Muted>
+              <Muted>{listingPlace(item)}</Muted>
+              {listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
             </Card>
           </Pressable>)}/>
     </Screen>);

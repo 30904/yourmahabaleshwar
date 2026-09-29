@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, Text } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { createBooking, getBySlug } from '../../api/endpoints';
 import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
 import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
+import { formatCurrency } from '../../utils/format';
+import { listingPlace, listingPrice, mediaUrl } from '../../utils/listing';
 function tomorrow() {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -25,9 +27,16 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [checkIn, setCheckIn] = useState(tomorrow());
     const [checkOut, setCheckOut] = useState(dayAfter());
     const [guests, setGuests] = useState('2');
+    const [roomId, setRoomId] = useState(null);
+    const [photoIndex, setPhotoIndex] = useState(0);
     useEffect(() => {
         getBySlug(path, slug)
-            .then(setItem)
+            .then((data) => {
+            const stay = data?.hotel ? { ...data.hotel, rooms: data.rooms || data.hotel.rooms || [] } : data;
+            setItem(stay);
+            const firstRoom = stay?.rooms?.[0];
+            if (firstRoom?._id) setRoomId(firstRoom._id);
+        })
             .catch(() => setItem(null))
             .finally(() => setLoading(false));
     }, [path, slug]);
@@ -46,8 +55,9 @@ export default function ListingDetailScreen({ route, navigation }) {
             };
             if (type === 'HOTEL' || type === 'RESORT') {
                 body.hotelId = item._id;
-                if (item.rooms?.[0]?._id)
-                    body.roomId = item.rooms[0]._id;
+                const chosen = (item.rooms || []).find((room) => String(room._id) === String(roomId)) || item.rooms?.[0];
+                if (chosen?._id)
+                    body.roomId = chosen._id;
             }
             else if (type === 'HOMESTAY')
                 body.homestayId = item._id;
@@ -93,11 +103,37 @@ export default function ListingDetailScreen({ route, navigation }) {
         <Muted>{t('common.error')}</Muted>
       </Screen>);
     }
+    const images = (item.images || []).map(mediaUrl).filter(Boolean);
+    const rooms = item.rooms || [];
+    const selectedRoom = rooms.find((room) => String(room._id) === String(roomId)) || rooms[0];
+    const nightPrice = selectedRoom?.basePrice ?? listingPrice(item);
     return (<Screen>
       <ScrollView>
-        {item.images?.[0] ? (<Image source={{ uri: item.images[0] }} style={{ height: 200, borderRadius: 14, marginBottom: 12 }}/>) : null}
+        {images[0] ? (<Pressable onPress={() => images.length > 1 && setPhotoIndex((i) => (i + 1) % images.length)}>
+            <Image source={{ uri: images[photoIndex] || images[0] }} style={{ height: 220, borderRadius: 14, marginBottom: 8 }}/>
+            {images.length > 1 ? <Muted>{photoIndex + 1}/{images.length}</Muted> : null}
+          </Pressable>) : null}
         <Title>{item.name}</Title>
-        <Muted>{item.description || item.address?.city || 'Mahabaleshwar'}</Muted>
+        <Muted>{listingPlace(item)}</Muted>
+        {nightPrice != null ? <Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>{formatCurrency(nightPrice)}</Text> : null}
+        {item.description ? <Muted>{item.description}</Muted> : null}
+        {rooms.length > 0 && (<Card>
+            <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>Rooms</Text>
+            {rooms.map((room) => {
+                const selected = String(room._id) === String(selectedRoom?._id);
+                return (<Pressable key={room._id} onPress={() => setRoomId(room._id)} style={{
+                    padding: 10,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: selected ? COLORS.primary : COLORS.border,
+                    marginBottom: 8,
+                    backgroundColor: selected ? COLORS.primarySoft : '#fff',
+                }}>
+                  <Text style={{ fontWeight: '700', color: COLORS.text }}>{room.name}</Text>
+                  {room.basePrice != null ? <Muted>{formatCurrency(room.basePrice)}</Muted> : null}
+                </Pressable>);
+            })}
+          </Card>)}
         <Card>
           <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('booking.bookNow')}</Text>
           <Field label={t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
