@@ -3,6 +3,7 @@ import Payment from '../models/Payment.js';
 import Booking from '../models/Booking.js';
 import { BOOKING_STATUS } from '../constants/booking.js';
 import { createNotification } from '../services/notificationService.js';
+import { sendWhatsAppPaymentCompleted } from '../services/whatsappService.js';
 import { generateInvoicePdf } from '../services/invoiceService.js';
 import { success, error } from '../utils/apiResponse.js';
 
@@ -73,6 +74,19 @@ export const razorpayWebhook = async (req, res) => {
             message: `Payment captured for ${booking.bookingNumber}`,
             type: 'PAYMENT',
           });
+          try {
+            const customerPhone =
+              booking.customer.phone ||
+              (typeof booking.customer === 'object' ? booking.customer.phone : null);
+            if (customerPhone) {
+              await sendWhatsAppPaymentCompleted({
+                phone: customerPhone,
+                amount: booking.total ?? payment.amount,
+              });
+            }
+          } catch (err) {
+            console.error('[webhook] WhatsApp payment_completed failed:', err?.message || err);
+          }
         }
       }
     }

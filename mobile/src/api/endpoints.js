@@ -39,4 +39,6 @@ export const getMySubscription = () => api.get('/admin/subscriptions/me').then((
 export const getMyKyc = () => api.get('/users/kyc').then((r) => r.data.data);
 export const submitKyc = (form) => api.post('/users/kyc', form).then((r) => r.data.data);
 export const registerDevice = (payload) => api.post('/users/devices', payload).then((r) => r.data.data);
+export const unregisterDevice = (token) =>
+  api.delete(`/users/devices/${encodeURIComponent(token)}`).then((r) => r.data);
 export const getNotifications = () => api.get('/users/notifications').then((r) => r.data.data);

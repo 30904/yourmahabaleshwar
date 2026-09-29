@@ -2,10 +2,12 @@
  * WhatsApp via Fast2SMS (Meta Cloud API-compatible).
  *
  * Env:
- *   WHATSAPP_API_URL          e.g. https://www.fast2sms.com/dev/whatsapp/v26.0/{PHONE_NUMBER_ID}/messages
- *   WHATSAPP_API_TOKEN        Fast2SMS API Authorization Key
- *   WHATSAPP_OTP_TEMPLATE     Approved AUTHENTICATION template name (e.g. ymb_otp_auth)
- *   WHATSAPP_OTP_LANGUAGE     Template language code (default en_US)
+ *   WHATSAPP_API_URL              e.g. https://www.fast2sms.com/dev/whatsapp/v26.0/{PHONE_NUMBER_ID}/messages
+ *   WHATSAPP_API_TOKEN            Fast2SMS API Authorization Key
+ *   WHATSAPP_OTP_TEMPLATE         Approved AUTHENTICATION template (e.g. ymb_otp_auth)
+ *   WHATSAPP_OTP_LANGUAGE         default en_US
+ *   WHATSAPP_PAYMENT_TEMPLATE     Utility template name (default payment_completed)
+ *   WHATSAPP_PAYMENT_LANGUAGE     default en
  */
 
 const normalizePhone = (phone) => {
@@ -20,6 +22,14 @@ const authHeader = (token) => {
   if (!t) return '';
   if (/^bearer\s+/i.test(t)) return t;
   return t;
+};
+
+const formatAmountParam = (amount) => {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return String(amount ?? '');
+  return new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 0,
+  }).format(Math.round(n));
 };
 
 const buildAuthOtpComponents = (code) => {
@@ -38,7 +48,7 @@ const buildAuthOtpComponents = (code) => {
   ];
 };
 
-const buildBody = ({ phone, message, template, code }) => {
+const buildBody = ({ phone, message, template, code, bodyParams }) => {
   const to = normalizePhone(phone);
   const base = {
     messaging_product: 'whatsapp',
@@ -69,24 +79,39 @@ const buildBody = ({ phone, message, template, code }) => {
   }
 
   if (template) {
-    if (typeof template === 'string') {
+    const name = typeof template === 'string' ? template : template.name;
+    const language =
+      (typeof template === 'object' && (template.language || template.languageCode)) ||
+      process.env.WHATSAPP_PAYMENT_LANGUAGE ||
+      process.env.WHATSAPP_OTP_LANGUAGE ||
+      'en';
+    const params =
+      bodyParams ||
+      (typeof template === 'object' && Array.isArray(template.bodyParams)
+        ? template.bodyParams
+        : null);
+
+    const components =
+      (typeof template === 'object' && template.components) ||
+      (params?.length
+        ? [
+            {
+              type: 'body',
+              parameters: params.map((p) =>
+                typeof p === 'object' && p.type ? p : { type: 'text', text: String(p) }
+              ),
+            },
+          ]
+        : undefined);
+
+    if (name) {
       return {
         ...base,
         type: 'template',
         template: {
-          name: template,
-          language: { code: process.env.WHATSAPP_OTP_LANGUAGE || 'en' },
-        },
-      };
-    }
-    if (typeof template === 'object' && template.name) {
-      return {
-        ...base,
-        type: 'template',
-        template: {
-          name: template.name,
-          language: { code: template.language || template.languageCode || 'en' },
-          ...(template.components ? { components: template.components } : {}),
+          name,
+          language: { code: language },
+          ...(components ? { components } : {}),
         },
       };
     }
@@ -137,14 +162,14 @@ async function postWhatsApp(body) {
   return { ok: true, ...data };
 }
 
-export const sendWhatsApp = async ({ phone, message, template, code }) => {
+export const sendWhatsApp = async ({ phone, message, template, code, bodyParams }) => {
   const url = (process.env.WHATSAPP_API_URL || '').trim();
   const token = (process.env.WHATSAPP_API_TOKEN || '').trim();
   if (!url || !token) {
     return { mock: true, phone, message, template };
   }
 
-  const body = buildBody({ phone, message, template, code });
+  const body = buildBody({ phone, message, template, code, bodyParams });
   return postWhatsApp(body);
 };
 
@@ -165,5 +190,26 @@ export const sendWhatsAppOtp = async ({ phone, code }) => {
       name: templateName,
       language: process.env.WHATSAPP_OTP_LANGUAGE || 'en_US',
     },
+  });
+};
+
+/**
+ * Utility template `payment_completed`:
+ * Dear user, Your last payment completed successfully amount: {{1}} Thank you.
+ */
+export const sendWhatsAppPaymentCompleted = async ({ phone, amount }) => {
+  const templateName =
+    (process.env.WHATSAPP_PAYMENT_TEMPLATE || '').trim() || 'payment_completed';
+  if (!phone) {
+    return { skipped: true, reason: 'No phone number' };
+  }
+
+  return sendWhatsApp({
+    phone,
+    template: {
+      name: templateName,
+      language: process.env.WHATSAPP_PAYMENT_LANGUAGE || 'en',
+    },
+    bodyParams: [formatAmountParam(amount)],
   });
 };

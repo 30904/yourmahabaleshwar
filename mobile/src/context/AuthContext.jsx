@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import * as SecureStore from 'expo-secure-store';
 import { fetchMe, login as loginApi, logoutApi, register as registerApi, registerVendor as registerVendorApi, sendOtp as sendOtpApi, verifyOtp as verifyOtpApi, } from '../api/endpoints';
 import { VENDOR_ROLES } from '../constants/theme';
-import { registerForPushNotifications } from '../services/push';
+import { registerForPushNotifications, unregisterPushNotifications } from '../services/push';
 const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
@@ -101,6 +101,12 @@ export function AuthProvider({ children }) {
         return { devCode: data.devCode };
     }, [pendingOtp]);
     const logout = useCallback(async () => {
+        try {
+            await unregisterPushNotifications();
+        }
+        catch {
+            /* ignore */
+        }
         try {
             await logoutApi();
         }
