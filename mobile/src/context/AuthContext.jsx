@@ -77,7 +77,8 @@ export function AuthProvider({ children }) {
             });
             return { requiresOtp: true, devCode: data.devCode };
         }
-        return {};
+        const user = await persistSession(data);
+        return { user };
     }, []);
     const verifyOtp = useCallback(async (code) => {
         if (!pendingOtp)

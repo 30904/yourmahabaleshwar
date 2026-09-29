@@ -76,6 +76,20 @@
     "kycHint": "Upload documents for verification",
     "submitKyc": "Submit KYC",
     "points": "Points",
-    "balance": "Wallet balance"
+    "balance": "Wallet balance",
+    "businessName": "Business name",
+    "vendorType": "Business type",
+    "registerSuccess": "Vendor account created",
+    "types": {
+      "HOTEL": "Hotel",
+      "RESORT": "Resort",
+      "HOMESTAY": "Homestay/Villa",
+      "TENT": "Tent",
+      "GUIDE": "Guide",
+      "TAXI": "Taxi",
+      "DRIVER": "Driver",
+      "HORSE": "Horse",
+      "PRODUCT": "Shop"
+    }
   }
 }
