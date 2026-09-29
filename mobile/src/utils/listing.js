@@ -26,7 +26,8 @@ export function formatTime12(value) {
     return `${hour}:${minute} ${period}`;
 }
 
-export function listingPlace(item) {
+export function listingPlace(item, type) {
+    if (type === 'GUIDE') return item?.mainTourismArea || 'Mahabaleshwar';
     const address = item?.address;
     if (address && typeof address === 'object') {
         const line = [address.line1, address.city, address.state].filter(Boolean).join(', ');

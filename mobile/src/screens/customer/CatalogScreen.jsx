@@ -30,8 +30,8 @@ export default function CatalogScreen({ route, navigation }) {
             <Card>
               {listingImage(item) ? (<Image source={{ uri: listingImage(item) }} style={{ height: 140, borderRadius: 10, marginBottom: 10 }}/>) : null}
               <Text style={{ fontWeight: '800', color: COLORS.text, fontSize: 16 }}>{item.name}</Text>
-              <Muted>{listingPlace(item)}</Muted>
-              {listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
+              <Muted>{listingPlace(item, type)}</Muted>
+              {type === 'GUIDE' && item.package6hr != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.package6hr)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('guide.sixHourShort')}</Text></Text>) : listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
             </Card>
           </Pressable>)}/>
     </Screen>);

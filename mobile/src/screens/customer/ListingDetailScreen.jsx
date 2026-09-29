@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { createBooking, getBySlug } from '../../api/endpoints';
+import GuideRateChart from '../../components/GuideRateChart';
 import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
 import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -28,6 +29,8 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [checkOut, setCheckOut] = useState(dayAfter());
     const [guests, setGuests] = useState('2');
     const [roomId, setRoomId] = useState(null);
+    const [guidePackage, setGuidePackage] = useState('6HR');
+    const [bikeAddon, setBikeAddon] = useState(false);
     const [photoIndex, setPhotoIndex] = useState(0);
     useEffect(() => {
         getBySlug(path, slug)
@@ -69,7 +72,8 @@ export default function ListingDetailScreen({ route, navigation }) {
                 body.tentId = item._id;
             else if (type === 'GUIDE') {
                 body.guideId = item._id;
-                body.guidePackage = '6HR';
+                body.guidePackage = guidePackage;
+                body.bikeAddon = bikeAddon;
                 body.checkIn = checkIn;
             }
             else if (type === 'TAXI') {
@@ -113,7 +117,10 @@ export default function ListingDetailScreen({ route, navigation }) {
     const images = photoSource.map(mediaUrl).filter(Boolean);
     const rooms = item.rooms || [];
     const selectedRoom = rooms.find((room) => String(room._id) === String(roomId)) || rooms[0];
-    const nightPrice = selectedRoom?.basePrice ?? listingPrice(item);
+    const guideBase = guidePackage === '12HR' ? item.package12hr : item.package6hr;
+    const nightPrice = type === 'GUIDE'
+        ? (Number(guideBase) || 0) + (bikeAddon ? (Number(item.bikeAddonPrice) || 0) : 0)
+        : (selectedRoom?.basePrice ?? listingPrice(item));
     return (<Screen>
       <ScrollView>
         {images[0] ? (<Pressable onPress={() => images.length > 1 && setPhotoIndex((i) => (i + 1) % images.length)}>
@@ -124,7 +131,9 @@ export default function ListingDetailScreen({ route, navigation }) {
         {(type === 'HOTEL' || type === 'RESORT') && (<Muted>{type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels')}</Muted>)}
         {type === 'HOMESTAY' && <Muted>{t('nav.homestays')}</Muted>}
         {type === 'TENT' && <Muted>{t('nav.tents')}</Muted>}
-        <Muted>{listingPlace(item)}</Muted>
+        {type === 'GUIDE' && <Muted>{t('nav.guides')}</Muted>}
+        <Muted>{listingPlace(item, type)}</Muted>
+        {type === 'GUIDE' && item.languages?.length > 0 && <Muted>{t('guide.languages')}: {item.languages.join(', ')}</Muted>}
         {type === 'TENT' && (<Muted>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Muted>)}
         {nightPrice != null ? (<Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>
             {formatCurrency(nightPrice)}
@@ -136,7 +145,10 @@ export default function ListingDetailScreen({ route, navigation }) {
               {item.amenities.map((amenity) => (<Text key={amenity} style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4, fontSize: 12, fontWeight: '600' }}>{amenity}</Text>))}
             </View>
           </View>)}
-        {item.description ? <Muted>{item.description}</Muted> : null}
+        {type === 'GUIDE' && item.specialties?.length > 0 && (<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+            {item.specialties.map((specialty) => (<Text key={specialty} style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4, fontSize: 12, fontWeight: '600' }}>{specialty}</Text>))}
+          </View>)}
+        {(item.bio || item.description) ? <Muted>{item.bio || item.description}</Muted> : null}
         {(type === 'HOMESTAY' || type === 'TENT') && (<Card>
             <Muted>{t('listing.checkTimes', { in: formatTime12(item.checkInTime || '14:00'), out: formatTime12(item.checkOutTime || '11:00') })}</Muted>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.cancellation')}</Text>
@@ -148,6 +160,34 @@ export default function ListingDetailScreen({ route, navigation }) {
                 {item.houseRules.map((rule) => <Muted key={rule}>{rule}</Muted>)}
               </>)}
           </Card>)}
+        {type === 'GUIDE' && (<Card>
+            <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('guide.thisGuide')}</Text>
+            {['6HR', '12HR'].map((code) => {
+                const selected = guidePackage === code;
+                const amount = code === '12HR' ? item.package12hr : item.package6hr;
+                return (<Pressable key={code} onPress={() => setGuidePackage(code)} style={{
+                    padding: 10,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: selected ? COLORS.primary : COLORS.border,
+                    marginBottom: 8,
+                    backgroundColor: selected ? COLORS.primarySoft : '#fff',
+                }}>
+                  <Text style={{ fontWeight: '700', color: COLORS.text }}>{code === '12HR' ? t('guide.package12hr') : t('guide.package6hr')}</Text>
+                  {amount != null ? <Muted>{formatCurrency(amount)}</Muted> : null}
+                </Pressable>);
+            })}
+            <Pressable onPress={() => setBikeAddon((value) => !value)} style={{
+                padding: 10,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: bikeAddon ? COLORS.primary : COLORS.border,
+                backgroundColor: bikeAddon ? COLORS.primarySoft : '#fff',
+            }}>
+              <Text style={{ fontWeight: '700', color: COLORS.text }}>{t('guide.bikeAddon', { price: formatCurrency(item.bikeAddonPrice || 0) })}</Text>
+            </Pressable>
+          </Card>)}
+        {type === 'GUIDE' && <GuideRateChart />}
         {rooms.length > 0 && (<Card>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>Rooms</Text>
             {rooms.map((room) => {
