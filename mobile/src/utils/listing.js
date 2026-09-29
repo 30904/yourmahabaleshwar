@@ -10,8 +10,20 @@ export function mediaUrl(path) {
 }
 
 export function listingImage(item) {
-    const raw = item?.images?.[0] || item?.photo || item?.imageUrl || item?.coverImage || '';
+    const roomPhoto = item?.rooms?.find((room) => room?.images?.[0])?.images?.[0];
+    const raw = item?.images?.[0] || roomPhoto || item?.photo || item?.imageUrl || item?.coverImage || '';
     return mediaUrl(raw);
+}
+
+export function formatTime12(value) {
+    const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return value || '';
+    let hour = Number(match[1]);
+    const minute = match[2];
+    const period = hour >= 12 ? 'PM' : 'AM';
+    hour %= 12;
+    if (hour === 0) hour = 12;
+    return `${hour}:${minute} ${period}`;
 }
 
 export function listingPlace(item) {

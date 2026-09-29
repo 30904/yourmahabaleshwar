@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, Text } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { createBooking, getBySlug } from '../../api/endpoints';
 import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
 import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
-import { listingPlace, listingPrice, mediaUrl } from '../../utils/listing';
+import { formatTime12, listingPlace, listingPrice, mediaUrl } from '../../utils/listing';
 function tomorrow() {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -59,8 +59,12 @@ export default function ListingDetailScreen({ route, navigation }) {
                 if (chosen?._id)
                     body.roomId = chosen._id;
             }
-            else if (type === 'HOMESTAY')
+            else if (type === 'HOMESTAY') {
                 body.homestayId = item._id;
+                const chosen = (item.rooms || []).find((room) => String(room._id) === String(roomId)) || item.rooms?.[0];
+                if (chosen?._id)
+                    body.roomId = chosen._id;
+            }
             else if (type === 'TENT')
                 body.tentId = item._id;
             else if (type === 'GUIDE') {
@@ -103,7 +107,10 @@ export default function ListingDetailScreen({ route, navigation }) {
         <Muted>{t('common.error')}</Muted>
       </Screen>);
     }
-    const images = (item.images || []).map(mediaUrl).filter(Boolean);
+    const photoSource = item.images?.length
+        ? item.images
+        : (item.rooms || []).flatMap((room) => room.images || []);
+    const images = photoSource.map(mediaUrl).filter(Boolean);
     const rooms = item.rooms || [];
     const selectedRoom = rooms.find((room) => String(room._id) === String(roomId)) || rooms[0];
     const nightPrice = selectedRoom?.basePrice ?? listingPrice(item);
@@ -115,9 +122,28 @@ export default function ListingDetailScreen({ route, navigation }) {
           </Pressable>) : null}
         <Title>{item.name}</Title>
         {(type === 'HOTEL' || type === 'RESORT') && (<Muted>{type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels')}</Muted>)}
+        {type === 'HOMESTAY' && <Muted>{t('nav.homestays')}</Muted>}
         <Muted>{listingPlace(item)}</Muted>
-        {nightPrice != null ? <Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>{formatCurrency(nightPrice)}</Text> : null}
+        {nightPrice != null ? (<Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>
+            {formatCurrency(nightPrice)}
+            {type === 'HOMESTAY' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('listing.perNight')}</Text> : null}
+          </Text>) : null}
+        {type === 'HOMESTAY' && item.amenities?.length > 0 && (<View style={{ marginTop: 10 }}>
+            <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('listing.amenities')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {item.amenities.map((amenity) => (<Text key={amenity} style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4, fontSize: 12, fontWeight: '600' }}>{amenity}</Text>))}
+            </View>
+          </View>)}
         {item.description ? <Muted>{item.description}</Muted> : null}
+        {type === 'HOMESTAY' && (<Card>
+            <Muted>{t('listing.checkTimes', { in: formatTime12(item.checkInTime || '14:00'), out: formatTime12(item.checkOutTime || '11:00') })}</Muted>
+            <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.cancellation')}</Text>
+            <Muted>{item.cancellationPolicyText || t('listing.freeCancellation')}</Muted>
+            {item.houseRules?.length > 0 && (<>
+                <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.houseRules')}</Text>
+                {item.houseRules.map((rule) => <Muted key={rule}>{rule}</Muted>)}
+              </>)}
+          </Card>)}
         {rooms.length > 0 && (<Card>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>Rooms</Text>
             {rooms.map((room) => {

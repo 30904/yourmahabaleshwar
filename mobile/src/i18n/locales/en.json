@@ -61,6 +61,14 @@
     "subhead": "Hotels, homestays/villas, tents, guides, drivers, taxi and horse rides",
     "browse": "Browse categories"
   },
+  "listing": {
+    "perNight": "per night",
+    "amenities": "Facilities",
+    "houseRules": "House rules",
+    "cancellation": "Cancellation",
+    "checkTimes": "Check-in {{in}} · Check-out {{out}}",
+    "freeCancellation": "Free cancellation available on select room rates."
+  },
   "booking": {
     "bookNow": "Book now",
     "payNow": "Pay now",
