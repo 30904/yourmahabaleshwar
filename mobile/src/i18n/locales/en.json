@@ -131,6 +131,132 @@
       }
     }
   },
+  "taxi": {
+    "perTrip": "Per trip",
+    "hourly": "Hourly",
+    "perTripShort": "/ trip",
+    "hourlyShort": "/ hr",
+    "description": "Reliable taxi fleet for sightseeing, local trips and outstation transfers.",
+    "serviceArea": "Service area",
+    "thisTaxi": "This taxi",
+    "rateChartTitle": "Indicative fare chart",
+    "openRateHint": "Rates are for 4-seater Non A/C as per S.M. Enterprises tariff. Toll, parking and extras are additional.",
+    "localToursTitle": "Local sightseeing tours rate chart (4-seater Non A/C)",
+    "localToursNote": "Official S.M. Enterprises taxi tariff — duration and key points as listed.",
+    "outstationTitle": "Out of Mahabaleshwar drop & pick-up",
+    "outstationNote": "Toll and parking charges are extra (Toll + Extra).",
+    "chartDuration": "Duration",
+    "chartKeyPoints": "Key points",
+    "chartDrop": "Drop",
+    "chartReturn": "Return",
+    "carTypeLabel": "Car type",
+    "tollExtra": "(+ toll extra)",
+    "alibag": "Alibag",
+    "matheran": "Matheran",
+    "ganpatipule": "Ganpatipule",
+    "carTypes": {
+      "ac4": "AC 4 seater",
+      "ac7": "AC 7 seater",
+      "nonAc4": "NON AC 4 seater",
+      "nonAc7": "NON AC 7 seater",
+      "miniTravels19": "Mini Travels 19 seater"
+    },
+    "chartRows": {
+      "local5km": "Local up to 5 km",
+      "mapro": "Mapro Garden",
+      "panchganiWai": "Panchgani / Wai",
+      "satara": "Satara bus stand / railway station",
+      "pune": "Pune railway station / airport",
+      "poladpur": "Poladpur / Mahad",
+      "raigad": "Raigad Fort",
+      "khed": "Khed / Chiplun",
+      "coastal": "Alibag / Matheran / Ganpatipule",
+      "coastalRates": "₹15,000 / ₹17,500 / ₹16,000",
+      "mumbai": "Mumbai (Dadar, Vashi, city / airport)"
+    },
+    "tours": {
+      "mahabaleshwar1": {
+        "name": "Tour No. 1: Mahabaleshwar Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Old Mahabaleshwar",
+          "Panchganga Temple",
+          "Shiva Temple",
+          "Arthur's Seat",
+          "Window Point",
+          "Tiger Spring",
+          "Hunting Point",
+          "Malkam",
+          "Elphinstone",
+          "Kate's Point",
+          "Needle Hole",
+          "Elephant Head",
+          "Strawberry Garden"
+        ]
+      },
+      "mahabaleshwar2": {
+        "name": "Tour No. 2: Mahabaleshwar Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Wilson Point",
+          "Ganesh Temple",
+          "Plato Point",
+          "King's Chair",
+          "Lingmala Waterfall",
+          "Venna Lake Mini Dam",
+          "Lodwick Point",
+          "Mumbai Point"
+        ]
+      },
+      "pratapgad": {
+        "name": "Tour No. 3: Pratapgad Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Pratapgad Fort",
+          "Bhavani Mata Temple",
+          "Pratap Garden",
+          "Shivaji Maharaj Statue",
+          "Kadelot Point",
+          "Afzal Khan's Tomb",
+          "Shivkalin Village"
+        ],
+        "note": "Extra cost: Shree Ramvardayini Temple Par"
+      },
+      "panchgani": {
+        "name": "Tour No. 4: Panchgani Darshan",
+        "duration": "3.00 hours",
+        "points": [
+          "Parsi Point",
+          "Table Land (Caves)",
+          "Museum (Gurghar)",
+          "Bhilar Waterfall (in monsoon)",
+          "Edvis World Theme Park"
+        ],
+        "note": "Extra cost: Velocity, Mapro Garden"
+      },
+      "panchganiWai": {
+        "name": "Tour No. 5: Panchgani / Wai Darshan",
+        "duration": "6.00 hours",
+        "points": [
+          "Sydney Point",
+          "Wai (Ganpati Temple & Kashivishweshwar Temple)",
+          "Dhom Dam",
+          "Nana Phadnavis Wada (Menavali)",
+          "Mapro Factory (Shendurjane Wai)"
+        ]
+      },
+      "tapola": {
+        "name": "Tour No. 6: Tapola Darshan",
+        "duration": "3.30 hours",
+        "points": [
+          "Mini Kashmir",
+          "Water Sports",
+          "Shivsagar Darshan"
+        ],
+        "note": "Extra cost: Honey Village / Maghar Village"
+      }
+    }
+  },
   "booking": {
     "bookNow": "Book now",
     "payNow": "Pay now",

@@ -27,7 +27,7 @@ export const CATEGORIES = [
     { key: 'tents', path: '/tents', labelKey: 'nav.tents', type: 'TENT' },
     { key: 'guides', path: '/guides', labelKey: 'nav.guides', type: 'GUIDE' },
     { key: 'drivers', path: '/drivers', labelKey: 'nav.drivers', type: 'DRIVER' },
-    { key: 'taxi', path: '/taxi', labelKey: 'nav.taxi', type: 'TAXI' },
+    { key: 'taxi', path: '/drivers', labelKey: 'nav.taxi', type: 'TAXI', query: { vendorType: 'TAXI' } },
     { key: 'horses', path: '/horses', labelKey: 'nav.horses', type: 'HORSE' },
     { key: 'strawberries', path: '/products', labelKey: 'nav.strawberries', type: 'PRODUCT', query: { vertical: 'STRAWBERRY' } },
     { key: 'mapro', path: '/products', labelKey: 'nav.mapro', type: 'PRODUCT', query: { vertical: 'MAPRO' } },
