@@ -26,6 +26,7 @@ export const CATEGORIES = [
     { key: 'homestays', path: '/homestays', labelKey: 'nav.homestays', type: 'HOMESTAY' },
     { key: 'tents', path: '/tents', labelKey: 'nav.tents', type: 'TENT' },
     { key: 'guides', path: '/guides', labelKey: 'nav.guides', type: 'GUIDE' },
+    { key: 'drivers', path: '/drivers', labelKey: 'nav.drivers', type: 'DRIVER' },
     { key: 'taxi', path: '/taxi', labelKey: 'nav.taxi', type: 'TAXI' },
     { key: 'horses', path: '/horses', labelKey: 'nav.horses', type: 'HORSE' },
     { key: 'strawberries', path: '/products', labelKey: 'nav.strawberries', type: 'PRODUCT', query: { vertical: 'STRAWBERRY' } },

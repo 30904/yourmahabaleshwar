@@ -22,6 +22,7 @@
     "homestays": "Homestays/Villas",
     "tents": "Tents",
     "guides": "Guides",
+    "drivers": "Drivers",
     "taxi": "Taxi",
     "horses": "Horses",
     "strawberries": "Strawberries",
@@ -56,7 +57,7 @@
   },
   "home": {
     "headline": "Discover Mahabaleshwar",
-    "subhead": "Hotels, homestays/villas, tents, guides, taxi & horse rides",
+    "subhead": "Hotels, homestays/villas, tents, guides, drivers, taxi and horse rides",
     "browse": "Browse categories"
   },
   "booking": {
