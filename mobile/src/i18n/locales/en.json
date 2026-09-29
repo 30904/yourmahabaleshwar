@@ -282,6 +282,22 @@
       "outstationOneway": { "name": "Outstation drop / one-way", "details": "Per location — quoted separately" }
     }
   },
+  "horse": {
+    "routesTitle": "Routes & trails",
+    "minutes": "min",
+    "serviceArea": "Service area",
+    "safetyGear": "Safety gear provided",
+    "perRoute": "/ route",
+    "rateChartTitle": "Official package rate chart",
+    "openRateHint": "Rates as per S.M. Enterprises horse riding form.",
+    "packages": {
+      "sightseeing": { "name": "Sightseeing tour", "details": "Major points sightseeing" },
+      "pointToPoint": { "name": "Point-to-point ride", "details": "From one location to another" },
+      "jungleTrail": { "name": "Jungle trail / trek", "details": "Scenic jungle trail" },
+      "sunsetSunrise": { "name": "Sunset / sunrise ride", "details": "Sunrise or sunset point ride" },
+      "kids": { "name": "Kids safe ride", "details": "Supervised kids ride" }
+    }
+  },
   "booking": {
     "bookNow": "Book now",
     "payNow": "Pay now",

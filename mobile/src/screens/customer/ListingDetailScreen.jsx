@@ -3,6 +3,7 @@ import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { createBooking, getBySlug } from '../../api/endpoints';
 import DriverRateChart, { driverPackagePrice } from '../../components/DriverRateChart';
+import HorseRateChart from '../../components/HorseRateChart';
 import GuideRateChart from '../../components/GuideRateChart';
 import TaxiRateChart from '../../components/TaxiRateChart';
 import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
@@ -37,6 +38,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [taxiCar, setTaxiCar] = useState('AC_4_SEATER');
     const [taxiRoute, setTaxiRoute] = useState('tour_mahabaleshwar_1');
     const [driverPackage, setDriverPackage] = useState('local_4hr');
+    const [horseRoute, setHorseRoute] = useState(null);
     const [photoIndex, setPhotoIndex] = useState(0);
     useEffect(() => {
         getBySlug(path, slug)
@@ -45,6 +47,8 @@ export default function ListingDetailScreen({ route, navigation }) {
             setItem(stay);
             const firstRoom = stay?.rooms?.[0];
             if (firstRoom?._id) setRoomId(firstRoom._id);
+            const firstRoute = stay?.routes?.[0];
+            if (firstRoute?._id) setHorseRoute(String(firstRoute._id));
         })
             .catch(() => setItem(null))
             .finally(() => setLoading(false));
@@ -100,6 +104,9 @@ export default function ListingDetailScreen({ route, navigation }) {
             }
             else if (type === 'HORSE') {
                 body.horseId = item._id;
+                const chosen = (item.routes || []).find((route) => String(route._id) === String(horseRoute)) || item.routes?.[0];
+                if (chosen?._id)
+                    body.routeId = chosen._id;
                 body.checkIn = checkIn;
             }
             else if (type === 'PRODUCT') {
@@ -134,6 +141,8 @@ export default function ListingDetailScreen({ route, navigation }) {
     const images = photoSource.map(mediaUrl).filter(Boolean);
     const rooms = item.rooms || [];
     const selectedRoom = rooms.find((room) => String(room._id) === String(roomId)) || rooms[0];
+    const horseRoutes = item.routes || [];
+    const selectedHorseRoute = horseRoutes.find((route) => String(route._id) === String(horseRoute)) || horseRoutes[0];
     const guideBase = guidePackage === '12HR' ? item.package12hr : item.package6hr;
     const taxiAmount = Number(taxiTrip === 'HOURLY' ? item.hourlyRate : item.perTripPrice);
     const nightPrice = type === 'GUIDE'
@@ -142,7 +151,9 @@ export default function ListingDetailScreen({ route, navigation }) {
             ? (Number.isFinite(taxiAmount) ? taxiAmount : null)
             : type === 'DRIVER'
                 ? driverPackagePrice(driverPackage)
-                : (selectedRoom?.basePrice ?? listingPrice(item));
+                : type === 'HORSE'
+                    ? (selectedHorseRoute?.price ?? listingPrice(item))
+                    : (selectedRoom?.basePrice ?? listingPrice(item));
     return (<Screen>
       <ScrollView>
         {images[0] ? (<Pressable onPress={() => images.length > 1 && setPhotoIndex((i) => (i + 1) % images.length)}>
@@ -156,6 +167,7 @@ export default function ListingDetailScreen({ route, navigation }) {
         {type === 'GUIDE' && <Muted>{t('nav.guides')}</Muted>}
         {type === 'TAXI' && <Muted>{t('nav.taxi')}</Muted>}
         {type === 'DRIVER' && <Muted>{t('nav.drivers')}</Muted>}
+        {type === 'HORSE' && <Muted>{t('nav.horses')}</Muted>}
         <Muted>{listingPlace(item, type)}</Muted>
         {type === 'GUIDE' && item.languages?.length > 0 && <Muted>{t('guide.languages')}: {item.languages.join(', ')}</Muted>}
         {type === 'TENT' && (<Muted>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Muted>)}
@@ -163,6 +175,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             {formatCurrency(nightPrice)}
             {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('listing.perNight')}</Text> : null}
             {type === 'TAXI' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {taxiTrip === 'HOURLY' ? t('taxi.hourlyShort') : t('taxi.perTripShort')}</Text> : null}
+            {type === 'HORSE' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('horse.perRoute')}</Text> : null}
           </Text>) : null}
         {(type === 'HOMESTAY' || type === 'TENT') && item.amenities?.length > 0 && (<View style={{ marginTop: 10 }}>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('listing.amenities')}</Text>
@@ -174,7 +187,9 @@ export default function ListingDetailScreen({ route, navigation }) {
             {item.specialties.map((specialty) => (<Text key={specialty} style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4, fontSize: 12, fontWeight: '600' }}>{specialty}</Text>))}
           </View>)}
         {type === 'TAXI' && item.serviceArea ? <Muted>{t('taxi.serviceArea')}: {item.serviceArea}</Muted> : null}
-        {type === 'TAXI' ? <Muted>{item.description || t('taxi.description')}</Muted> : (item.bio || item.description) ? <Muted>{item.bio || item.description}</Muted> : null}
+        {type === 'HORSE' && item.stable?.serviceArea ? <Muted>{t('horse.serviceArea')}: {item.stable.serviceArea}</Muted> : null}
+        {type === 'HORSE' && item.stable?.safetyGearProvided ? <Muted>{t('horse.safetyGear')}</Muted> : null}
+        {type === 'TAXI' ? <Muted>{item.description || t('taxi.description')}</Muted> : (item.bio || item.description || item.horseDetails) ? <Muted>{item.bio || item.description || item.horseDetails}</Muted> : null}
         {(type === 'HOMESTAY' || type === 'TENT') && (<Card>
             <Muted>{t('listing.checkTimes', { in: formatTime12(item.checkInTime || '14:00'), out: formatTime12(item.checkOutTime || '11:00') })}</Muted>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.cancellation')}</Text>
@@ -234,6 +249,24 @@ export default function ListingDetailScreen({ route, navigation }) {
           </Card>)}
         {type === 'TAXI' && <TaxiRateChart selectedCar={taxiCar} onSelectCar={setTaxiCar} selectedRoute={taxiRoute} onSelectRoute={setTaxiRoute} />}
         {type === 'DRIVER' && <DriverRateChart selectedPackage={driverPackage} onSelectPackage={setDriverPackage} />}
+        {type === 'HORSE' && horseRoutes.length > 0 && (<Card>
+            <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('horse.routesTitle')}</Text>
+            {horseRoutes.map((route) => {
+                const selected = String(route._id) === String(selectedHorseRoute?._id);
+                return (<Pressable key={route._id || route.name} onPress={() => setHorseRoute(String(route._id))} style={{
+                    padding: 10,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: selected ? COLORS.primary : COLORS.border,
+                    marginBottom: 8,
+                    backgroundColor: selected ? COLORS.primarySoft : '#fff',
+                }}>
+                  <Text style={{ fontWeight: '700', color: COLORS.text }}>{route.name}</Text>
+                  <Muted>{route.durationMinutes || 30} {t('horse.minutes')} · {formatCurrency(route.price)}</Muted>
+                </Pressable>);
+            })}
+          </Card>)}
+        {type === 'HORSE' && <HorseRateChart />}
         {rooms.length > 0 && (<Card>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>Rooms</Text>
             {rooms.map((room) => {

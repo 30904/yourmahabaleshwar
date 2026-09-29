@@ -31,6 +31,7 @@ export function listingPlace(item, type) {
     if (type === 'TAXI' || type === 'DRIVER') {
         return [item?.vehicleType, item?.serviceArea || 'Mahabaleshwar'].filter(Boolean).join(' · ');
     }
+    if (type === 'HORSE') return item?.location || 'Mahabaleshwar';
     const address = item?.address;
     if (address && typeof address === 'object') {
         const line = [address.line1, address.city, address.state].filter(Boolean).join(', ');
@@ -44,6 +45,7 @@ export function listingPrice(item) {
         ?? item?.pricePerNight
         ?? item?.rooms?.[0]?.basePrice
         ?? item?.perTripPrice
+        ?? item?.routes?.[0]?.price
         ?? item?.pricePerRide
         ?? item?.package6hr
         ?? item?.price

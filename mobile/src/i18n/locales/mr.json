@@ -282,6 +282,22 @@
       "outstationOneway": { "name": "आऊटस्टेशन ड्रॉप / वन-वे", "details": "ठिकाणानुसार — स्वतंत्र दर" }
     }
   },
+  "horse": {
+    "routesTitle": "मार्ग आणि ट्रेल",
+    "minutes": "मि",
+    "serviceArea": "सेवा क्षेत्र",
+    "safetyGear": "सुरक्षा साधने उपलब्ध",
+    "perRoute": "/ मार्ग",
+    "rateChartTitle": "अधिकृत पॅकेज दरपत्रक",
+    "openRateHint": "S.M. Enterprises घोडसवारी फॉर्मनुसार दर.",
+    "packages": {
+      "sightseeing": { "name": "साईटसीईंग टूर", "details": "प्रमुख ठिकाणे दर्शन" },
+      "pointToPoint": { "name": "पॉईंट टू पॉईंट", "details": "एका ठिकाणाहून दुसऱ्या ठिकाणापर्यंत" },
+      "jungleTrail": { "name": "जंगल ट्रेल / ट्रेक", "details": "निसर्गरम्य जंगल मार्ग" },
+      "sunsetSunrise": { "name": "सनसेट / सनराईज", "details": "सूर्योदय किंवा सूर्यास्त सवारी" },
+      "kids": { "name": "लहान मुलांची सवारी", "details": "मार्गदर्शित सुरक्षित सवारी" }
+    }
+  },
   "booking": {
     "bookNow": "आता बुक करा",
     "payNow": "आता पेमेंट करा",
