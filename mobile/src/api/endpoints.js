@@ -17,6 +17,7 @@ export const createBooking = (type, body) => {
         TENT: '/bookings/tent',
         GUIDE: '/bookings/guide',
         TAXI: '/bookings/taxi',
+        DRIVER: '/bookings/taxi',
         HORSE: '/bookings/horse',
         PRODUCT: '/bookings/product',
         COMBO: '/bookings/combo',

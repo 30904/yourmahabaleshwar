@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { createBooking, getBySlug } from '../../api/endpoints';
+import DriverRateChart, { driverPackagePrice } from '../../components/DriverRateChart';
 import GuideRateChart from '../../components/GuideRateChart';
 import TaxiRateChart from '../../components/TaxiRateChart';
 import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
@@ -35,6 +36,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [taxiTrip, setTaxiTrip] = useState('PER_TRIP');
     const [taxiCar, setTaxiCar] = useState('AC_4_SEATER');
     const [taxiRoute, setTaxiRoute] = useState('tour_mahabaleshwar_1');
+    const [driverPackage, setDriverPackage] = useState('local_4hr');
     const [photoIndex, setPhotoIndex] = useState(0);
     useEffect(() => {
         getBySlug(path, slug)
@@ -89,6 +91,13 @@ export default function ListingDetailScreen({ route, navigation }) {
                     body.hours = Number(guests) || 1;
                 body.checkIn = checkIn;
             }
+            else if (type === 'DRIVER') {
+                body.driverId = item._id;
+                body.serviceTenant = 'DRIVER';
+                body.driverPackage = driverPackage;
+                body.taxiType = 'PER_TRIP';
+                body.checkIn = checkIn;
+            }
             else if (type === 'HORSE') {
                 body.horseId = item._id;
                 body.checkIn = checkIn;
@@ -131,7 +140,9 @@ export default function ListingDetailScreen({ route, navigation }) {
         ? (Number(guideBase) || 0) + (bikeAddon ? (Number(item.bikeAddonPrice) || 0) : 0)
         : type === 'TAXI'
             ? (Number.isFinite(taxiAmount) ? taxiAmount : null)
-            : (selectedRoom?.basePrice ?? listingPrice(item));
+            : type === 'DRIVER'
+                ? driverPackagePrice(driverPackage)
+                : (selectedRoom?.basePrice ?? listingPrice(item));
     return (<Screen>
       <ScrollView>
         {images[0] ? (<Pressable onPress={() => images.length > 1 && setPhotoIndex((i) => (i + 1) % images.length)}>
@@ -144,6 +155,7 @@ export default function ListingDetailScreen({ route, navigation }) {
         {type === 'TENT' && <Muted>{t('nav.tents')}</Muted>}
         {type === 'GUIDE' && <Muted>{t('nav.guides')}</Muted>}
         {type === 'TAXI' && <Muted>{t('nav.taxi')}</Muted>}
+        {type === 'DRIVER' && <Muted>{t('nav.drivers')}</Muted>}
         <Muted>{listingPlace(item, type)}</Muted>
         {type === 'GUIDE' && item.languages?.length > 0 && <Muted>{t('guide.languages')}: {item.languages.join(', ')}</Muted>}
         {type === 'TENT' && (<Muted>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Muted>)}
@@ -221,6 +233,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             })}
           </Card>)}
         {type === 'TAXI' && <TaxiRateChart selectedCar={taxiCar} onSelectCar={setTaxiCar} selectedRoute={taxiRoute} onSelectRoute={setTaxiRoute} />}
+        {type === 'DRIVER' && <DriverRateChart selectedPackage={driverPackage} onSelectPackage={setDriverPackage} />}
         {rooms.length > 0 && (<Card>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>Rooms</Text>
             {rooms.map((room) => {

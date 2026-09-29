@@ -257,6 +257,31 @@
       }
     }
   },
+  "driver": {
+    "title": "Book a driver",
+    "hubDesc": "Individual driver partners for local trips and sightseeing. Submit your request — we assign a driver for you.",
+    "noVendorPick": "You do not choose a specific partner — submit your request and our team will assign the best available vendor.",
+    "howItWorks": "How it works",
+    "step1": "Fill in your trip details using the booking form",
+    "step2": "Our admin team assigns the best available verified partner",
+    "step3": "The assigned partner confirms your booking",
+    "feature1": "Local sightseeing",
+    "feature2": "Flexible hourly trips",
+    "feature3": "Verified drivers",
+    "rateChartTitle": "Indicative fare chart",
+    "openRateHint": "Outstation drop / one-way is quoted separately.",
+    "extraChargesTitle": "Extra charges (as applicable)",
+    "separateQuote": "Separate quote",
+    "overtime": "Overtime",
+    "night": "Night / early morning (11 PM–6 AM)",
+    "oneWayLuxury": "One-way or luxury car",
+    "packages": {
+      "local4hr": { "name": "Local 4 hours", "details": "Local city travel" },
+      "local8hr": { "name": "Local 8 hours", "details": "Local city travel" },
+      "outstation12hr": { "name": "Outstation 12 hours", "details": "Round trip" },
+      "outstationOneway": { "name": "Outstation drop / one-way", "details": "Per location — quoted separately" }
+    }
+  },
   "booking": {
     "bookNow": "Book now",
     "payNow": "Pay now",

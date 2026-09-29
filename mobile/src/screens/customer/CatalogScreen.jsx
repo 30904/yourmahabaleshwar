@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Image, Pressable, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { listCatalog } from '../../api/endpoints';
+import { DriverBookingIntro } from '../../components/DriverRateChart';
 import TaxiRateChart from '../../components/TaxiRateChart';
 import { Card, Loading, Muted, Screen, Title } from '../../components/ui';
 import { COLORS } from '../../constants/theme';
@@ -23,7 +24,7 @@ export default function CatalogScreen({ route, navigation }) {
         return <Loading />;
     return (<Screen style={{ paddingTop: 8 }}>
       <Title>{title}</Title>
-      <FlatList data={items} keyExtractor={(item) => item._id || item.slug} ListHeaderComponent={type === 'TAXI' ? <TaxiRateChart /> : null} ListEmptyComponent={<Muted>{t('common.empty')}</Muted>} renderItem={({ item }) => (<Pressable onPress={() => navigation.navigate('ListingDetail', {
+      <FlatList data={items} keyExtractor={(item) => item._id || item.slug} ListHeaderComponent={type === 'TAXI' ? <TaxiRateChart /> : type === 'DRIVER' ? <DriverBookingIntro /> : null} ListEmptyComponent={<Muted>{t('common.empty')}</Muted>} renderItem={({ item }) => (<Pressable onPress={() => navigation.navigate('ListingDetail', {
                 path,
                 slug: item.slug,
                 type,
