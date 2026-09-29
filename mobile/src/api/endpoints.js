@@ -4,6 +4,7 @@ export const register = (payload) => api.post('/auth/register', payload).then((r
 export const registerVendor = (payload) => api.post('/auth/register-vendor', payload).then((r) => r.data.data);
 export const sendOtp = (payload) => api.post('/auth/otp/send', payload).then((r) => r.data.data);
 export const verifyOtp = (payload) => api.post('/auth/otp/verify', payload).then((r) => r.data.data);
+export const forgotPassword = (email) => api.post('/auth/forgot-password', { email }).then((r) => r.data);
 export const fetchMe = () => api.get('/auth/me').then((r) => r.data.data);
 export const logoutApi = () => api.post('/auth/logout').then((r) => r.data);
 export const listCatalog = (path, params) => api.get(path, { params }).then((r) => r.data.data);

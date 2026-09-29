@@ -46,6 +46,10 @@
     "accountCreated": "खाते तयार झाले",
     "otpSent": "OTP पाठवला",
     "resendOtp": "OTP पुन्हा पाठवा",
+    "forgotPassword": "पासवर्ड विसरलात?",
+    "forgotHint": "नोंदणीकृत ईमेल टाका. रीसेट सूचना पाठवल्या जातील.",
+    "sendReset": "रीसेट लिंक पाठवा",
+    "resetSent": "हा ईमेल नोंदणीकृत असल्यास रीसेट सूचना पाठवल्या आहेत.",
     "verify": "OTP पडताळा",
     "logout": "साइन आउट",
     "welcome": "YOURMAHABALESHWAR मध्ये स्वागत"

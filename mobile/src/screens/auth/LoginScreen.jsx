@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text } from 'react-native';
+import { Alert, Pressable, ScrollView, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Field, Screen, Title, Muted, Card } from '../../components/ui';
@@ -77,6 +77,9 @@ export default function LoginScreen({ navigation }) {
         {step === 'form' ? (<Card>
             <Field label={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address"/>
             <Field label={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry/>
+            <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: 'flex-end', marginBottom: 4 }}>
+              <Text style={{ color: COLORS.primary, fontWeight: '700' }}>{t('auth.forgotPassword')}</Text>
+            </Pressable>
             <Button title={t('auth.signIn')} onPress={onLogin} loading={loading}/>
             <Button title={t('auth.register')} onPress={() => navigation.navigate('Register')} variant="outline"/>
             <Button title={t('auth.vendorRegister')} onPress={() => navigation.navigate('VendorRegister')} variant="outline"/>

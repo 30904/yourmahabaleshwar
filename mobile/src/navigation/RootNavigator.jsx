@@ -10,6 +10,7 @@ import { COLORS } from '../constants/theme';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import VendorRegisterScreen from '../screens/auth/VendorRegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import HomeScreen from '../screens/customer/HomeScreen';
 import CatalogScreen from '../screens/customer/CatalogScreen';
 import ListingDetailScreen from '../screens/customer/ListingDetailScreen';
@@ -25,6 +26,7 @@ function AuthNavigator() {
       <AuthStack.Screen name="Login" component={LoginScreen}/>
       <AuthStack.Screen name="Register" component={RegisterScreen}/>
       <AuthStack.Screen name="VendorRegister" component={VendorRegisterScreen}/>
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen}/>
     </AuthStack.Navigator>);
 }
 function MainTabs() {

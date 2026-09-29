@@ -46,6 +46,10 @@
     "accountCreated": "Account created",
     "otpSent": "OTP sent",
     "resendOtp": "Resend OTP",
+    "forgotPassword": "Forgot password?",
+    "forgotHint": "Enter your account email. We will send reset instructions if it is registered.",
+    "sendReset": "Send reset link",
+    "resetSent": "If that email is registered, reset instructions have been sent.",
     "verify": "Verify OTP",
     "logout": "Sign out",
     "welcome": "Welcome to YOURMAHABALESHWAR"
