@@ -62,8 +62,8 @@ export function AuthProvider({ children }) {
             });
             return { requiresOtp: true, devCode: data.devCode };
         }
-        await persistSession(data);
-        return {};
+        const user = await persistSession(data);
+        return { user };
     }, []);
     const registerVendor = useCallback(async (payload) => {
         const data = await registerVendorApi(payload);
