@@ -18,8 +18,13 @@ import CatalogScreen from '../screens/customer/CatalogScreen';
 import ListingDetailScreen from '../screens/customer/ListingDetailScreen';
 import BookingsScreen from '../screens/customer/BookingsScreen';
 import AccountScreen from '../screens/customer/AccountScreen';
+import FavoritesScreen from '../screens/customer/FavoritesScreen';
 import VendorHubScreen from '../screens/vendor/VendorHubScreen';
 import VendorKycScreen from '../screens/vendor/VendorKycScreen';
+import VendorListingsScreen from '../screens/vendor/VendorListingsScreen';
+import VendorListingFormScreen from '../screens/vendor/VendorListingFormScreen';
+import VendorPricingScreen from '../screens/vendor/VendorPricingScreen';
+import VendorAvailabilityScreen from '../screens/vendor/VendorAvailabilityScreen';
 const AuthStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -70,8 +75,13 @@ export default function RootNavigator() {
         <RootStack.Screen name="Content" component={ContentScreen} options={{ title: 'Info' }}/>
         <RootStack.Screen name="Catalog" component={CatalogScreen} options={{ title: 'Explore' }}/>
         <RootStack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: 'Details' }}/>
+        <RootStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Saved' }}/>
         <RootStack.Screen name="VendorHub" component={VendorHubScreen} options={{ title: 'Vendor' }}/>
         <RootStack.Screen name="VendorKyc" component={VendorKycScreen} options={{ title: 'KYC' }}/>
+        <RootStack.Screen name="VendorListings" component={VendorListingsScreen} options={{ title: 'Listings' }}/>
+        <RootStack.Screen name="VendorListingForm" component={VendorListingFormScreen} options={{ title: 'Listing' }}/>
+        <RootStack.Screen name="VendorPricing" component={VendorPricingScreen} options={{ title: 'Prices' }}/>
+        <RootStack.Screen name="VendorAvailability" component={VendorAvailabilityScreen} options={{ title: 'Dates' }}/>
       </RootStack.Navigator>
     </NavigationContainer>);
 }

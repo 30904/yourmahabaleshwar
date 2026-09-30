@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { fetchMe, login as loginApi, logoutApi, register as registerApi, registerVendor as registerVendorApi, sendOtp as sendOtpApi, verifyOtp as verifyOtpApi, } from '../api/endpoints';
+import { fetchMe, login as loginApi, logoutApi, register as registerApi, registerVendor as registerVendorApi, sendOtp as sendOtpApi, updateProfile, verifyOtp as verifyOtpApi, } from '../api/endpoints';
 import { VENDOR_ROLES } from '../constants/theme';
 import { registerForPushNotifications, unregisterPushNotifications } from '../services/push';
 const AuthContext = createContext(null);
@@ -102,6 +102,11 @@ export function AuthProvider({ children }) {
         setPendingOtp((p) => (p ? { ...p, devCode: data.devCode } : p));
         return { devCode: data.devCode };
     }, [pendingOtp]);
+    const saveProfile = useCallback(async (body) => {
+        const updated = await updateProfile(body);
+        setUser(updated);
+        return updated;
+    }, []);
     const logout = useCallback(async () => {
         try {
             await unregisterPushNotifications();
@@ -129,8 +134,9 @@ export function AuthProvider({ children }) {
         registerVendor,
         verifyOtp,
         resendOtp,
+        saveProfile,
         logout,
-    }), [user, loading, pendingOtp, login, register, registerVendor, verifyOtp, resendOtp, logout]);
+    }), [user, loading, pendingOtp, login, register, registerVendor, verifyOtp, resendOtp, saveProfile, logout]);
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => {

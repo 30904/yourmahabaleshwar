@@ -53,3 +53,31 @@ export function listingPrice(item) {
     const n = Number(amount);
     return Number.isFinite(n) ? n : null;
 }
+
+export function bookingTitle(booking) {
+    return booking?.hotel?.name
+        || booking?.homestay?.name
+        || booking?.tent?.name
+        || booking?.guide?.name
+        || booking?.driver?.name
+        || booking?.horse?.name
+        || booking?.product?.name
+        || booking?.combo?.name
+        || booking?.type
+        || 'Booking';
+}
+
+const WISHLIST_PATHS = {
+    HOTEL: '/hotels',
+    RESORT: '/hotels',
+    HOMESTAY: '/homestays',
+    TENT: '/tents',
+    GUIDE: '/guides',
+    TAXI: '/drivers',
+    DRIVER: '/drivers',
+    HORSE: '/horses',
+};
+
+export function wishlistPath(type) {
+    return WISHLIST_PATHS[type] || null;
+}

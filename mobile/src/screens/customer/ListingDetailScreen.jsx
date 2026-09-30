@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { createBooking, getBySlug } from '../../api/endpoints';
+import { addWishlist, createBooking, getBySlug, getWishlist, removeWishlist } from '../../api/endpoints';
 import DriverRateChart, { DRIVER_PACKAGES, driverPackagePrice } from '../../components/DriverRateChart';
 import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../components/HorseRateChart';
 import GuideRateChart, { GUIDE_CHART_PACKAGES, guideChartPrice } from '../../components/GuideRateChart';
@@ -10,7 +10,7 @@ import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../compon
 import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
-import { formatTime12, listingPlace, listingPrice, mediaUrl } from '../../utils/listing';
+import { formatTime12, listingPlace, listingPrice, mediaUrl, wishlistPath } from '../../utils/listing';
 function tomorrow() {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -28,9 +28,10 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [booking, setBooking] = useState(false);
-    const [checkIn, setCheckIn] = useState(tomorrow());
+    const [checkIn, setCheckIn] = useState(type === 'COMBO' ? dayAfter() : tomorrow());
     const [checkOut, setCheckOut] = useState(dayAfter());
     const [guests, setGuests] = useState('2');
+    const [productQty, setProductQty] = useState('1');
     const [adults, setAdults] = useState('2');
     const [children, setChildren] = useState('0');
     const [leadName, setLeadName] = useState('');
@@ -49,6 +50,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [driverPackage, setDriverPackage] = useState('local_4hr');
     const [horsePackage, setHorsePackage] = useState('sightseeing');
     const [photoIndex, setPhotoIndex] = useState(0);
+    const [saved, setSaved] = useState(false);
     useEffect(() => {
         getBySlug(path, slug)
             .then((data) => {
@@ -60,6 +62,35 @@ export default function ListingDetailScreen({ route, navigation }) {
             .catch(() => setItem(null))
             .finally(() => setLoading(false));
     }, [path, slug]);
+    useEffect(() => {
+        if (!user || !item?._id || !wishlistPath(type))
+            return;
+        getWishlist()
+            .then((rows) => {
+            setSaved((rows || []).some((row) => String(row.item?._id) === String(item._id) && row.itemType === type));
+        })
+            .catch(() => setSaved(false));
+    }, [user, item?._id, type]);
+    const onSaveListing = async () => {
+        if (!user) {
+            Alert.alert(t('auth.signIn'), t('account.signInToSave'));
+            navigation.navigate('Auth');
+            return;
+        }
+        try {
+            if (saved) {
+                await removeWishlist(item._id, type);
+                setSaved(false);
+            }
+            else {
+                await addWishlist(item._id, type);
+                setSaved(true);
+            }
+        }
+        catch (e) {
+            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+        }
+    };
     const onBook = async () => {
         if (!user) {
             Alert.alert(t('auth.signIn'), 'Please sign in to book');
@@ -102,6 +133,10 @@ export default function ListingDetailScreen({ route, navigation }) {
                 Alert.alert(t('common.error'), t('booking.needTerms'));
                 return;
             }
+        }
+        if (type === 'COMBO' && !checkIn) {
+            Alert.alert(t('common.error'), t('booking.badDates'));
+            return;
         }
         setBooking(true);
         try {
@@ -286,10 +321,29 @@ export default function ListingDetailScreen({ route, navigation }) {
                 };
             }
             else if (type === 'PRODUCT') {
+                const qty = Math.max(1, Number(productQty) || 1);
+                const stock = Number(item.stock);
+                if (Number.isFinite(stock) && stock < 1) {
+                    Alert.alert(t('common.error'), t('shop.outOfStock'));
+                    setBooking(false);
+                    return;
+                }
+                if (Number.isFinite(stock) && qty > stock) {
+                    Alert.alert(t('common.error'), t('shop.onlyStock', { count: stock }));
+                    setBooking(false);
+                    return;
+                }
                 body.productId = item._id;
-                body.quantity = Number(guests) || 1;
+                body.quantity = qty;
+                body.deliveryAddress = {
+                    phone: user.phone || '',
+                    city: 'Mahabaleshwar',
+                    note: 'Local pickup/delivery',
+                };
             }
             else if (type === 'COMBO') {
+                delete body.guests;
+                delete body.checkOut;
                 body.comboId = item._id;
                 body.checkIn = checkIn;
             }
@@ -326,7 +380,9 @@ export default function ListingDetailScreen({ route, navigation }) {
                 ? driverPackagePrice(driverPackage)
                 : type === 'HORSE'
                     ? horseChartPrice(horsePackage)
-                    : (selectedRoom?.basePrice ?? listingPrice(item));
+                    : type === 'COMBO'
+                        ? (Number(item.comboPrice) || 0)
+                        : (selectedRoom?.basePrice ?? listingPrice(item));
     return (<Screen>
       <ScrollView>
         {images[0] ? (<Pressable onPress={() => images.length > 1 && setPhotoIndex((i) => (i + 1) % images.length)}>
@@ -334,6 +390,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             {images.length > 1 ? <Muted>{photoIndex + 1}/{images.length}</Muted> : null}
           </Pressable>) : null}
         <Title>{item.name}</Title>
+        {wishlistPath(type) ? <Button title={saved ? t('account.savedListing') : t('account.saveListing')} variant={saved ? 'outline' : 'primary'} onPress={onSaveListing}/> : null}
         {(type === 'HOTEL' || type === 'RESORT') && (<Muted>{type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels')}</Muted>)}
         {type === 'HOMESTAY' && <Muted>{t('nav.homestays')}</Muted>}
         {type === 'TENT' && <Muted>{t('nav.tents')}</Muted>}
@@ -342,7 +399,8 @@ export default function ListingDetailScreen({ route, navigation }) {
         {type === 'DRIVER' && <Muted>{t('nav.drivers')}</Muted>}
         {type === 'HORSE' && <Muted>{t('nav.horses')}</Muted>}
         {type === 'COMBO' && <Muted>{t('nav.combos')}</Muted>}
-        {type !== 'COMBO' && <Muted>{listingPlace(item, type)}</Muted>}
+        {type === 'PRODUCT' && <Muted>{item.vertical === 'MAPRO' ? t('nav.mapro') : t('nav.strawberries')}</Muted>}
+        {type !== 'COMBO' && type !== 'PRODUCT' && <Muted>{listingPlace(item, type)}</Muted>}
         {type === 'GUIDE' && item.languages?.length > 0 && <Muted>{t('guide.languages')}: {item.languages.join(', ')}</Muted>}
         {type === 'TENT' && (<Muted>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Muted>)}
         {nightPrice != null ? (<Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>
@@ -350,6 +408,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('listing.perNight')}</Text> : null}
             {type === 'GUIDE' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('guide.sixHourShort')}</Text> : null}
             {type === 'TAXI' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('taxi.perTripShort')}</Text> : null}
+            {type === 'PRODUCT' && item.unit ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> / {item.unit}</Text> : null}
             {type === 'COMBO' && item.originalPrice != null ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted, textDecorationLine: 'line-through' }}> {formatCurrency(item.originalPrice)}</Text> : null}
           </Text>) : null}
         {type === 'COMBO' && item.originalPrice > item.comboPrice ? <Muted>{t('shop.save')} {formatCurrency(item.originalPrice - item.comboPrice)}</Muted> : null}
@@ -372,7 +431,9 @@ export default function ListingDetailScreen({ route, navigation }) {
         {type === 'TAXI' && item.serviceArea ? <Muted>{t('taxi.serviceArea')}: {item.serviceArea}</Muted> : null}
         {type === 'HORSE' && item.stable?.serviceArea ? <Muted>{t('horse.serviceArea')}: {item.stable.serviceArea}</Muted> : null}
         {type === 'HORSE' && item.stable?.safetyGearProvided ? <Muted>{t('horse.safetyGear')}</Muted> : null}
-        {type === 'TAXI' ? <Muted>{item.description || t('taxi.description')}</Muted> : (item.bio || item.description || item.horseDetails) ? <Muted>{item.bio || item.description || item.horseDetails}</Muted> : null}
+        {type === 'PRODUCT' && (item.description || item.shortDescription) ? <Muted>{item.description || item.shortDescription}</Muted> : null}
+        {type === 'PRODUCT' && item.deliveryNote ? <Muted>{item.deliveryNote}</Muted> : null}
+        {type === 'TAXI' ? <Muted>{item.description || t('taxi.description')}</Muted> : type !== 'PRODUCT' && (item.bio || item.description || item.horseDetails) ? <Muted>{item.bio || item.description || item.horseDetails}</Muted> : null}
         {(type === 'HOMESTAY' || type === 'TENT') && (<Card>
             <Muted>{t('listing.checkTimes', { in: formatTime12(item.checkInTime || '14:00'), out: formatTime12(item.checkOutTime || '11:00') })}</Muted>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.cancellation')}</Text>
@@ -421,8 +482,8 @@ export default function ListingDetailScreen({ route, navigation }) {
             })}
           </Card>)}
         <Card>
-          <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('booking.bookNow')}</Text>
-          <Field label={type === 'GUIDE' ? t('guide.tourDate') : type === 'TAXI' ? t('taxi.tripDate') : type === 'DRIVER' ? t('driver.tripDate') : type === 'HORSE' ? t('horse.rideDate') : t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+          <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('booking.bookNow')}</Text>
+          {type !== 'PRODUCT' && <Field label={type === 'GUIDE' ? t('guide.tourDate') : type === 'TAXI' ? t('taxi.tripDate') : type === 'DRIVER' ? t('driver.tripDate') : type === 'HORSE' ? t('horse.rideDate') : t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>}
           {(type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT') && (<Field label={t('booking.checkOut')} value={checkOut} onChangeText={setCheckOut} placeholder="YYYY-MM-DD"/>)}
           {type === 'GUIDE' ? (<>
             {GUIDE_CHART_PACKAGES.map((pkg) => {
@@ -485,7 +546,11 @@ export default function ListingDetailScreen({ route, navigation }) {
               <Text style={{ fontWeight: '700', color: acceptTerms ? COLORS.primary : COLORS.text }}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
             </Pressable>
             <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency(horseChartPrice(horsePackage))}</Text>
-          </>) : (type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT') ? (<>
+          </>) : type === 'PRODUCT' ? (<>
+            <Field label={t('shop.quantity')} value={productQty} onChangeText={setProductQty} keyboardType="numeric"/>
+            {Number.isFinite(Number(item.stock)) ? <Muted>{t('shop.onlyStock', { count: item.stock })}</Muted> : null}
+            <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency((Number(item.price) || 0) * Math.max(1, Number(productQty) || 1))}</Text>
+          </>) : type === 'COMBO' ? (<Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency(Number(item.comboPrice) || 0)}</Text>) : (type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT') ? (<>
             {type === 'TENT' ? <Field label={t('booking.tentQuantity')} value={tentQuantity} onChangeText={setTentQuantity} keyboardType="numeric"/> : null}
             <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
             <Field label={t('booking.children')} value={children} onChangeText={setChildren} keyboardType="numeric"/>
@@ -508,7 +573,7 @@ export default function ListingDetailScreen({ route, navigation }) {
                 return <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{t('booking.nightsCount', { count: nights })} · {formatCurrency(nightPrice * nights * qty)}</Text>;
             })()}
           </>) : <Field label={t('booking.guests')} value={guests} onChangeText={setGuests} keyboardType="numeric"/>}
-          <Button title={t('booking.bookNow')} onPress={onBook} loading={booking}/>
+          <Button title={type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('booking.bookNow')} onPress={onBook} loading={booking}/>
         </Card>
       </ScrollView>
     </Screen>);

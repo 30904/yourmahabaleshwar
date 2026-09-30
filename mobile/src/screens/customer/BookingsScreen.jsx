@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Linking, RefreshControl, Text, View } from 'react-native';
+import { Alert, FlatList, Modal, Platform, RefreshControl, Text, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
   createPaymentOrder,
-  invoiceUrl,
+  downloadInvoice,
   myBookings,
   requestRefund,
+  refundPreview,
   vendorBookings,
   verifyPayment,
   updateBookingStatus,
@@ -15,14 +17,16 @@ import {
   vendorProposeEnd,
   confirmServiceEnd,
 } from '../../api/endpoints';
-import { Button, Card, Loading, Muted, Screen, Title } from '../../components/ui';
+import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
 import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
-import * as SecureStore from 'expo-secure-store';
+import { bookingTitle } from '../../utils/listing';
+import { checkoutHtml, openWebCheckout } from '../../services/razorpayCheckout';
 
 const TRIP_TENANTS = ['GUIDE', 'TAXI', 'DRIVER', 'HORSE'];
 const TRIP_TYPES = ['GUIDE', 'TAXI', 'HORSE'];
+const OVERTIME_PER_HOUR = 150;
 
 const isTrip = (b) =>
   (b.serviceTenant && TRIP_TENANTS.includes(b.serviceTenant)) || TRIP_TYPES.includes(b.type);
@@ -38,11 +42,19 @@ const activeTrip = (b) =>
   b.status !== 'CANCELLED' &&
   b.status !== 'REFUNDED';
 
+function when(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 export default function BookingsScreen() {
   const { t } = useTranslation();
   const { isVendor, user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [checkout, setCheckout] = useState(null);
+  const [endBookingId, setEndBookingId] = useState(null);
+  const [overtimeHours, setOvertimeHours] = useState('0');
 
   const load = async () => {
     setLoading(true);
@@ -62,6 +74,17 @@ export default function BookingsScreen() {
     }, [isVendor])
   );
 
+  const recordPayment = async (payment, response) => {
+    await verifyPayment({
+      paymentId: payment._id,
+      razorpayPaymentId: response.razorpay_payment_id,
+      razorpayOrderId: response.razorpay_order_id,
+      razorpaySignature: response.razorpay_signature,
+    });
+    Alert.alert(t('booking.paid'));
+    load();
+  };
+
   const pay = async (b) => {
     try {
       const { order, payment, keyId } = await createPaymentOrder(b._id);
@@ -76,27 +99,70 @@ export default function BookingsScreen() {
         load();
         return;
       }
-      Alert.alert('Razorpay', 'Live checkout requires react-native-razorpay in a custom/dev build. Using mock verify for now.');
-      await verifyPayment({
-        paymentId: payment._id,
-        razorpayPaymentId: `pay_mock_${Date.now()}`,
-        razorpayOrderId: order.id,
-        razorpaySignature: `mock_sig_${Date.now()}`,
-      });
-      load();
+      const details = { keyId, order, bookingNumber: b.bookingNumber, user };
+      if (Platform.OS === 'web') {
+        const response = await openWebCheckout(details);
+        await recordPayment(payment, response);
+        return;
+      }
+      setCheckout({ ...details, payment });
+    } catch (e) {
+      if (e?.message === 'CANCELLED') {
+        Alert.alert(t('booking.paymentCancelled'));
+        return;
+      }
+      Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+    }
+  };
+
+  const onCheckoutMessage = async (event) => {
+    const current = checkout;
+    setCheckout(null);
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (!data.ok) {
+        Alert.alert(t('booking.paymentCancelled'));
+        return;
+      }
+      await recordPayment(current.payment, data.response);
     } catch (e) {
       Alert.alert(t('common.error'), e.response?.data?.message || e.message);
     }
   };
 
   const openInvoice = async (b) => {
-    const token = await SecureStore.getItemAsync('accessToken');
-    const url = invoiceUrl(b._id);
-    if (b.invoiceUrl) {
-      Linking.openURL(b.invoiceUrl.startsWith('http') ? b.invoiceUrl : url);
-      return;
+    try {
+      await downloadInvoice(b._id);
+    } catch (e) {
+      Alert.alert(t('common.error'), e.response?.data?.message || e.message || t('booking.invoiceFailed'));
     }
-    Linking.openURL(url + (token ? `?token=${token}` : ''));
+  };
+
+  const askRefund = async (b) => {
+    try {
+      const preview = await refundPreview(b._id);
+      Alert.alert(
+        t('booking.refund'),
+        t('booking.refundPreview', { amount: formatCurrency(preview.amount), type: preview.type }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.continue'),
+            onPress: async () => {
+              try {
+                await requestRefund(b._id, 'Customer cancellation');
+                Alert.alert(t('booking.refundSent'));
+                load();
+              } catch (e) {
+                Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+              }
+            },
+          },
+        ]
+      );
+    } catch (e) {
+      Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+    }
   };
 
   if (loading && !items.length) return <Loading />;
@@ -112,42 +178,70 @@ export default function BookingsScreen() {
         ListEmptyComponent={<Muted>{t('booking.noBookings')}</Muted>}
         renderItem={({ item }) => (
           <Card>
-            <Text style={{ fontWeight: '800', color: COLORS.text }}>{item.bookingNumber || item.type}</Text>
+            <Text style={{ fontWeight: '800', color: COLORS.text }}>{bookingTitle(item)}</Text>
             <Muted>
-              {t('booking.status')}: {item.status} · {t('booking.total')}: {formatCurrency(item.total)}
+              {item.bookingNumber || item._id} · {item.type}
+              {item.checkIn ? ` · ${new Date(item.checkIn).toLocaleDateString()}` : ''}
             </Muted>
-            {isTrip(item) && hasArrived(item) && !arrivalOk(item) ? <Muted>Partner arrived — confirm</Muted> : null}
-            {isTrip(item) && arrivalOk(item) && !endProposed(item) && !ended(item) ? <Muted>Arrival confirmed</Muted> : null}
+            <Muted>{t('booking.status')}: {item.status}</Muted>
+            <Text style={{ fontWeight: '800', color: COLORS.primary }}>{t('booking.total')}: {formatCurrency(item.total)}</Text>
+            {item.guestRegistration?.leadGuest?.fullName ? (
+              <Muted>
+                {item.guestRegistration.leadGuest.fullName}
+                {item.guestRegistration.leadGuest.mobile ? ` · ${item.guestRegistration.leadGuest.mobile}` : ''}
+                {item.guests?.adults != null ? ` · ${item.guests.adults} ${t('booking.adults')}` : ''}
+                {item.guests?.children ? ` · ${item.guests.children} ${t('booking.children')}` : ''}
+              </Muted>
+            ) : null}
+            {item.refundStatus && item.refundStatus !== 'NONE' ? (
+              <Muted>
+                {t('booking.refundStatus')}: {item.refundStatus}
+                {item.refundAmount ? ` · ${formatCurrency(item.refundAmount)}` : ''}
+              </Muted>
+            ) : null}
+            {isTrip(item) && hasArrived(item) && !arrivalOk(item) ? <Muted>{t('booking.statusVendorArrived')}</Muted> : null}
+            {isTrip(item) && arrivalOk(item) && !endProposed(item) && !ended(item) ? (
+              <Muted>
+                {t('booking.statusArrivalConfirmed')}
+                {(item.arrivalConfirmedAt || item.guideReachedAt) ? ` · ${when(item.arrivalConfirmedAt || item.guideReachedAt)}` : ''}
+              </Muted>
+            ) : null}
             {isTrip(item) && endProposed(item) ? (
               <Muted>
-                End requested
-                {item.overtimeHours > 0 ? ` · OT ${item.overtimeHours}h (${formatCurrency(item.overtimeAmount || 0)})` : ''}
+                {t('booking.statusEndProposed')}
+                {item.overtimeHours > 0
+                  ? ` · ${t('booking.overtimeSummary', { hours: item.overtimeHours, amount: formatCurrency(item.overtimeAmount || 0) })}`
+                  : ` · ${t('booking.noOvertime')}`}
               </Muted>
             ) : null}
             {isTrip(item) && ended(item) ? (
               <Muted>
-                Booking ended
-                {item.overtimeHours > 0 ? ` · OT ${item.overtimeHours}h (${formatCurrency(item.overtimeAmount || 0)})` : ''}
+                {t('booking.statusEnded')}
+                {(item.serviceEndedAt || item.guideEndedAt) ? ` · ${when(item.serviceEndedAt || item.guideEndedAt)}` : ''}
+                {item.overtimeHours > 0
+                  ? ` · ${t('booking.overtimeSummary', { hours: item.overtimeHours, amount: formatCurrency(item.overtimeAmount || 0) })}`
+                  : ''}
               </Muted>
             ) : null}
             <View style={{ gap: 4 }}>
-              {!isVendor && item.paymentStatus !== 'PAID' && item.status !== 'CANCELLED' && (
+              {!isVendor && item.paymentStatus === 'PENDING' && (
                 <Button title={t('booking.payNow')} onPress={() => pay(item)} />
               )}
               {isVendor && activeTrip(item) && !hasArrived(item) && (
                 <Button
-                  title="I have arrived"
+                  title={t('booking.vendorArrivedButton')}
                   onPress={() => {
-                    Alert.alert('Arrival', 'Mark that you have reached the customer?', [
-                      { text: 'Cancel', style: 'cancel' },
+                    Alert.alert(t('booking.vendorArrivedButton'), t('booking.vendorArrivedAsk'), [
+                      { text: t('common.cancel'), style: 'cancel' },
                       {
-                        text: 'Confirm',
+                        text: t('common.continue'),
                         onPress: async () => {
                           try {
                             await vendorMarkArrived(item._id);
+                            Alert.alert(t('booking.vendorArrivedSuccess'));
                             load();
                           } catch (e) {
-                            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+                            Alert.alert(t('common.error'), e.response?.data?.message || t('booking.vendorArrivedFailed'));
                           }
                         },
                       },
@@ -157,18 +251,19 @@ export default function BookingsScreen() {
               )}
               {!isVendor && activeTrip(item) && hasArrived(item) && !arrivalOk(item) && (
                 <Button
-                  title="Confirm partner arrived"
+                  title={t('booking.confirmArrivalButton')}
                   onPress={() => {
-                    Alert.alert('Confirm', 'Confirm that your partner has reached you?', [
-                      { text: 'Cancel', style: 'cancel' },
+                    Alert.alert(t('booking.confirmArrivalButton'), t('booking.confirmArrivalAsk'), [
+                      { text: t('common.cancel'), style: 'cancel' },
                       {
-                        text: 'Confirm',
+                        text: t('common.continue'),
                         onPress: async () => {
                           try {
                             await confirmServiceArrival(item._id);
+                            Alert.alert(t('booking.confirmArrivalSuccess'));
                             load();
                           } catch (e) {
-                            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+                            Alert.alert(t('common.error'), e.response?.data?.message || t('booking.confirmArrivalFailed'));
                           }
                         },
                       },
@@ -176,60 +271,78 @@ export default function BookingsScreen() {
                   }}
                 />
               )}
-              {isVendor && activeTrip(item) && arrivalOk(item) && !endProposed(item) && (
+              {isVendor && activeTrip(item) && arrivalOk(item) && !endProposed(item) && endBookingId !== item._id && (
                 <Button
-                  title="End booking"
+                  title={t('booking.proposeEndButton')}
+                  variant="outline"
                   onPress={() => {
-                    Alert.alert('End booking', 'Any overtime? (₹150/hr)', [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'No overtime',
-                        onPress: async () => {
-                          try {
-                            await vendorProposeEnd(item._id, 0);
-                            Alert.alert('Sent', 'Waiting for customer confirmation.');
-                            load();
-                          } catch (e) {
-                            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
-                          }
-                        },
-                      },
-                      {
-                        text: '1 hour OT',
-                        onPress: async () => {
-                          try {
-                            await vendorProposeEnd(item._id, 1);
-                            Alert.alert('Sent', 'Waiting for customer confirmation.');
-                            load();
-                          } catch (e) {
-                            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
-                          }
-                        },
-                      },
-                    ]);
+                    setEndBookingId(item._id);
+                    setOvertimeHours('0');
                   }}
                 />
+              )}
+              {isVendor && activeTrip(item) && arrivalOk(item) && !endProposed(item) && endBookingId === item._id && (
+                <View>
+                  <Muted>{t('booking.proposeEndTitle')}</Muted>
+                  <Muted>{t('booking.proposeEndOvertimeHint', { rate: formatCurrency(OVERTIME_PER_HOUR) })}</Muted>
+                  <Field label={t('booking.overtimeHours')} value={overtimeHours} onChangeText={setOvertimeHours} keyboardType="decimal-pad"/>
+                  <Muted>{t('booking.overtimeChargePreview', { amount: formatCurrency(Math.round((Number(overtimeHours) || 0) * OVERTIME_PER_HOUR)) })}</Muted>
+                  <Button
+                    title={t('booking.proposeEndConfirm')}
+                    onPress={() => {
+                      const hours = Math.max(0, Number(overtimeHours) || 0);
+                      const amount = formatCurrency(Math.round(hours * OVERTIME_PER_HOUR));
+                      Alert.alert(
+                        t('booking.proposeEndButton'),
+                        hours > 0
+                          ? t('booking.proposeEndWithOvertime', { hours, amount })
+                          : t('booking.proposeEndAsk'),
+                        [
+                          { text: t('common.cancel'), style: 'cancel' },
+                          {
+                            text: t('common.continue'),
+                            onPress: async () => {
+                              try {
+                                await vendorProposeEnd(item._id, hours);
+                                setEndBookingId(null);
+                                setOvertimeHours('0');
+                                Alert.alert(t('booking.proposeEndSuccess'));
+                                load();
+                              } catch (e) {
+                                Alert.alert(t('common.error'), e.response?.data?.message || t('booking.proposeEndFailed'));
+                              }
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                  />
+                  <Button title={t('common.cancel')} variant="outline" onPress={() => setEndBookingId(null)}/>
+                </View>
               )}
               {!isVendor && activeTrip(item) && endProposed(item) && (
                 <Button
-                  title="Confirm end booking"
+                  title={t('booking.confirmEndButton')}
                   onPress={() => {
                     Alert.alert(
-                      'Confirm end',
+                      t('booking.confirmEndButton'),
                       item.overtimeHours > 0
-                        ? `Confirm ending with ${item.overtimeHours} hr overtime (${formatCurrency(item.overtimeAmount || 0)})?`
-                        : 'Confirm ending with no overtime?',
+                        ? t('booking.confirmEndWithOvertime', {
+                          hours: item.overtimeHours,
+                          amount: formatCurrency(item.overtimeAmount || 0),
+                        })
+                        : t('booking.confirmEndAsk'),
                       [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: t('common.cancel'), style: 'cancel' },
                         {
-                          text: 'Confirm',
+                          text: t('common.continue'),
                           onPress: async () => {
                             try {
                               await confirmServiceEnd(item._id);
-                              Alert.alert('Done', 'Booking ended. Invoice available.');
+                              Alert.alert(t('booking.confirmEndSuccess'));
                               load();
                             } catch (e) {
-                              Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+                              Alert.alert(t('common.error'), e.response?.data?.message || t('booking.confirmEndFailed'));
                             }
                           },
                         },
@@ -238,24 +351,11 @@ export default function BookingsScreen() {
                   }}
                 />
               )}
-              {!isVendor && (item.paymentStatus === 'PAID' || item.status === 'COMPLETED' || item.invoiceUrl) && (
-                <>
-                  <Button title={t('booking.invoice')} variant="outline" onPress={() => openInvoice(item)} />
-                  {item.status !== 'COMPLETED' && (
-                    <Button
-                      title={t('booking.refund')}
-                      variant="danger"
-                      onPress={async () => {
-                        try {
-                          await requestRefund(item._id, 'Customer cancellation');
-                          load();
-                        } catch (e) {
-                          Alert.alert(t('common.error'), e.response?.data?.message || e.message);
-                        }
-                      }}
-                    />
-                  )}
-                </>
+              {!isVendor && (item.paymentStatus === 'PAID' || item.invoiceUrl || item.invoiceNumber || item.status === 'COMPLETED') && (
+                <Button title={t('booking.invoice')} variant="outline" onPress={() => openInvoice(item)} />
+              )}
+              {!isVendor && ['CONFIRMED', 'PENDING'].includes(item.status) && item.paymentStatus === 'PAID' && (
+                <Button title={t('booking.refund')} variant="danger" onPress={() => askRefund(item)} />
               )}
               {isVendor && item.status === 'PENDING' && (
                 <>
@@ -280,6 +380,19 @@ export default function BookingsScreen() {
           </Card>
         )}
       />
+      <Modal visible={!!checkout} animationType="slide" onRequestClose={() => setCheckout(null)}>
+        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+          <Button title={t('common.cancel')} variant="outline" onPress={() => setCheckout(null)} />
+          {checkout ? (
+            <WebView
+              originWhitelist={['*']}
+              source={{ html: checkoutHtml(checkout) }}
+              onMessage={onCheckoutMessage}
+              javaScriptEnabled
+            />
+          ) : null}
+        </View>
+      </Modal>
     </Screen>
   );
 }
