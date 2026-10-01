@@ -25,6 +25,9 @@ import VendorListingsScreen from '../screens/vendor/VendorListingsScreen';
 import VendorListingFormScreen from '../screens/vendor/VendorListingFormScreen';
 import VendorPricingScreen from '../screens/vendor/VendorPricingScreen';
 import VendorAvailabilityScreen from '../screens/vendor/VendorAvailabilityScreen';
+import VendorReviewsScreen from '../screens/vendor/VendorReviewsScreen';
+import VendorSubscriptionScreen from '../screens/vendor/VendorSubscriptionScreen';
+import VendorAdsScreen from '../screens/vendor/VendorAdsScreen';
 const AuthStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -82,6 +85,9 @@ export default function RootNavigator() {
         <RootStack.Screen name="VendorListingForm" component={VendorListingFormScreen} options={{ title: 'Listing' }}/>
         <RootStack.Screen name="VendorPricing" component={VendorPricingScreen} options={{ title: 'Prices' }}/>
         <RootStack.Screen name="VendorAvailability" component={VendorAvailabilityScreen} options={{ title: 'Dates' }}/>
+        <RootStack.Screen name="VendorReviews" component={VendorReviewsScreen} options={{ title: 'Reviews' }}/>
+        <RootStack.Screen name="VendorSubscription" component={VendorSubscriptionScreen} options={{ title: 'Subscription' }}/>
+        <RootStack.Screen name="VendorAds" component={VendorAdsScreen} options={{ title: 'Ads' }}/>
       </RootStack.Navigator>
     </NavigationContainer>);
 }

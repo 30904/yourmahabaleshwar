@@ -1,12 +1,12 @@
 import { Platform } from 'react-native';
 
-function checkoutOptions({ keyId, order, bookingNumber, user }) {
+function checkoutOptions({ keyId, order, bookingNumber, user, description }) {
     return {
         key: keyId,
         amount: order.amount,
         currency: order.currency || 'INR',
         name: 'YOURMAHABALESHWAR',
-        description: `Booking ${bookingNumber || ''}`.trim(),
+        description: description || `Booking ${bookingNumber || ''}`.trim(),
         order_id: order.id,
         prefill: {
             name: user?.name || '',

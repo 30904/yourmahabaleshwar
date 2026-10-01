@@ -74,6 +74,7 @@ export async function downloadInvoice(bookingId) {
     }
 }
 export const getWallet = () => api.get('/admin/wallet').then((r) => r.data.data);
+export const purchasePoints = (body) => api.post('/admin/subscriptions/points/purchase', body).then((r) => r.data.data);
 export const getMySubscription = () => api.get('/admin/subscriptions/me').then((r) => r.data.data);
 export const getMyKyc = () => api.get('/users/kyc').then((r) => r.data.data);
 export const submitKyc = (form) => api.post('/users/kyc', form).then((r) => r.data.data);
@@ -143,4 +144,17 @@ export const updateVendorListing = (vertical, id, payload) => api.put(`${listing
 export const patchVendorListingPrices = (vertical, id, payload) => api.patch(`${listingBase(vertical)}/${id}/prices`, payload).then((r) => r.data.data);
 export const fetchMyAvailability = (from, to) => api.get('/availability/mine', { params: { from, to } }).then((r) => r.data.data);
 export const patchListingAvailability = (type, id, payload) => api.patch(`/availability/${type}/${id}`, payload).then((r) => r.data.data);
+export const fetchVendorReviews = ({ page = 1, limit = 20 } = {}) => api.get('/reviews/vendor', { params: { page, limit } }).then((r) => r.data.data);
+export const fetchMyServiceMonetization = () => api.get('/service-monetization/me').then((r) => r.data.data);
+export const orderServicePoints = (amount) => api.post('/service-monetization/points/order', { amount }).then((r) => r.data.data);
+export const confirmServicePoints = (body) => api.post('/service-monetization/points/confirm', body).then((r) => r.data.data);
+export const orderServiceUnlimited = () => api.post('/service-monetization/unlimited/order').then((r) => r.data.data);
+export const confirmServiceUnlimited = (body) => api.post('/service-monetization/unlimited/confirm', body).then((r) => r.data.data);
+export const fetchMyStaySubscriptions = () => api.get('/stay-subscriptions/mine').then((r) => r.data.data?.items || []);
+export const orderStayRenewal = (listingType, listingId) => api.post(`/stay-subscriptions/${listingType}/${listingId}/renew/order`).then((r) => r.data.data);
+export const confirmStayRenewal = (listingType, listingId, body) => api.post(`/stay-subscriptions/${listingType}/${listingId}/renew/confirm`, body).then((r) => r.data.data);
+export const fetchVendorAdCatalog = () => api.get('/ads/packages').then((r) => r.data.data);
+export const fetchMyHomepageAds = () => api.get('/ads/mine').then((r) => r.data.data?.items || []);
+export const orderHomepageAd = (body) => api.post('/ads/order', body).then((r) => r.data.data);
+export const confirmHomepageAd = (body) => api.post('/ads/confirm', body).then((r) => r.data.data);
 export const fetchFormSchema = (tenant) => api.get('/admin/public/form-schemas', { params: { formKind: 'vendor', tenant } }).then((r) => r.data.data);
