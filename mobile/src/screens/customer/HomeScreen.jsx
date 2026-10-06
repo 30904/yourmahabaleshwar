@@ -1,45 +1,28 @@
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
+import { ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button, Field, Screen, Title, Muted } from '../../components/ui';
-import { CATEGORIES, COLORS } from '../../constants/theme';
+import HomeHeader from '../../components/home/HomeHeader';
+import HomeHero from '../../components/home/HomeHero';
+import { HomeCategoryStrip, HomeDeals, HomeDestinations, HomePromo, HomePropertyTabs, HomeServices, HomeWhyBook } from '../../components/home/HomeSections';
+import HomeFooter from '../../components/home/HomeFooter';
+import { Screen } from '../../components/ui';
+
 export default function HomeScreen() {
-    const { t } = useTranslation();
     const navigation = useNavigation();
-    const [query, setQuery] = useState('');
-    return (<Screen>
-      <ScrollView>
-        <Text style={styles.brand}>YOURMAHABALESHWAR</Text>
-        <Title>{t('home.headline')}</Title>
-        <Muted>{t('home.subhead')}</Muted>
-        <Field label={t('search.action')} value={query} onChangeText={setQuery} placeholder={t('search.placeholder')} autoCapitalize="sentences"/>
-        <Button title={t('search.action')} onPress={() => navigation.navigate('Search', { q: query.trim() })}/>
-        <Text style={styles.section}>{t('home.browse')}</Text>
-        <View style={styles.grid}>
-          {CATEGORIES.map((c) => (<Pressable key={c.key} style={styles.tile} onPress={() => navigation.navigate('Catalog', {
-                path: c.path,
-                title: t(c.labelKey),
-                type: c.type,
-                query: 'query' in c ? c.query : undefined,
-            })}>
-              <Text style={styles.tileText}>{t(c.labelKey)}</Text>
-            </Pressable>))}
-        </View>
-      </ScrollView>
-    </Screen>);
+    return (
+        <Screen style={{ padding: 0 }}>
+            <HomeHeader navigation={navigation} />
+            <ScrollView>
+                <HomeHero navigation={navigation} />
+                <HomeCategoryStrip navigation={navigation} />
+                <HomeDeals navigation={navigation} />
+                <HomePropertyTabs navigation={navigation} />
+                <HomePromo navigation={navigation} />
+                <HomeDestinations navigation={navigation} />
+                <HomeServices navigation={navigation} />
+                <HomeWhyBook />
+                <HomeFooter navigation={navigation} />
+            </ScrollView>
+        </Screen>
+    );
 }
-const styles = StyleSheet.create({
-    brand: { color: COLORS.primary, fontWeight: '900', fontSize: 18, marginBottom: 8 },
-    section: { marginTop: 20, marginBottom: 10, fontWeight: '700', color: COLORS.text },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    tile: {
-        width: '48%',
-        backgroundColor: COLORS.primarySoft,
-        borderRadius: 14,
-        padding: 18,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    tileText: { fontWeight: '700', color: COLORS.primary },
-});

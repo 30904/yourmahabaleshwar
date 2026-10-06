@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import AuthFrame, { AuthLink } from '../../components/AuthFrame';
 import { forgotPassword } from '../../api/endpoints';
-import { Button, Field, Screen, Title, Muted, Card } from '../../components/ui';
+import { Button, Field } from '../../components/ui';
 
 export default function ForgotPasswordScreen({ navigation }) {
     const { t } = useTranslation();
@@ -24,15 +25,15 @@ export default function ForgotPasswordScreen({ navigation }) {
             setLoading(false);
         }
     };
-    return (<Screen>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Title>{t('auth.forgotPassword')}</Title>
-        <Muted>{t('auth.forgotHint')}</Muted>
-        <Card>
-          <Field label={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address"/>
-          <Button title={t('auth.sendReset')} onPress={onSubmit} loading={loading}/>
-          <Button title={t('auth.signIn')} variant="outline" onPress={() => navigation.navigate('Login')}/>
-        </Card>
-      </ScrollView>
-    </Screen>);
+    return (
+        <AuthFrame
+            title={t('auth.forgotTitle')}
+            hint={t('auth.forgotHint')}
+            subtitle={t('auth.signInSubtitle')}
+            footer={<AuthLink title={t('auth.backToLogin')} onPress={() => navigation.navigate('Login')} />}
+        >
+            <Field label={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address" />
+            <Button title={t('auth.sendReset')} onPress={onSubmit} loading={loading} />
+        </AuthFrame>
+    );
 }

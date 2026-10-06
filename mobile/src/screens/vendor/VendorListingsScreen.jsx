@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Text } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { fetchMyVendorListings } from '../../api/endpoints';
-import { Button, Card, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
+import { Button, Card, Loading, Screen } from '../../components/ui';
+import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { canVendorEditListing, listingStatusOf } from '../../utils/vendorListingForm';
@@ -20,13 +20,11 @@ const SINGLE_LISTING_ROLES = new Set([
     'HORSE_OPERATOR',
 ]);
 
-function statusColor(status) {
-    if (status === 'APPROVED')
-        return COLORS.success;
-    if (status === 'REJECTED')
-        return COLORS.danger;
-    return COLORS.accent;
-}
+const STATUS_TONE = {
+    APPROVED: { bg: '#F0FDF4', fg: COLORS.success },
+    PENDING: { bg: '#FFFBEB', fg: COLORS.warning },
+    REJECTED: { bg: '#FEF2F2', fg: COLORS.danger },
+};
 
 export default function VendorListingsScreen() {
     const { t } = useTranslation();
@@ -69,32 +67,73 @@ export default function VendorListingsScreen() {
         REJECTED: t('vendor.listingRejected'),
     };
 
-    return (<Screen>
-      <Title>{t('vendor.listings')}</Title>
-      <Muted>{singleLocked ? t('vendor.singleListingHint') : t('vendor.listingsHint')}</Muted>
-      {!singleLocked ? <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')}/> : null}
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => `${item.vertical}-${item.id}`}
-        refreshing={loading}
-        onRefresh={load}
-        ListHeaderComponent={<Card>
-          {STATUS_FILTERS.map((status) => (<Button key={status} title={statusLabel[status]} variant={statusFilter === status ? 'primary' : 'outline'} onPress={() => setStatusFilter((current) => (current === status ? null : status))}/>))}
-        </Card>}
-        ListEmptyComponent={<Muted>{items.length ? t('vendor.noListingsForFilter') : t('vendor.noListings')}</Muted>}
-        renderItem={({ item }) => {
-            const status = listingStatusOf(item);
-            return (<Card>
-              <Text style={{ fontWeight: '800', color: COLORS.text }}>{item.name}</Text>
-              <Muted>{t(item.labelKey)}</Muted>
-              <Muted>{item.slug || '—'}</Muted>
-              <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 6 }}>
-                {item.prices?.from != null ? `${t('vendor.fromPrice')} ${formatCurrency(item.prices.from)}` : '—'}
-              </Text>
-              <Text style={{ fontWeight: '700', color: statusColor(status), marginTop: 4 }}>{statusLabel[status]}</Text>
-              {canVendorEditListing(item) ? <Button title={t('vendor.editListing', { kind: t(item.labelKey) })} variant="outline" onPress={() => navigation.navigate('VendorListingForm', { vertical: item.vertical, id: item.id })}/> : <Muted>{t('vendor.listingEditLocked')}</Muted>}
-            </Card>);
-        }}
-      />
-    </Screen>);
+    return (
+        <Screen>
+            <FlatList
+                style={styles.list}
+                data={filtered}
+                keyExtractor={(item) => `${item.vertical}-${item.id}`}
+                refreshing={loading}
+                onRefresh={load}
+                ListHeaderComponent={(
+                    <View>
+                        <Text style={styles.pageTitle}>{t('vendor.listings')}</Text>
+                        <Text style={styles.hint}>{singleLocked ? t('vendor.singleListingHint') : t('vendor.listingsHint')}</Text>
+                        <View style={styles.filters}>
+                            {STATUS_FILTERS.map((status) => {
+                                const on = statusFilter === status;
+                                const tone = STATUS_TONE[status];
+                                return (
+                                    <Pressable key={status} onPress={() => setStatusFilter((current) => (current === status ? null : status))} style={[styles.filter, on && { backgroundColor: tone.fg, borderColor: tone.fg }]}>
+                                        <Text style={[styles.filterText, on && styles.filterTextOn]}>{statusLabel[status]}</Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                        {!singleLocked ? <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')} /> : null}
+                    </View>
+                )}
+                ListEmptyComponent={(
+                    <Card style={styles.empty}>
+                        <Text style={styles.emptyText}>{items.length ? t('vendor.noListingsForFilter') : t('vendor.noListings')}</Text>
+                    </Card>
+                )}
+                renderItem={({ item }) => {
+                    const status = listingStatusOf(item);
+                    const tone = STATUS_TONE[status] || STATUS_TONE.PENDING;
+                    return (
+                        <Card>
+                            <Text style={styles.name}>{item.name}</Text>
+                            <Text style={styles.meta}>{t(item.labelKey)}</Text>
+                            <Text style={styles.meta}>{item.slug || '—'}</Text>
+                            <Text style={styles.price}>
+                                {item.prices?.from != null ? `${t('vendor.fromPrice')} ${formatCurrency(item.prices.from)}` : '—'}
+                            </Text>
+                            <View style={[styles.badge, { backgroundColor: tone.bg }]}>
+                                <Text style={[styles.badgeText, { color: tone.fg }]}>{statusLabel[status]}</Text>
+                            </View>
+                            {canVendorEditListing(item) ? <Button title={t('vendor.editListing', { kind: t(item.labelKey) })} variant="outline" onPress={() => navigation.navigate('VendorListingForm', { vertical: item.vertical, id: item.id })} /> : <Text style={styles.meta}>{t('vendor.listingEditLocked')}</Text>}
+                        </Card>
+                    );
+                }}
+            />
+        </Screen>
+    );
 }
+
+const styles = StyleSheet.create({
+    list: { flex: 1 },
+    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4 },
+    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 4, marginBottom: 12, lineHeight: 20 },
+    filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+    filter: { borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+    filterText: { fontFamily: FONTS.semibold, fontSize: 13, color: '#475569' },
+    filterTextOn: { color: '#fff' },
+    empty: { alignItems: 'center', paddingVertical: 28 },
+    emptyText: { fontFamily: FONTS.medium, fontSize: 15, color: COLORS.muted, textAlign: 'center' },
+    name: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text },
+    meta: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 4 },
+    price: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary, marginTop: 8 },
+    badge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 8 },
+    badgeText: { fontFamily: FONTS.semibold, fontSize: 12 },
+});

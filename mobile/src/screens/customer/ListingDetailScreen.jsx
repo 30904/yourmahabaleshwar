@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { addWishlist, createBooking, getBySlug, getWishlist, removeWishlist } from '../../api/endpoints';
 import DriverRateChart, { DRIVER_PACKAGES, driverPackagePrice } from '../../components/DriverRateChart';
 import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../components/HorseRateChart';
 import GuideRateChart, { GUIDE_CHART_PACKAGES, guideChartPrice } from '../../components/GuideRateChart';
 import TaxiRateChart, { taxiChartPrice } from '../../components/TaxiRateChart';
-import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
+import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
+import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { formatTime12, listingPlace, listingPrice, mediaUrl, wishlistPath } from '../../utils/listing';
@@ -20,6 +20,30 @@ function dayAfter() {
     const d = new Date();
     d.setDate(d.getDate() + 2);
     return d.toISOString().slice(0, 10);
+}
+function FormSection({ title, children }) {
+    return (<View style={styles.formSection}>
+      <Text style={styles.formSectionTitle}>{title}</Text>
+      {children}
+    </View>);
+}
+function TotalBox({ lines, totalLabel, total }) {
+    return (<View style={styles.totalBox}>
+      {lines.filter(Boolean).map((line) => (<View key={line.label} style={styles.totalLine}>
+          <Text style={styles.totalLineLabel}>{line.label}</Text>
+          <Text style={styles.totalLineValue}>{line.value}</Text>
+        </View>))}
+      <View style={styles.totalFinal}>
+        <Text style={styles.totalFinalLabel}>{totalLabel}</Text>
+        <Text style={styles.totalFinalValue}>{formatCurrency(total || 0)}</Text>
+      </View>
+    </View>);
+}
+function Choice({ selected, onPress, title, detail }) {
+    return (<Pressable onPress={onPress} style={[styles.choice, selected && styles.choiceOn]}>
+      <Text style={styles.choiceTitle}>{title}</Text>
+      {detail ? <Muted>{detail}</Muted> : null}
+    </Pressable>);
 }
 export default function ListingDetailScreen({ route, navigation }) {
     const { t } = useTranslation();
@@ -383,34 +407,67 @@ export default function ListingDetailScreen({ route, navigation }) {
                     : type === 'COMBO'
                         ? (Number(item.comboPrice) || 0)
                         : (selectedRoom?.basePrice ?? listingPrice(item));
-    return (<Screen>
-      <ScrollView>
-        {images[0] ? (<Pressable onPress={() => images.length > 1 && setPhotoIndex((i) => (i + 1) % images.length)}>
-            <Image source={{ uri: images[photoIndex] || images[0] }} style={{ height: 220, borderRadius: 14, marginBottom: 8 }}/>
-            {images.length > 1 ? <Muted>{photoIndex + 1}/{images.length}</Muted> : null}
-          </Pressable>) : null}
-        <Title>{item.name}</Title>
-        {wishlistPath(type) ? <Button title={saved ? t('account.savedListing') : t('account.saveListing')} variant={saved ? 'outline' : 'primary'} onPress={onSaveListing}/> : null}
-        {(type === 'HOTEL' || type === 'RESORT') && (<Muted>{type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels')}</Muted>)}
-        {type === 'HOMESTAY' && <Muted>{t('nav.homestays')}</Muted>}
-        {type === 'TENT' && <Muted>{t('nav.tents')}</Muted>}
-        {type === 'GUIDE' && <Muted>{t('nav.guides')}</Muted>}
-        {type === 'TAXI' && <Muted>{t('nav.taxi')}</Muted>}
-        {type === 'DRIVER' && <Muted>{t('nav.drivers')}</Muted>}
-        {type === 'HORSE' && <Muted>{t('nav.horses')}</Muted>}
-        {type === 'COMBO' && <Muted>{t('nav.combos')}</Muted>}
-        {type === 'PRODUCT' && <Muted>{item.vertical === 'MAPRO' ? t('nav.mapro') : t('nav.strawberries')}</Muted>}
-        {type !== 'COMBO' && type !== 'PRODUCT' && <Muted>{listingPlace(item, type)}</Muted>}
-        {type === 'GUIDE' && item.languages?.length > 0 && <Muted>{t('guide.languages')}: {item.languages.join(', ')}</Muted>}
-        {type === 'TENT' && (<Muted>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Muted>)}
-        {nightPrice != null ? (<Text style={{ marginTop: 8, fontWeight: '800', fontSize: 20, color: COLORS.primary }}>
-            {formatCurrency(nightPrice)}
-            {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('listing.perNight')}</Text> : null}
-            {type === 'GUIDE' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('guide.sixHourShort')}</Text> : null}
-            {type === 'TAXI' ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> {t('taxi.perTripShort')}</Text> : null}
-            {type === 'PRODUCT' && item.unit ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted }}> / {item.unit}</Text> : null}
-            {type === 'COMBO' && item.originalPrice != null ? <Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.muted, textDecorationLine: 'line-through' }}> {formatCurrency(item.originalPrice)}</Text> : null}
-          </Text>) : null}
+    const typeLabel = (type === 'HOTEL' || type === 'RESORT')
+        ? (type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels'))
+        : type === 'HOMESTAY' ? t('nav.homestays')
+            : type === 'TENT' ? t('nav.tents')
+                : type === 'GUIDE' ? t('nav.guides')
+                    : type === 'TAXI' ? t('nav.taxi')
+                        : type === 'DRIVER' ? t('nav.drivers')
+                            : type === 'HORSE' ? t('nav.horses')
+                                : type === 'COMBO' ? t('nav.combos')
+                                    : (item.vertical === 'MAPRO' ? t('nav.mapro') : t('nav.strawberries'));
+    const score = item.score || item.rating;
+    const cover = images[photoIndex] || images[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200';
+    const stay = type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT';
+    return (<Screen style={{ padding: 0 }}>
+      <ScrollView contentContainerStyle={styles.page}>
+        <View style={styles.article}>
+          <View>
+            <Image source={{ uri: cover }} style={styles.cover}/>
+            {images.length > 1 ? (<>
+              <Pressable style={[styles.photoBtn, styles.photoPrev]} onPress={() => setPhotoIndex((i) => (i - 1 + images.length) % images.length)}>
+                <Text style={styles.photoBtnText}>‹</Text>
+              </Pressable>
+              <Pressable style={[styles.photoBtn, styles.photoNext]} onPress={() => setPhotoIndex((i) => (i + 1) % images.length)}>
+                <Text style={styles.photoBtnText}>›</Text>
+              </Pressable>
+              <Text style={styles.photoCount}>{photoIndex + 1}/{images.length}</Text>
+            </>) : null}
+            {wishlistPath(type) ? (<Pressable style={styles.heart} onPress={onSaveListing}>
+              <Text style={[styles.heartIcon, saved && styles.heartOn]}>{saved ? '♥' : '♡'}</Text>
+            </Pressable>) : null}
+          </View>
+          <View style={styles.articleBody}>
+            <View style={styles.titleRow}>
+              <Text style={styles.name}>{item.name}</Text>
+              {score ? (<View style={styles.score}>
+                <Text style={styles.scoreText}>{Number(score).toFixed(1)}</Text>
+              </View>) : null}
+            </View>
+            <Text style={styles.typeLabel}>{typeLabel}</Text>
+            {type !== 'COMBO' && type !== 'PRODUCT' ? <Text style={styles.place}>{listingPlace(item, type)}</Text> : null}
+            {type === 'GUIDE' && item.languages?.length > 0 ? <Text style={styles.place}>{t('guide.languages')}: {item.languages.join(', ')}</Text> : null}
+            {type === 'TENT' ? <Text style={styles.place}>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Text> : null}
+            {(type === 'HOTEL' || type === 'RESORT') && item.amenities?.length > 0 ? (<View style={styles.chips}>
+              {item.amenities.slice(0, 6).map((amenity) => (<Text key={amenity} style={styles.chip}>{amenity}</Text>))}
+            </View>) : null}
+            <View style={styles.pricePanel}>
+              <Text style={styles.from}>{t('listing.from')}</Text>
+              {nightPrice != null ? (<Text style={styles.price}>
+                {formatCurrency(nightPrice)}
+                {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={styles.priceSuffix}> {t('listing.perNight')}</Text> : null}
+                {type === 'GUIDE' ? <Text style={styles.priceSuffix}> {t('guide.sixHourShort')}</Text> : null}
+                {type === 'TAXI' ? <Text style={styles.priceSuffix}> {t('taxi.perTripShort')}</Text> : null}
+                {type === 'PRODUCT' && item.unit ? <Text style={styles.priceSuffix}> / {item.unit}</Text> : null}
+                {type === 'COMBO' && item.originalPrice != null ? <Text style={styles.struck}> {formatCurrency(item.originalPrice)}</Text> : null}
+              </Text>) : <Text style={styles.price}>—</Text>}
+              {(type === 'HOTEL' || type === 'RESORT') ? <Text style={styles.priceNote}>{t('listing.perNight')} · {t('property.inclTaxes')}</Text> : null}
+              {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={styles.priceNote}>{t('property.inclTaxes')}</Text> : null}
+              {stay && type !== 'TENT' && selectedRoom?.name ? <Text style={styles.roomName}>{selectedRoom.name}</Text> : null}
+            </View>
+          </View>
+        </View>
         {type === 'COMBO' && item.originalPrice > item.comboPrice ? <Muted>{t('shop.save')} {formatCurrency(item.originalPrice - item.comboPrice)}</Muted> : null}
         {type === 'COMBO' && item.items?.length > 0 && (<Card>
             {item.items.map((part, index) => (<Muted key={`${part.itemType}-${part.label || index}`}>
@@ -464,117 +521,234 @@ export default function ListingDetailScreen({ route, navigation }) {
             {horseRoutes.map((route) => (<Muted key={route._id || route.name}>{route.name} · {route.durationMinutes || 30} {t('horse.minutes')} · {formatCurrency(route.price)}</Muted>))}
           </Card>)}
         {type === 'HORSE' && <HorseRateChart selectedPackage={horsePackage} onSelectPackage={setHorsePackage} />}
-        {rooms.length > 0 && (<Card>
-            <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('booking.rooms')}</Text>
-            {rooms.map((room) => {
-                const selected = String(room._id) === String(selectedRoom?._id);
-                return (<Pressable key={room._id} onPress={() => setRoomId(room._id)} style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: selected ? COLORS.primary : COLORS.border,
-                    marginBottom: 8,
-                    backgroundColor: selected ? COLORS.primarySoft : '#fff',
-                }}>
-                  <Text style={{ fontWeight: '700', color: COLORS.text }}>{room.name}</Text>
-                  {room.basePrice != null ? <Muted>{formatCurrency(room.basePrice)}</Muted> : null}
-                </Pressable>);
-            })}
-          </Card>)}
         <Card>
-          <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('booking.bookNow')}</Text>
-          {type !== 'PRODUCT' && <Field label={type === 'GUIDE' ? t('guide.tourDate') : type === 'TAXI' ? t('taxi.tripDate') : type === 'DRIVER' ? t('driver.tripDate') : type === 'HORSE' ? t('horse.rideDate') : t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>}
-          {(type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT') && (<Field label={t('booking.checkOut')} value={checkOut} onChangeText={setCheckOut} placeholder="YYYY-MM-DD"/>)}
+          <Text style={styles.formTitle}>{type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('booking.bookNow')}</Text>
           {type === 'GUIDE' ? (<>
-            {GUIDE_CHART_PACKAGES.map((pkg) => {
-                const selected = guidePackage === pkg.id;
-                const amount = bikeAddon ? pkg.withBike : pkg.guideOnly;
-                return (<Pressable key={pkg.id} onPress={() => setGuidePackage(pkg.id)} style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: selected ? COLORS.primary : COLORS.border,
-                    marginBottom: 8,
-                    backgroundColor: selected ? COLORS.primarySoft : '#fff',
-                }}>
-                  <Text style={{ fontWeight: '700', color: COLORS.text }}>{t(pkg.nameKey)}</Text>
-                  <Muted>{t(pkg.durationKey)} · {formatCurrency(amount)}</Muted>
-                </Pressable>);
-            })}
-            <Pressable onPress={() => setBikeAddon((value) => !value)} style={{
-                padding: 10,
-                borderRadius: 10,
-                borderWidth: 1,
-                marginBottom: 8,
-                borderColor: bikeAddon ? COLORS.primary : COLORS.border,
-                backgroundColor: bikeAddon ? COLORS.primarySoft : '#fff',
-            }}>
-              <Text style={{ fontWeight: '700', color: COLORS.text }}>{t('guide.bikeAddon', { price: formatCurrency(guideChartPrice(guidePackage, true) - guideChartPrice(guidePackage, false)) })}</Text>
-            </Pressable>
-            <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-            <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
-            <Pressable onPress={() => setAcceptTerms((value) => !value)} style={{ marginBottom: 8 }}>
-              <Text style={{ fontWeight: '700', color: acceptTerms ? COLORS.primary : COLORS.text }}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-            </Pressable>
-            <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency(guideChartPrice(guidePackage, bikeAddon))}</Text>
-          </>) : type === 'TAXI' ? (<>
-            <Field label={t('taxi.pickup')} value={pickupLocation} onChangeText={setPickupLocation}/>
-            <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
-            <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-            <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
-            <Pressable onPress={() => setAcceptTerms((value) => !value)} style={{ marginBottom: 8 }}>
-              <Text style={{ fontWeight: '700', color: acceptTerms ? COLORS.primary : COLORS.text }}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-            </Pressable>
-            <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency(taxiChartPrice(taxiRoute))}</Text>
-          </>) : type === 'DRIVER' ? (<>
-            <Field label={t('driver.pickup')} value={pickupLocation} onChangeText={setPickupLocation}/>
-            <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
-            <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-            <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
-            <Pressable onPress={() => setAcceptTerms((value) => !value)} style={{ marginBottom: 8 }}>
-              <Text style={{ fontWeight: '700', color: acceptTerms ? COLORS.primary : COLORS.text }}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-            </Pressable>
-            <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency(driverPackagePrice(driverPackage))}</Text>
+            <FormSection title={t('booking.sectionTrip')}>
+              <Field label={t('guide.tourDate')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+              {GUIDE_CHART_PACKAGES.map((pkg) => (<Choice key={pkg.id} selected={guidePackage === pkg.id} onPress={() => setGuidePackage(pkg.id)} title={t(pkg.nameKey)} detail={`${t(pkg.durationKey)} · ${formatCurrency(bikeAddon ? pkg.withBike : pkg.guideOnly)}`}/>))}
+              <Choice selected={bikeAddon} onPress={() => setBikeAddon((value) => !value)} title={t('guide.bikeAddon', { price: formatCurrency(guideChartPrice(guidePackage, true) - guideChartPrice(guidePackage, false)) })}/>
+            </FormSection>
+            <FormSection title={t('booking.sectionGuest')}>
+              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
+              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionPayment')}>
+              <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(guideChartPrice(guidePackage, bikeAddon)) }]} totalLabel={t('booking.total')} total={guideChartPrice(guidePackage, bikeAddon)}/>
+            </FormSection>
+            <FormSection title={t('booking.sectionTerms')}>
+              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
+                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
+              </Pressable>
+            </FormSection>
+          </>) : type === 'TAXI' || type === 'DRIVER' ? (<>
+            <FormSection title={t('booking.sectionTrip')}>
+              <Field label={type === 'TAXI' ? t('taxi.tripDate') : t('driver.tripDate')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+              <Field label={type === 'TAXI' ? t('taxi.pickup') : t('driver.pickup')} value={pickupLocation} onChangeText={setPickupLocation}/>
+              <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionGuest')}>
+              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
+              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionPayment')}>
+              <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(type === 'TAXI' ? taxiChartPrice(taxiRoute) : driverPackagePrice(driverPackage)) }]} totalLabel={t('booking.total')} total={type === 'TAXI' ? taxiChartPrice(taxiRoute) : driverPackagePrice(driverPackage)}/>
+            </FormSection>
+            <FormSection title={t('booking.sectionTerms')}>
+              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
+                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
+              </Pressable>
+            </FormSection>
           </>) : type === 'HORSE' ? (<>
-            <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
-            <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-            <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
-            <Pressable onPress={() => setAcceptSafety((value) => !value)} style={{ marginBottom: 8 }}>
-              <Text style={{ fontWeight: '700', color: acceptSafety ? COLORS.primary : COLORS.text }}>{acceptSafety ? '✓ ' : ''}{t('horse.acceptSafety')}</Text>
-            </Pressable>
-            <Pressable onPress={() => setAcceptTerms((value) => !value)} style={{ marginBottom: 8 }}>
-              <Text style={{ fontWeight: '700', color: acceptTerms ? COLORS.primary : COLORS.text }}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-            </Pressable>
-            <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency(horseChartPrice(horsePackage))}</Text>
+            <FormSection title={t('booking.sectionTrip')}>
+              <Field label={t('horse.rideDate')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+              <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionGuest')}>
+              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
+              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionPayment')}>
+              <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(horseChartPrice(horsePackage)) }]} totalLabel={t('booking.total')} total={horseChartPrice(horsePackage)}/>
+            </FormSection>
+            <FormSection title={t('booking.sectionTerms')}>
+              <Pressable onPress={() => setAcceptSafety((value) => !value)} style={{ marginBottom: 8 }}>
+                <Text style={[styles.termsText, acceptSafety && styles.termsOn]}>{acceptSafety ? '✓ ' : ''}{t('horse.acceptSafety')}</Text>
+              </Pressable>
+              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
+                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
+              </Pressable>
+            </FormSection>
           </>) : type === 'PRODUCT' ? (<>
-            <Field label={t('shop.quantity')} value={productQty} onChangeText={setProductQty} keyboardType="numeric"/>
-            {Number.isFinite(Number(item.stock)) ? <Muted>{t('shop.onlyStock', { count: item.stock })}</Muted> : null}
-            <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency((Number(item.price) || 0) * Math.max(1, Number(productQty) || 1))}</Text>
-          </>) : type === 'COMBO' ? (<Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{formatCurrency(Number(item.comboPrice) || 0)}</Text>) : (type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT') ? (<>
-            {type === 'TENT' ? <Field label={t('booking.tentQuantity')} value={tentQuantity} onChangeText={setTentQuantity} keyboardType="numeric"/> : null}
-            <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
-            <Field label={t('booking.children')} value={children} onChangeText={setChildren} keyboardType="numeric"/>
-            <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-            <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-              {[['AADHAAR', 'booking.idAadhaar'], ['VOTER', 'booking.idVoter'], ['DRIVING_LICENSE', 'booking.idDriving'], ['PASSPORT', 'booking.idPassport']].map(([value, label]) => (<Pressable key={value} onPress={() => setIdType(value)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: idType === value ? COLORS.primary : COLORS.border, backgroundColor: idType === value ? COLORS.primarySoft : '#fff' }}>
-                  <Text style={{ fontWeight: '700', color: COLORS.text, fontSize: 12 }}>{t(label)}</Text>
-                </Pressable>))}
-            </View>
-            <Field label={t('booking.idNumber')} value={idNumber} onChangeText={setIdNumber} autoCapitalize="characters"/>
-            <Pressable onPress={() => setAcceptTerms((value) => !value)} style={{ marginBottom: 8 }}>
-              <Text style={{ fontWeight: '700', color: acceptTerms ? COLORS.primary : COLORS.text }}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-            </Pressable>
-            {type !== 'TENT' && selectedRoom ? <Muted>{selectedRoom.name}</Muted> : null}
-            {(() => {
+            <FormSection title={t('shop.orderNow')}>
+              <Field label={t('shop.quantity')} value={productQty} onChangeText={setProductQty} keyboardType="numeric"/>
+              {Number.isFinite(Number(item.stock)) ? <Muted>{t('shop.onlyStock', { count: item.stock })}</Muted> : null}
+            </FormSection>
+            <FormSection title={t('booking.sectionPayment')}>
+              <TotalBox lines={[{ label: t('shop.quantity'), value: String(Math.max(1, Number(productQty) || 1)) }]} totalLabel={t('booking.total')} total={(Number(item.price) || 0) * Math.max(1, Number(productQty) || 1)}/>
+            </FormSection>
+          </>) : type === 'COMBO' ? (<>
+            <FormSection title={t('booking.sectionDates')}>
+              <Field label={t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionPayment')}>
+              <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(Number(item.comboPrice) || 0) }]} totalLabel={t('booking.total')} total={Number(item.comboPrice) || 0}/>
+            </FormSection>
+          </>) : (type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT') ? (<>
+            <FormSection title={t('booking.sectionDates')}>
+              <Field label={t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+              <Field label={t('booking.checkOut')} value={checkOut} onChangeText={setCheckOut} placeholder="YYYY-MM-DD"/>
+              {type === 'TENT' ? <Field label={t('booking.tentQuantity')} value={tentQuantity} onChangeText={setTentQuantity} keyboardType="numeric"/> : null}
+              {rooms.map((room) => (<Choice key={room._id} selected={String(room._id) === String(selectedRoom?._id)} onPress={() => setRoomId(room._id)} title={room.name} detail={room.basePrice != null ? formatCurrency(room.basePrice) : null}/>))}
+            </FormSection>
+            <FormSection title={t('booking.sectionGuest')}>
+              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
+              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionId')}>
+              <View style={styles.idRow}>
+                {[['AADHAAR', 'booking.idAadhaar'], ['VOTER', 'booking.idVoter'], ['DRIVING_LICENSE', 'booking.idDriving'], ['PASSPORT', 'booking.idPassport']].map(([value, label]) => (<Pressable key={value} onPress={() => setIdType(value)} style={[styles.idChip, idType === value && styles.idChipOn]}>
+                    <Text style={styles.idChipText}>{t(label)}</Text>
+                  </Pressable>))}
+              </View>
+              <Field label={t('booking.idNumber')} value={idNumber} onChangeText={setIdNumber} autoCapitalize="characters"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionParty')}>
+              <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
+              <Field label={t('booking.children')} value={children} onChangeText={setChildren} keyboardType="numeric"/>
+            </FormSection>
+            <FormSection title={t('booking.sectionPayment')}>
+              {(() => {
                 const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
                 const qty = type === 'TENT' ? Math.max(1, Number(tentQuantity) || 1) : 1;
-                if (!Number.isFinite(nights) || nights < 1 || nightPrice == null) return null;
-                return <Text style={{ fontWeight: '800', color: COLORS.primary, marginTop: 8 }}>{t('booking.nightsCount', { count: nights })} · {formatCurrency(nightPrice * nights * qty)}</Text>;
+                const ready = Number.isFinite(nights) && nights >= 1 && nightPrice != null;
+                const amount = ready ? nightPrice * nights * qty : 0;
+                return (<TotalBox lines={[
+                    type !== 'TENT' && selectedRoom ? { label: t('booking.rooms'), value: selectedRoom.name } : null,
+                    ready ? { label: t('booking.nightsCount', { count: nights }), value: String(nights) } : null,
+                    nightPrice != null ? { label: t('booking.tariff'), value: formatCurrency(nightPrice) } : null,
+                    ready ? { label: t('booking.subtotal'), value: formatCurrency(amount) } : null,
+                ]} totalLabel={t('booking.total')} total={amount}/>);
             })()}
-          </>) : <Field label={t('booking.guests')} value={guests} onChangeText={setGuests} keyboardType="numeric"/>}
+            </FormSection>
+            <FormSection title={t('booking.sectionTerms')}>
+              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
+                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
+              </Pressable>
+            </FormSection>
+          </>) : (<Field label={t('booking.guests')} value={guests} onChangeText={setGuests} keyboardType="numeric"/>)}
           <Button title={type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('booking.bookNow')} onPress={onBook} loading={booking}/>
         </Card>
       </ScrollView>
     </Screen>);
 }
+
+const styles = StyleSheet.create({
+    page: { padding: 16, paddingBottom: 28 },
+    article: {
+        backgroundColor: COLORS.card,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        overflow: 'hidden',
+        marginBottom: 16,
+    },
+    cover: { width: '100%', height: 220, backgroundColor: '#F1F5F9' },
+    photoBtn: {
+        position: 'absolute',
+        top: 90,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    photoPrev: { left: 10 },
+    photoNext: { right: 10 },
+    photoBtnText: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.text, marginTop: -2 },
+    photoCount: {
+        position: 'absolute',
+        left: 12,
+        bottom: 12,
+        backgroundColor: 'rgba(15,23,42,0.7)',
+        color: '#fff',
+        fontFamily: FONTS.semibold,
+        fontSize: 12,
+        borderRadius: 999,
+        overflow: 'hidden',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+    },
+    heart: {
+        position: 'absolute',
+        right: 12,
+        top: 12,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    heartIcon: { fontSize: 18, color: '#475569' },
+    heartOn: { color: '#EF4444' },
+    articleBody: { padding: 16 },
+    titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+    name: { flex: 1, fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary, letterSpacing: -0.4 },
+    score: {
+        minWidth: 36,
+        backgroundColor: COLORS.primary,
+        borderTopLeftRadius: 8,
+        borderTopRightRadius: 8,
+        borderBottomRightRadius: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        alignItems: 'center',
+    },
+    scoreText: { fontFamily: FONTS.bold, color: '#fff', fontSize: 14 },
+    typeLabel: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.muted, marginTop: 6, textTransform: 'uppercase', letterSpacing: 0.6 },
+    place: { fontFamily: FONTS.regular, fontSize: 14, color: '#475569', marginTop: 6, lineHeight: 20 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+    chip: {
+        backgroundColor: '#EFF6FF',
+        color: COLORS.primary,
+        borderRadius: 999,
+        overflow: 'hidden',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        fontFamily: FONTS.medium,
+        fontSize: 12,
+    },
+    pricePanel: {
+        marginTop: 16,
+        backgroundColor: '#F8FAFC',
+        borderRadius: RADIUS.button,
+        padding: 14,
+    },
+    from: { fontFamily: FONTS.medium, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: '#64748B' },
+    price: { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary, marginTop: 4 },
+    priceSuffix: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.muted },
+    struck: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.muted, textDecorationLine: 'line-through' },
+    priceNote: { fontFamily: FONTS.regular, fontSize: 12, color: '#64748B', marginTop: 4 },
+    roomName: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.body, marginTop: 8 },
+    formTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: 12 },
+    formSection: { marginBottom: 14, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+    formSectionTitle: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primary, marginBottom: 8 },
+    choice: { padding: 10, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8, backgroundColor: '#fff' },
+    choiceOn: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
+    choiceTitle: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.text },
+    idRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+    idChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#fff' },
+    idChipOn: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
+    idChipText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.text },
+    termsText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.text },
+    termsOn: { color: COLORS.primary },
+    totalBox: { backgroundColor: '#F8FAFC', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+    totalLine: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, gap: 12 },
+    totalLineLabel: { fontFamily: FONTS.regular, fontSize: 13, color: '#475569', flex: 1 },
+    totalLineValue: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.text },
+    totalFinal: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
+    totalFinalLabel: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.text },
+    totalFinalValue: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
+});

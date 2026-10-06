@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Modal, Platform, RefreshControl, Text, View } from 'react-native';
+import { Alert, FlatList, Modal, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -17,8 +17,8 @@ import {
   vendorProposeEnd,
   confirmServiceEnd,
 } from '../../api/endpoints';
-import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
+import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
+import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { bookingTitle } from '../../utils/listing';
@@ -45,6 +45,23 @@ const activeTrip = (b) =>
 function when(value) {
   if (!value) return '';
   return new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+const STATUS_TONE = {
+  CONFIRMED: { bg: '#F0FDF4', fg: COLORS.success },
+  PENDING: { bg: '#FFFBEB', fg: COLORS.warning },
+  CANCELLED: { bg: '#FEF2F2', fg: '#B91C1C' },
+  COMPLETED: { bg: COLORS.primarySoft, fg: COLORS.primary },
+  REFUNDED: { bg: '#F1F5F9', fg: COLORS.muted },
+};
+
+function StatusBadge({ status }) {
+  const tone = STATUS_TONE[status] || STATUS_TONE.REFUNDED;
+  return (
+    <View style={[styles.badge, { backgroundColor: tone.bg }]}>
+      <Text style={[styles.badgeText, { color: tone.fg }]}>{status}</Text>
+    </View>
+  );
 }
 
 export default function BookingsScreen() {
@@ -169,29 +186,40 @@ export default function BookingsScreen() {
 
   return (
     <Screen>
-      <Title>{t('nav.bookings')}</Title>
-      <Muted>{user?.name}</Muted>
+      <Text style={styles.pageTitle}>{t('nav.bookings')}</Text>
+      <Text style={styles.pageHint}>{t('booking.manageHint')}</Text>
       <FlatList
+        style={styles.list}
         data={items}
         keyExtractor={(item) => item._id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
-        ListEmptyComponent={<Muted>{t('booking.noBookings')}</Muted>}
+        ListEmptyComponent={(
+          <Card style={styles.empty}>
+            <Text style={styles.emptyText}>{t('booking.noBookings')}</Text>
+          </Card>
+        )}
         renderItem={({ item }) => (
           <Card>
-            <Text style={{ fontWeight: '800', color: COLORS.text }}>{bookingTitle(item)}</Text>
-            <Muted>
-              {item.bookingNumber || item._id} · {item.type}
-              {item.checkIn ? ` · ${new Date(item.checkIn).toLocaleDateString()}` : ''}
-            </Muted>
-            <Muted>{t('booking.status')}: {item.status}</Muted>
-            <Text style={{ fontWeight: '800', color: COLORS.primary }}>{t('booking.total')}: {formatCurrency(item.total)}</Text>
+            <View style={styles.cardTop}>
+              <View style={styles.cardMain}>
+                <Text style={styles.bookingTitle}>{bookingTitle(item)}</Text>
+                <Text style={styles.meta}>
+                  {item.bookingNumber || item._id} · {item.type}
+                  {item.checkIn ? ` · ${new Date(item.checkIn).toLocaleDateString()}` : ''}
+                </Text>
+              </View>
+              <StatusBadge status={item.status} />
+            </View>
+            <Text style={styles.total}>{formatCurrency(item.total)}</Text>
             {item.guestRegistration?.leadGuest?.fullName ? (
-              <Muted>
-                {item.guestRegistration.leadGuest.fullName}
-                {item.guestRegistration.leadGuest.mobile ? ` · ${item.guestRegistration.leadGuest.mobile}` : ''}
-                {item.guests?.adults != null ? ` · ${item.guests.adults} ${t('booking.adults')}` : ''}
-                {item.guests?.children ? ` · ${item.guests.children} ${t('booking.children')}` : ''}
-              </Muted>
+              <View style={styles.guestBox}>
+                <Text style={styles.guestName}>
+                  {item.guestRegistration.leadGuest.fullName}
+                  {item.guestRegistration.leadGuest.mobile ? ` · ${item.guestRegistration.leadGuest.mobile}` : ''}
+                  {item.guests?.adults != null ? ` · ${item.guests.adults} ${t('booking.adults')}` : ''}
+                  {item.guests?.children ? ` · ${item.guests.children} ${t('booking.children')}` : ''}
+                </Text>
+              </View>
             ) : null}
             {item.refundStatus && item.refundStatus !== 'NONE' ? (
               <Muted>
@@ -396,3 +424,41 @@ export default function BookingsScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  pageTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 24,
+    color: COLORS.text,
+    letterSpacing: -0.4,
+  },
+  pageHint: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: COLORS.muted,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  list: { flex: 1 },
+  empty: { alignItems: 'center', paddingVertical: 28 },
+  emptyText: {
+    fontFamily: FONTS.medium,
+    fontSize: 15,
+    color: COLORS.muted,
+    textAlign: 'center',
+  },
+  cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  cardMain: { flex: 1 },
+  bookingTitle: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text },
+  meta: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 4, lineHeight: 18 },
+  badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontFamily: FONTS.semibold, fontSize: 11 },
+  total: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginTop: 10 },
+  guestBox: {
+    marginTop: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    padding: 12,
+  },
+  guestName: { fontFamily: FONTS.regular, fontSize: 12, color: '#475569', lineHeight: 18 },
+});

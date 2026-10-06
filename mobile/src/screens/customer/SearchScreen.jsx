@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { globalSearch } from '../../api/endpoints';
-import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
-import { formatCurrency } from '../../utils/format';
-import { listingPlace, listingPrice } from '../../utils/listing';
+import ListingCard from '../../components/ListingCard';
+import { openCategory } from '../../components/home/homeNav';
+import { Button, Card, Loading, Muted, Screen } from '../../components/ui';
+import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 
 const SECTIONS = [
     { key: 'hotels', titleKey: 'nav.hotels', path: '/hotels', type: 'HOTEL', pick: (data) => (data.hotels || []).filter((item) => String(item.type || 'HOTEL').toUpperCase() !== 'RESORT') },
@@ -16,6 +16,8 @@ const SECTIONS = [
     { key: 'drivers', titleKey: 'search.taxiDrivers', path: '/drivers', type: 'DRIVER', pick: (data) => data.drivers || [] },
     { key: 'horses', titleKey: 'nav.horses', path: '/horses', type: 'HORSE', pick: (data) => data.horses || [] },
 ];
+
+const SHORTCUTS = ['guides', 'tents', 'taxi', 'drivers', 'horses', 'homestays', 'hotels', 'resorts'];
 
 export default function SearchScreen({ route, navigation }) {
     const { t } = useTranslation();
@@ -41,33 +43,134 @@ export default function SearchScreen({ route, navigation }) {
     };
 
     useEffect(() => {
-        if (route.params?.q) runSearch(route.params.q);
+        if (route.params?.q) {
+            setQuery(route.params.q);
+            runSearch(route.params.q);
+        }
     }, [route.params?.q]);
 
     const sections = data ? SECTIONS.map((section) => ({ ...section, items: section.pick(data) })).filter((section) => section.items.length) : [];
     const total = sections.reduce((sum, section) => sum + section.items.length, 0);
 
-    return (<Screen>
-      <ScrollView>
-        <Field label={t('search.action')} value={query} onChangeText={setQuery} placeholder={t('search.placeholder')} autoCapitalize="sentences"/>
-        <Button title={t('search.action')} onPress={() => runSearch()}/>
-        {loading ? <Loading /> : null}
-        {!loading && searched ? (<>
-          <Title>{t('search.results', { count: total, q: searched })}</Title>
-          <Muted>{total ? t('search.matches') : t('search.none')}</Muted>
-          {sections.map((section) => (<Card key={section.key}>
-              <Text style={{ fontWeight: '800', color: COLORS.text, marginBottom: 8 }}>{t(section.titleKey)}</Text>
-              {section.items.map((item) => (<Pressable key={item._id || item.slug} onPress={() => navigation.navigate('ListingDetail', {
-                    path: section.path,
-                    slug: item.slug,
-                    type: section.type,
-                })} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: COLORS.border }}>
-                  <Text style={{ fontWeight: '700', color: COLORS.text }}>{item.name}</Text>
-                  <Muted>{listingPlace(item, section.type)}</Muted>
-                  {listingPrice(item) != null ? <Text style={{ fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text> : null}
-                </Pressable>))}
-            </Card>))}
-        </>) : null}
-      </ScrollView>
-    </Screen>);
+    return (
+        <Screen style={styles.screen}>
+            <ScrollView contentContainerStyle={styles.page}>
+                <View style={styles.band}>
+                    <View style={styles.widget}>
+                        <TextInput
+                            value={query}
+                            onChangeText={setQuery}
+                            placeholder={t('search.placeholderWhere')}
+                            placeholderTextColor={COLORS.muted}
+                            autoCapitalize="sentences"
+                            returnKeyType="search"
+                            onSubmitEditing={() => runSearch()}
+                            style={styles.input}
+                        />
+                        <View style={styles.searchBtn}>
+                            <Button title={t('common.search')} onPress={() => runSearch()} />
+                        </View>
+                    </View>
+                </View>
+                <View style={styles.body}>
+                    {loading ? <Loading /> : null}
+                    {!loading && searched ? (
+                        <>
+                            <Text style={styles.heading}>{t('search.results', { count: total, q: searched })}</Text>
+                            {total ? <Muted>{t('search.matches')}</Muted> : (
+                                <Card style={styles.empty}>
+                                    <Text style={styles.emptyTitle}>{t('search.none')}</Text>
+                                </Card>
+                            )}
+                            {total ? sections.map((section) => (
+                                <View key={section.key} style={styles.section}>
+                                    <Text style={styles.sectionTitle}>{t(section.titleKey)}</Text>
+                                    {section.items.map((item) => (
+                                        <ListingCard
+                                            key={item._id || item.slug}
+                                            item={item}
+                                            type={section.type}
+                                            onPress={() => navigation.navigate('ListingDetail', {
+                                                path: section.path,
+                                                slug: item.slug,
+                                                type: section.type,
+                                            })}
+                                        />
+                                    ))}
+                                </View>
+                            )) : null}
+                        </>
+                    ) : null}
+                    <Text style={styles.sectionTitle}>{t('search.experiences')}</Text>
+                    <View style={styles.shortcuts}>
+                        {SHORTCUTS.map((key) => (
+                            <Pressable key={key} style={styles.shortcut} onPress={() => openCategory(navigation, t, key)}>
+                                <Text style={styles.shortcutText}>{t(`nav.${key}`)}</Text>
+                            </Pressable>
+                        ))}
+                    </View>
+                </View>
+            </ScrollView>
+        </Screen>
+    );
 }
+
+const styles = StyleSheet.create({
+    screen: { padding: 0 },
+    page: { paddingBottom: 28 },
+    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 16 },
+    widget: {
+        backgroundColor: '#fff',
+        borderRadius: RADIUS.card,
+        borderWidth: 3,
+        borderColor: COLORS.accent,
+        overflow: 'hidden',
+    },
+    input: {
+        fontFamily: FONTS.medium,
+        fontSize: 16,
+        color: COLORS.text,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    searchBtn: { paddingHorizontal: 8, paddingBottom: 8 },
+    body: { padding: 16 },
+    heading: {
+        fontFamily: FONTS.bold,
+        fontSize: 24,
+        color: COLORS.text,
+        letterSpacing: -0.4,
+        marginBottom: 4,
+    },
+    section: { marginTop: 20 },
+    sectionTitle: {
+        fontFamily: FONTS.bold,
+        fontSize: 18,
+        color: COLORS.text,
+        marginBottom: 12,
+        marginTop: 8,
+    },
+    empty: { marginTop: 16, alignItems: 'center' },
+    emptyTitle: {
+        fontFamily: FONTS.semibold,
+        fontSize: 15,
+        color: COLORS.muted,
+        textAlign: 'center',
+    },
+    shortcuts: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    shortcut: {
+        width: '47%',
+        backgroundColor: COLORS.card,
+        borderRadius: RADIUS.card,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 16,
+        alignItems: 'center',
+    },
+    shortcutText: {
+        fontFamily: FONTS.semibold,
+        fontSize: 14,
+        color: COLORS.primary,
+        textAlign: 'center',
+    },
+});

@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import { fetchMe, login as loginApi, logoutApi, register as registerApi, registerVendor as registerVendorApi, sendOtp as sendOtpApi, updateProfile, verifyOtp as verifyOtpApi, } from '../api/endpoints';
+import { clearToken, readToken, writeToken } from '../api/tokenStore';
 import { VENDOR_ROLES } from '../constants/theme';
 import { registerForPushNotifications, unregisterPushNotifications } from '../services/push';
 const AuthContext = createContext(null);
@@ -9,8 +9,8 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [pendingOtp, setPendingOtp] = useState(null);
     const persistSession = async (payload) => {
-        await SecureStore.setItemAsync('accessToken', payload.accessToken);
-        await SecureStore.setItemAsync('refreshToken', payload.refreshToken);
+        await writeToken('accessToken', payload.accessToken);
+        await writeToken('refreshToken', payload.refreshToken);
         setUser(payload.user);
         setPendingOtp(null);
         registerForPushNotifications(payload.user.role).catch(() => { });
@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         (async () => {
             try {
-                const token = await SecureStore.getItemAsync('accessToken');
+                const token = await readToken('accessToken');
                 if (!token)
                     return;
                 const me = await fetchMe();
@@ -27,8 +27,8 @@ export function AuthProvider({ children }) {
                 registerForPushNotifications(me.role).catch(() => { });
             }
             catch {
-                await SecureStore.deleteItemAsync('accessToken');
-                await SecureStore.deleteItemAsync('refreshToken');
+                await clearToken('accessToken');
+                await clearToken('refreshToken');
             }
             finally {
                 setLoading(false);
@@ -83,10 +83,13 @@ export function AuthProvider({ children }) {
     const verifyOtp = useCallback(async (code) => {
         if (!pendingOtp)
             throw new Error('No pending OTP');
+        const identifier = String(pendingOtp.identifier || '').trim();
+        if (!identifier)
+            throw new Error('No pending OTP');
         const data = await verifyOtpApi({
-            identifier: pendingOtp.identifier,
-            code,
-            purpose: pendingOtp.purpose,
+            identifier,
+            code: String(code || '').replace(/\D/g, ''),
+            purpose: pendingOtp.purpose || 'LOGIN',
         });
         return persistSession(data);
     }, [pendingOtp]);
@@ -120,8 +123,8 @@ export function AuthProvider({ children }) {
         catch {
             /* ignore */
         }
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await clearToken('accessToken');
+        await clearToken('refreshToken');
         setUser(null);
     }, []);
     const value = useMemo(() => ({

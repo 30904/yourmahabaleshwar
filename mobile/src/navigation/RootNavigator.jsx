@@ -6,7 +6,8 @@ import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Loading } from '../components/ui';
-import { COLORS } from '../constants/theme';
+import { COLORS, FONTS } from '../constants/theme';
+import { Calendar, HomeSimple, User } from '../components/home/icons';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import VendorRegisterScreen from '../screens/auth/VendorRegisterScreen';
@@ -45,25 +46,35 @@ function MainTabs() {
     return (<Tab.Navigator screenOptions={{
             headerShown: false,
             tabBarActiveTintColor: COLORS.primary,
-            tabBarStyle: { borderTopColor: COLORS.border },
+            tabBarInactiveTintColor: '#64748B',
+            tabBarLabelStyle: { fontFamily: FONTS.medium, fontSize: 11 },
+            tabBarStyle: {
+                backgroundColor: '#fff',
+                borderTopWidth: 1,
+                borderTopColor: COLORS.border,
+                height: 64,
+                paddingTop: 6,
+                paddingBottom: 8,
+            },
         }}>
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{
             title: t('nav.home'),
-            tabBarIcon: ({ color }) => <Text style={{ color }}>⌂</Text>,
+            tabBarIcon: ({ color }) => <HomeSimple size={22} color={color} strokeWidth={2} />,
         }}/>
       <Tab.Screen name="Bookings" component={user ? BookingsScreen : AccountScreen} options={{
             title: t('nav.bookings'),
-            tabBarIcon: ({ color }) => <Text style={{ color }}>☰</Text>,
-        }}/>
-      <Tab.Screen name="VendorTab" component={VendorHubScreen} options={{
-            title: t('nav.vendor'),
-            tabBarIcon: ({ color }) => <Text style={{ color }}>◆</Text>,
-            tabBarButton: isVendor ? undefined : () => null,
+            tabBarIcon: ({ color }) => <Calendar size={22} color={color} strokeWidth={2} />,
         }}/>
       <Tab.Screen name="Account" component={AccountScreen} options={{
             title: t('nav.account'),
-            tabBarIcon: ({ color }) => <Text style={{ color }}>●</Text>,
+            tabBarIcon: ({ color }) => <User size={22} color={color} strokeWidth={2} />,
         }}/>
+      {isVendor ? (
+      <Tab.Screen name="VendorTab" component={VendorHubScreen} options={{
+            title: t('nav.vendor'),
+            tabBarIcon: ({ color }) => <Text style={{ color }}>◆</Text>,
+        }}/>
+      ) : null}
     </Tab.Navigator>);
 }
 export default function RootNavigator() {

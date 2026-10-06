@@ -1,14 +1,33 @@
 export const COLORS = {
-    primary: '#0B3D2E',
-    primarySoft: '#E8F2EE',
-    accent: '#C45C26',
-    bg: '#F7F5F2',
+    primary: '#003580',
+    primaryLight: '#1E88E5',
+    primarySoft: '#E8F0FE',
+    action: '#0071C2',
+    actionPressed: '#005999',
+    accent: '#FFB700',
+    warning: '#B45309',
+    bg: '#F0F4F8',
     card: '#FFFFFF',
-    text: '#14201B',
-    muted: '#5C6B64',
-    border: '#D9E0DC',
-    danger: '#B42318',
-    success: '#067647',
+    text: '#0F172A',
+    body: '#1E293B',
+    muted: '#475569',
+    border: '#E2E8F0',
+    inputBorder: '#CBD5E1',
+    focus: '#0071C2',
+    danger: '#DC2626',
+    success: '#16A34A',
+};
+export const RADIUS = {
+    button: 8,
+    input: 8,
+    card: 12,
+};
+export const FONTS = {
+    regular: 'Inter_400Regular',
+    medium: 'Inter_500Medium',
+    semibold: 'Inter_600SemiBold',
+    bold: 'Inter_700Bold',
+    extrabold: 'Inter_800ExtraBold',
 };
 export const VENDOR_ROLES = [
     'HOTEL_VENDOR',

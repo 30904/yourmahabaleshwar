@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { confirmHomepageAd, fetchMyHomepageAds, fetchMyVendorListings, fetchVendorAdCatalog, orderHomepageAd } from '../../api/endpoints';
-import { Button, Card, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
+import { Button, Card, Loading, Screen } from '../../components/ui';
+import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { checkoutHtml, openWebCheckout } from '../../services/razorpayCheckout';
@@ -151,7 +151,7 @@ export default function VendorAdsScreen() {
     };
 
     if (!allowed)
-        return (<Screen><Muted>{t('vendorAds.notAvailable')}</Muted></Screen>);
+        return (<Screen><Text style={styles.hint}>{t('vendorAds.notAvailable')}</Text></Screen>);
     if (loading)
         return <Loading />;
 
@@ -160,38 +160,50 @@ export default function VendorAdsScreen() {
 
     return (<Screen>
       <ScrollView>
-        <Title>{t('vendorAds.title')}</Title>
-        <Muted>{t('vendorAds.subtitle')}</Muted>
+        <Text style={styles.pageTitle}>{t('vendorAds.title')}</Text>
+        <Text style={styles.hint}>{t('vendorAds.subtitle')}</Text>
         <Card>
-          <Muted>{t('vendorAds.slotsOpen')}</Muted>
-          <Text style={{ fontWeight: '800', fontSize: 22, color: COLORS.primary }}>{slotsRemaining}/{maxSlots}</Text>
-          <Muted>{t('vendorAds.slotsHint')}</Muted>
+          <Text style={styles.label}>{t('vendorAds.slotsOpen')}</Text>
+          <Text style={styles.balance}>{slotsRemaining}/{maxSlots}</Text>
+          <Text style={styles.hint}>{t('vendorAds.slotsHint')}</Text>
         </Card>
         <Card>
-          <Text style={{ fontWeight: '800', color: COLORS.text }}>{t('vendorAds.buyTitle')}</Text>
-          {!options.length ? <Muted>{t('vendorAds.noApprovedListings')}</Muted> : (<>
-            <Muted>{t('vendorAds.package')}</Muted>
-            {(catalog?.packages || []).map((pkg) => (<Pressable key={pkg._id} onPress={() => setPackageId(pkg._id)} style={{ paddingVertical: 8 }}>
-              <Text style={{ fontWeight: '700', color: packageId === pkg._id ? COLORS.primary : COLORS.text }}>
-                {packageId === pkg._id ? '✓ ' : ''}{pkg.name} — {formatCurrency(pkg.price)} / {pkg.durationDays} {t('vendorAds.days')}
-              </Text>
-            </Pressable>))}
-            <Muted>{t('vendorAds.listing')}</Muted>
-            {options.map((opt) => (<Pressable key={opt.key} onPress={() => setListingKey(opt.key)} style={{ paddingVertical: 8 }}>
-              <Text style={{ fontWeight: '700', color: listingKey === opt.key ? COLORS.primary : COLORS.text }}>
-                {listingKey === opt.key ? '✓ ' : ''}{opt.name} ({opt.listingType})
-              </Text>
-            </Pressable>))}
+          <Text style={styles.cardTitle}>{t('vendorAds.buyTitle')}</Text>
+          {!options.length ? <Text style={styles.hint}>{t('vendorAds.noApprovedListings')}</Text> : (<>
+            <Text style={styles.label}>{t('vendorAds.package')}</Text>
+            <View style={styles.chips}>
+              {(catalog?.packages || []).map((pkg) => {
+                const on = packageId === pkg._id;
+                return (
+                  <Pressable key={pkg._id} onPress={() => setPackageId(pkg._id)} style={[styles.chip, on && styles.chipOn]}>
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{pkg.name} — {formatCurrency(pkg.price)} / {pkg.durationDays} {t('vendorAds.days')}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={styles.label}>{t('vendorAds.listing')}</Text>
+            <View style={styles.chips}>
+              {options.map((opt) => {
+                const on = listingKey === opt.key;
+                return (
+                  <Pressable key={opt.key} onPress={() => setListingKey(opt.key)} style={[styles.chip, on && styles.chipOn]}>
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{opt.name} ({opt.listingType})</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
             <Button title={slotsRemaining <= 0 ? t('vendorAds.slotsFull') : t('vendorAds.payAndPromote')} onPress={purchase} loading={busy} disabled={slotsRemaining <= 0}/>
           </>)}
         </Card>
         <Card>
-          <Text style={{ fontWeight: '800', color: COLORS.text }}>{t('vendorAds.historyTitle')}</Text>
-          {!ads.length ? <Muted>{t('vendorAds.historyEmpty')}</Muted> : ads.map((ad) => (<View key={ad._id} style={{ paddingVertical: 8 }}>
-            <Text style={{ fontWeight: '700', color: COLORS.text }}>{ad.title}</Text>
-            <Muted>{ad.listingType} · {when(ad.startDate)} → {when(ad.endDate)} · {formatCurrency(ad.amountPaid || 0)}</Muted>
-            <Muted>{ad.status}</Muted>
-          </View>))}
+          <Text style={styles.cardTitle}>{t('vendorAds.historyTitle')}</Text>
+          {!ads.length ? <Text style={styles.hint}>{t('vendorAds.historyEmpty')}</Text> : ads.map((ad) => (
+            <View key={ad._id} style={styles.ad}>
+              <Text style={styles.adTitle}>{ad.title}</Text>
+              <Text style={styles.hint}>{ad.listingType} · {when(ad.startDate)} → {when(ad.endDate)} · {formatCurrency(ad.amountPaid || 0)}</Text>
+              <View style={styles.badge}><Text style={styles.badgeText}>{ad.status}</Text></View>
+            </View>
+          ))}
         </Card>
       </ScrollView>
       <Modal visible={!!checkout} animationType="slide" onRequestClose={() => setCheckout(null)}>
@@ -202,3 +214,20 @@ export default function VendorAdsScreen() {
       </Modal>
     </Screen>);
 }
+
+const styles = StyleSheet.create({
+    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4 },
+    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 4, marginBottom: 8, lineHeight: 20 },
+    label: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.body, marginTop: 8, marginBottom: 6 },
+    balance: { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary, marginTop: 4 },
+    cardTitle: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text, marginBottom: 8 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+    chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#fff' },
+    chipOn: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
+    chipText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.text },
+    chipTextOn: { color: COLORS.primary },
+    ad: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    adTitle: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.text },
+    badge: { alignSelf: 'flex-start', backgroundColor: COLORS.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 },
+    badgeText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary },
+});

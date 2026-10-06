@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { getMyKyc, submitKyc } from '../../api/endpoints';
-import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
+import { Button, Card, Field, Loading, Screen } from '../../components/ui';
+import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 
 const ROLE_TO_VENDOR_TYPE = {
@@ -91,27 +91,52 @@ export default function VendorKycScreen() {
         return <Loading />;
 
     const approved = status === 'APPROVED';
-    const statusColor = status === 'APPROVED' ? COLORS.success : status === 'REJECTED' ? COLORS.danger : COLORS.accent;
+    const tone = status === 'APPROVED' ? styles.ok : status === 'REJECTED' ? styles.bad : styles.pending;
+    const toneText = status === 'APPROVED' ? styles.okText : status === 'REJECTED' ? styles.badText : styles.pendingText;
 
-    return (<Screen>
-      <ScrollView>
-        <Title>{t('vendor.kycTitle')}</Title>
-        <Text style={{ fontWeight: '700', color: statusColor, marginBottom: 8 }}>{status}</Text>
-        <Muted>{t('vendor.kycHint')}</Muted>
-        {rejectionReason ? <Muted>{t('vendor.rejectionReason')}: {rejectionReason}</Muted> : null}
-        <Card>
-          <Field label={t('vendor.aadhaar')} value={aadhar} onChangeText={setAadhar} keyboardType="numeric"/>
-          <Field label={t('vendor.pan')} value={pan} onChangeText={(value) => setPan(value.toUpperCase())} autoCapitalize="characters"/>
-          <Field label={t('vendor.gst')} value={gstNumber} onChangeText={(value) => setGstNumber(value.toUpperCase())} autoCapitalize="characters"/>
-          <Muted>{t('vendor.bankDetails')}</Muted>
-          <Field label={t('vendor.accountHolder')} value={bank.accountHolder} onChangeText={(value) => setBankField('accountHolder', value)} autoCapitalize="words"/>
-          <Field label={t('vendor.accountNumber')} value={bank.accountNumber} onChangeText={(value) => setBankField('accountNumber', value)} keyboardType="numeric"/>
-          <Field label={t('vendor.ifsc')} value={bank.ifsc} onChangeText={(value) => setBankField('ifsc', value.toUpperCase())} autoCapitalize="characters"/>
-          <Field label={t('vendor.bankName')} value={bank.bankName} onChangeText={(value) => setBankField('bankName', value)} autoCapitalize="words"/>
-          <Field label={t('vendor.branch')} value={bank.branch} onChangeText={(value) => setBankField('branch', value)} autoCapitalize="words"/>
-          <Field label={t('vendor.upi')} value={bank.upiId} onChangeText={(value) => setBankField('upiId', value)} autoCapitalize="none"/>
-          <Button title={t('vendor.submitKyc')} onPress={onSubmit} loading={saving} disabled={approved}/>
-        </Card>
-      </ScrollView>
-    </Screen>);
+    return (
+        <Screen>
+            <ScrollView>
+                <Text style={styles.pageTitle}>{t('vendor.kycTitle')}</Text>
+                <View style={[styles.badge, tone]}>
+                    <Text style={[styles.badgeText, toneText]}>{status}</Text>
+                </View>
+                <Text style={styles.hint}>{t('vendor.kycHint')}</Text>
+                {rejectionReason ? (
+                    <View style={styles.danger}>
+                        <Text style={styles.dangerText}>{t('vendor.rejectionReason')}: {rejectionReason}</Text>
+                    </View>
+                ) : null}
+                <Card>
+                    <Field label={t('vendor.aadhaar')} value={aadhar} onChangeText={setAadhar} keyboardType="numeric" />
+                    <Field label={t('vendor.pan')} value={pan} onChangeText={(value) => setPan(value.toUpperCase())} autoCapitalize="characters" />
+                    <Field label={t('vendor.gst')} value={gstNumber} onChangeText={(value) => setGstNumber(value.toUpperCase())} autoCapitalize="characters" />
+                    <Text style={styles.sectionTitle}>{t('vendor.bankDetails')}</Text>
+                    <Field label={t('vendor.accountHolder')} value={bank.accountHolder} onChangeText={(value) => setBankField('accountHolder', value)} autoCapitalize="words" />
+                    <Field label={t('vendor.accountNumber')} value={bank.accountNumber} onChangeText={(value) => setBankField('accountNumber', value)} keyboardType="numeric" />
+                    <Field label={t('vendor.ifsc')} value={bank.ifsc} onChangeText={(value) => setBankField('ifsc', value.toUpperCase())} autoCapitalize="characters" />
+                    <Field label={t('vendor.bankName')} value={bank.bankName} onChangeText={(value) => setBankField('bankName', value)} autoCapitalize="words" />
+                    <Field label={t('vendor.branch')} value={bank.branch} onChangeText={(value) => setBankField('branch', value)} autoCapitalize="words" />
+                    <Field label={t('vendor.upi')} value={bank.upiId} onChangeText={(value) => setBankField('upiId', value)} autoCapitalize="none" />
+                    <Button title={t('vendor.submitKyc')} onPress={onSubmit} loading={saving} disabled={approved} />
+                </Card>
+            </ScrollView>
+        </Screen>
+    );
 }
+
+const styles = StyleSheet.create({
+    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4 },
+    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 8, marginBottom: 12, lineHeight: 20 },
+    sectionTitle: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text, marginBottom: 8, marginTop: 4 },
+    badge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 },
+    badgeText: { fontFamily: FONTS.semibold, fontSize: 12 },
+    ok: { backgroundColor: '#F0FDF4' },
+    okText: { color: COLORS.success },
+    pending: { backgroundColor: '#FFFBEB' },
+    pendingText: { color: COLORS.warning },
+    bad: { backgroundColor: '#FEF2F2' },
+    badText: { color: COLORS.danger },
+    danger: { backgroundColor: '#FEF2F2', borderRadius: 12, borderWidth: 1, borderColor: '#FECACA', padding: 12, marginBottom: 12 },
+    dangerText: { fontFamily: FONTS.medium, fontSize: 13, color: '#B91C1C', lineHeight: 18 },
+});

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { createVendorListing, fetchFormSchema, fetchMyVendorListing, fetchMyVendorListings, updateVendorListing } from '../../api/endpoints';
-import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
+import { Button, Card, Field, Loading, Screen } from '../../components/ui';
+import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { AMENITY_OPTIONS, canVendorEditListing, defaultRoute, defaultsFor, toFormValues, toPayload, validateListingForm } from '../../utils/vendorListingForm';
 
@@ -39,25 +39,31 @@ const STAY_AMENITIES = ['Swimming Pool', 'Restaurant', 'Safe Parking', 'Free Wi-
 const UNITS = ['pack', 'kg', 'box', 'bottle', 'jar', 'piece'];
 
 function Choices({ label, value, options, onChange }) {
-    return (<View style={{ marginBottom: 12 }}>
-      <Muted>{label}</Muted>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
-        {options.map((opt) => {
-            const id = typeof opt === 'string' ? opt : opt.value;
-            const text = typeof opt === 'string' ? opt : opt.label;
-            const on = value === id;
-            return (<Pressable key={id} onPress={() => onChange(id)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: on ? COLORS.primary : COLORS.primarySoft }}>
-              <Text style={{ color: on ? '#fff' : COLORS.primary, fontWeight: '700' }}>{text}</Text>
-            </Pressable>);
-        })}
-      </View>
-    </View>);
+    return (
+        <View style={styles.choices}>
+            <Text style={styles.choiceLabel}>{label}</Text>
+            <View style={styles.chips}>
+                {options.map((opt) => {
+                    const id = typeof opt === 'string' ? opt : opt.value;
+                    const text = typeof opt === 'string' ? opt : opt.label;
+                    const on = value === id;
+                    return (
+                        <Pressable key={id} onPress={() => onChange(id)} style={[styles.chip, on && styles.chipOn]}>
+                            <Text style={[styles.chipText, on && styles.chipTextOn]}>{text}</Text>
+                        </Pressable>
+                    );
+                })}
+            </View>
+        </View>
+    );
 }
 
 function Check({ label, on, onPress }) {
-    return (<Pressable onPress={onPress} style={{ paddingVertical: 8 }}>
-      <Text style={{ color: on ? COLORS.primary : COLORS.text, fontWeight: '700' }}>{on ? '✓ ' : '○ '}{label}</Text>
-    </Pressable>);
+    return (
+        <Pressable onPress={onPress} style={styles.check}>
+            <Text style={[styles.checkText, on && styles.checkOn]}>{on ? '✓ ' : '○ '}{label}</Text>
+        </Pressable>
+    );
 }
 
 export default function VendorListingFormScreen() {
@@ -186,7 +192,7 @@ export default function VendorListingFormScreen() {
     };
 
     if (!vertical)
-        return (<Screen><Muted>{t('vendor.listingsLoadFailed')}</Muted></Screen>);
+        return (<Screen><Text style={styles.hint}>{t('vendor.listingsLoadFailed')}</Text></Screen>);
     if (loading)
         return <Loading />;
 
@@ -196,7 +202,7 @@ export default function VendorListingFormScreen() {
 
     return (<Screen>
       <ScrollView>
-        <Title>{isEdit ? t('vendor.editListing', { kind }) : t('vendor.createListingKind', { kind })}</Title>
+        <Text style={styles.pageTitle}>{isEdit ? t('vendor.editListing', { kind }) : t('vendor.createListingKind', { kind })}</Text>
         {!isEdit && allowed.length > 1 && (<Choices label={label('type')} value={vertical} options={allowed.map((value) => ({ value, label: t(`vendor.types.${value}`) }))} onChange={(value) => {
             setVertical(value);
             setForm(defaultsFor(value));
@@ -289,7 +295,7 @@ export default function VendorListingFormScreen() {
             <Field label={label('experience')} value={text('experience')} onChangeText={(value) => setField('experience', value)} keyboardType="numeric"/>
             <Field label={label('slotsPerDay')} value={text('slotsPerDay')} onChangeText={(value) => setField('slotsPerDay', value)} keyboardType="numeric"/>
             <Field label={label('description')} value={text('description')} onChangeText={(value) => setField('description', value)}/>
-            <Muted>{label('routes')}</Muted>
+            <Text style={styles.sectionTitle}>{label('routes')}</Text>
             {(form.routes || []).map((routeRow, index) => (<View key={index}>
               <Field label={label('routeName')} value={routeRow.name || ''} onChangeText={(value) => setField('routes', form.routes.map((row, i) => i === index ? { ...row, name: value } : row))}/>
               <Field label={label('durationMinutes')} value={String(routeRow.durationMinutes ?? '')} onChangeText={(value) => setField('routes', form.routes.map((row, i) => i === index ? { ...row, durationMinutes: value } : row))} keyboardType="numeric"/>
@@ -321,7 +327,7 @@ export default function VendorListingFormScreen() {
           </>)}
         </Card>
         {sections.map((section) => (<Card key={section.id}>
-          <Muted>{section.title}</Muted>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
           {(section.fields || []).map((field) => field.type === 'checkbox' ? (<Check key={field.id} label={field.label} on={!!custom[field.id]} onPress={() => setCustom((prev) => ({ ...prev, [field.id]: !prev[field.id] }))}/>) : field.type === 'select' ? (<Choices key={field.id} label={field.label} value={custom[field.id] || ''} options={field.options || []} onChange={(value) => setCustom((prev) => ({ ...prev, [field.id]: value }))}/>) : (<Field key={field.id} label={field.label} value={custom[field.id] == null ? '' : String(custom[field.id])} onChangeText={(value) => setCustom((prev) => ({ ...prev, [field.id]: value }))} keyboardType={field.type === 'number' ? 'numeric' : 'default'}/>))}
         </Card>))}
         <Button title={t('common.save')} onPress={onSave} loading={saving}/>
@@ -329,3 +335,19 @@ export default function VendorListingFormScreen() {
       </ScrollView>
     </Screen>);
 }
+
+const styles = StyleSheet.create({
+    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4, marginBottom: 12 },
+    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, lineHeight: 20 },
+    sectionTitle: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text, marginBottom: 8 },
+    choices: { marginBottom: 12 },
+    choiceLabel: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.body, marginBottom: 6 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#fff' },
+    chipOn: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
+    chipText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.text },
+    chipTextOn: { color: COLORS.primary },
+    check: { paddingVertical: 8 },
+    checkText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.text },
+    checkOn: { color: COLORS.primary },
+});

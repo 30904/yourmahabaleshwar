@@ -39,10 +39,11 @@
       [
         "expo-notifications",
         {
-          "color": "#0B3D2E"
+          "color": "#003580"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-font"
     ],
     "extra": {
       "apiUrl": "https://www.yourmahabaleshwar.com/api",

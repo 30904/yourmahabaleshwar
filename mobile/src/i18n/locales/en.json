@@ -8,7 +8,9 @@
     "continue": "Continue",
     "submit": "Submit",
     "empty": "Nothing here yet",
-    "rupees": "₹{{amount}}"
+    "rupees": "₹{{amount}}",
+    "search": "Search",
+    "viewAll": "View all"
   },
   "nav": {
     "home": "Home",
@@ -28,10 +30,23 @@
     "horses": "Horses",
     "strawberries": "Strawberries",
     "mapro": "Mapro",
-    "combos": "Combos"
+    "combos": "Combos",
+    "stays": "Stays",
+    "shop": "Shop",
+    "comingSoon": "[coming soon]",
+    "enquireAboutProducts": "Enquire about products",
+    "enquireShopHint": "Call us on either number for shop enquiries.",
+    "closeEnquire": "Close"
   },
   "auth": {
     "signIn": "Sign in",
+    "signInSubtitle": "Sign in to manage your bookings",
+    "newHere": "New here?",
+    "haveAccount": "Have an account?",
+    "registerSubtitle": "Join travellers discovering Mahabaleshwar",
+    "forgotTitle": "Forgot password",
+    "back": "Back",
+    "backToLogin": "Back to login",
     "register": "Create account",
     "vendorRegister": "List your property",
     "email": "Email",
@@ -58,8 +73,103 @@
   },
   "home": {
     "headline": "Discover Mahabaleshwar",
-    "subhead": "Hotels, homestays/villas, tents, guides, drivers, taxi and horse rides",
-    "browse": "Browse categories"
+    "subhead": "Hotels, homestays/villas, tents, guides, taxi and horse rides — one platform.",
+    "browse": "Browse categories",
+    "badgeTrusted": "India's trusted hill-station marketplace",
+    "badgeLoved": "Loved by 50,000+ travellers",
+    "statProperties": "Properties",
+    "statReviews": "Guest reviews",
+    "statRating": "Average rating",
+    "popular": "Popular:",
+    "quickHotels": "Hotels",
+    "quickResorts": "Resorts",
+    "quickGlamping": "Glamping",
+    "quickFreeCancellation": "Free cancellation",
+    "sponsoredListings": "Sponsored stays",
+    "fromPrice": "From {{price}}",
+    "categories": {
+      "hotels": "Hotels",
+      "hotelsCount": "450+ stays",
+      "resorts": "Resorts",
+      "resortsCount": "80+ resorts",
+      "homestays": "Homestays/Villas",
+      "homestaysCount": "Local homes",
+      "tents": "Tents & camps",
+      "tentsCount": "50+ glamping",
+      "guides": "Local guides",
+      "guidesCount": "100+ experts",
+      "driver": "Drivers",
+      "driverCount": "200+ drivers",
+      "taxi": "Taxi",
+      "taxiCount": "200+ cabs",
+      "horses": "Horse rides",
+      "horsesCount": "Scenic trails",
+      "strawberriesCount": "Farm fresh",
+      "maproCount": "Jams and syrups",
+      "combosCount": "Bundled stays"
+    },
+    "deals": {
+      "eyebrow": "Limited time",
+      "title": "Trending deals & offers",
+      "subtitle": "Save more on your next hill-station escape",
+      "seeAll": "See all deals",
+      "bookNow": "Book now",
+      "monsoon": { "title": "Monsoon Escape", "discount": "30% off", "desc": "Book before June 30" },
+      "weekend": { "title": "Weekend Getaway", "discount": "Free breakfast", "desc": "2+ night stays" },
+      "earlyBird": { "title": "Early Bird", "discount": "15% off", "desc": "Book 14 days ahead" }
+    },
+    "propertyTabs": {
+      "eyebrow": "Guest favourites",
+      "title": "Popular in Mahabaleshwar",
+      "subtitle": "Highly rated properties with great value",
+      "topHotels": "Top hotels",
+      "luxuryResorts": "Luxury resorts",
+      "uniqueStays": "Unique stays"
+    },
+    "promo": {
+      "eyebrow": "Member perks",
+      "title": "Sign in to unlock exclusive deals & free upgrades",
+      "subtitle": "Create a free account — save properties, faster checkout, and seasonal discounts.",
+      "cta": "Join free"
+    },
+    "destinations": {
+      "eyebrow": "Explore",
+      "title": "Destinations near Mahabaleshwar",
+      "subtitle": "From misty valleys to heritage forts",
+      "mahabaleshwarCount": "450+ properties",
+      "panchganiCount": "120+ properties",
+      "tapolaCount": "45+ camps",
+      "pratapgadCount": "80+ guides"
+    },
+    "services": {
+      "eyebrow": "Beyond stays",
+      "title": "Guides & transport",
+      "subtitle": "Explore Mahabaleshwar with trusted locals",
+      "localGuide": "Local guide",
+      "taxiCab": "Taxi & cab",
+      "hourlyTrips": "Hourly & point-to-point trips",
+      "browseGuides": "Browse all guides",
+      "bookCab": "Book a cab"
+    },
+    "whyBook": {
+      "eyebrow": "Why us",
+      "title": "Book with confidence",
+      "subtitle": "The same trust you expect from global booking platforms — built for Mahabaleshwar"
+    }
+  },
+  "footer": {
+    "tagline": "Discover · Book · Experience Mahabaleshwar — hotels, resorts, tents, guides and taxi.",
+    "support": "Support",
+    "helpCentre": "Help Centre",
+    "contactUs": "Contact us",
+    "cancellation": "Cancellation",
+    "discover": "Discover",
+    "company": "Company",
+    "about": "About",
+    "blog": "Blog",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "© 2026 YOURMAHABALESHWAR.COM · All rights reserved"
   },
   "content": {
     "menu": "About, help and policies",
@@ -100,12 +210,24 @@
   "search": {
     "placeholder": "Search hotels, guides, taxis...",
     "action": "Search",
+    "destination": "Destination",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guestsRooms": "Guests & rooms",
+    "placeholderDestination": "City, property, or landmark",
+    "placeholderWhere": "Where are you going?",
+    "experiences": "Book experiences",
+    "guests2_1": "2 adults · 1 room",
+    "guests2_2": "2 adults · 2 rooms",
+    "guests4_1": "4 adults · 1 room",
+    "guests4_2": "4 adults · 2 rooms",
     "results": "{{count}} results for {{q}}",
     "matches": "Best matches for your search",
     "none": "No results found. Try a different search.",
     "taxiDrivers": "Taxi & drivers"
   },
   "listing": {
+    "from": "From",
     "perNight": "per night",
     "amenities": "Facilities",
     "houseRules": "House rules",
@@ -350,6 +472,33 @@
       "kids": { "name": "Kids safe ride", "details": "Supervised kids ride" }
     }
   },
+  "property": {
+    "featured": "Featured",
+    "freeCancellation": "Free cancellation",
+    "noPrepayment": "No prepayment needed",
+    "perNight": "/ night",
+    "inclTaxes": "incl. taxes",
+    "seeAvailability": "See availability",
+    "reviews": "reviews"
+  },
+  "trust": {
+    "secureTitle": "Secure booking",
+    "secureDesc": "256-bit SSL encryption",
+    "verifiedTitle": "Verified properties",
+    "verifiedDesc": "Every listing is vetted",
+    "supportTitle": "24/7 support",
+    "supportDesc": "Local team in Mahabaleshwar",
+    "paymentTitle": "Flexible payment",
+    "paymentDesc": "Pay online or at property"
+  },
+  "serviceBooking": {
+    "bookNow": "Book now",
+    "guideTitle": "Book a local guide",
+    "taxiTitle": "Book a taxi",
+    "noVendorPick": "You do not choose a specific partner — submit your request and our team will assign the best available vendor.",
+    "guideFeature1": "6hr & 12hr packages",
+    "taxiFeature1": "Per trip or hourly"
+  },
   "shop": {
     "strawberrySub": "Farm-fresh strawberries and homemade crush from Mahabaleshwar",
     "maproSub": "Jams, syrups and gift packs inspired by Mapro",
@@ -364,6 +513,7 @@
   },
   "account": {
     "profile": "Profile",
+    "language": "Language",
     "save": "Save changes",
     "saved": "Profile updated",
     "needProfile": "Enter your name and email",
@@ -416,8 +566,19 @@
     "accept": "Accept",
     "reject": "Reject",
     "noBookings": "No bookings yet",
+    "manageHint": "Track and manage your reservations",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
+    "sectionDates": "Stay dates & room",
+    "sectionTrip": "1. Trip details",
+    "sectionGuest": "Lead guest details",
+    "sectionId": "ID proof",
+    "sectionParty": "Co-travellers",
+    "sectionPayment": "Payment",
+    "sectionTerms": "Terms & conditions",
+    "tariff": "Tariff / night",
+    "subtotal": "Subtotal",
+    "total": "Total",
     "guests": "Guests",
     "adults": "Adults",
     "children": "Children",
@@ -475,6 +636,8 @@
     "pointsRequired": "Enter at least 1 point",
     "recentTransactions": "Recent transactions",
     "noTransactions": "No transactions",
+    "registerTitle": "List your property / service",
+    "registerSubtitle": "Register as a hotel, homestay/villa, tent, guide, taxi or horse partner",
     "businessName": "Business name",
     "vendorType": "Business type",
     "registerSuccess": "Vendor account created",

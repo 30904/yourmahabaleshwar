@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { fetchMyVendorListing, fetchMyVendorListings, patchVendorListingPrices } from '../../api/endpoints';
-import { Button, Card, Field, Loading, Muted, Screen, Title } from '../../components/ui';
+import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
+import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { pricingDraftFromListing, pricingPayloadFromDraft, validatePricingDraft } from '../../utils/vendorPricing';
 
@@ -121,23 +122,37 @@ export default function VendorPricingScreen() {
     if (loading)
         return <Loading />;
 
-    return (<Screen>
-      <ScrollView>
-        <Title>{t('vendor.pricing')}</Title>
-        <Muted>{t('vendor.pricingHint')}</Muted>
-        {!rows.length ? (<Card>
-          <Muted>{t('vendor.noPricingListings')}</Muted>
-          <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')}/>
-        </Card>) : rows.map((item) => {
-            const key = listingKey(item);
-            const draft = drafts[key] || {};
-            return (<Card key={key}>
-              <Title>{item.name}</Title>
-              <Muted>{t(item.labelKey)}</Muted>
-              <PricingFields vertical={item.vertical} draft={draft} t={t} onField={(field, value) => setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }))} onRow={(field, index, value) => setRowField(key, field, value, index)}/>
-              <Button title={t('vendor.savePrices')} onPress={() => onSave(item)} loading={!!saving[key]}/>
-            </Card>);
-        })}
-      </ScrollView>
-    </Screen>);
+    return (
+        <Screen>
+            <ScrollView>
+                <Text style={styles.pageTitle}>{t('vendor.pricing')}</Text>
+                <Text style={styles.hint}>{t('vendor.pricingHint')}</Text>
+                {!rows.length ? (
+                    <Card style={styles.empty}>
+                        <Text style={styles.emptyText}>{t('vendor.noPricingListings')}</Text>
+                        <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')} />
+                    </Card>
+                ) : rows.map((item) => {
+                    const key = listingKey(item);
+                    const draft = drafts[key] || {};
+                    return (
+                        <Card key={key}>
+                            <Text style={styles.cardTitle}>{item.name}</Text>
+                            <Text style={styles.hint}>{t(item.labelKey)}</Text>
+                            <PricingFields vertical={item.vertical} draft={draft} t={t} onField={(field, value) => setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }))} onRow={(field, index, value) => setRowField(key, field, value, index)} />
+                            <Button title={t('vendor.savePrices')} onPress={() => onSave(item)} loading={!!saving[key]} />
+                        </Card>
+                    );
+                })}
+            </ScrollView>
+        </Screen>
+    );
 }
+
+const styles = StyleSheet.create({
+    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4 },
+    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 4, marginBottom: 8, lineHeight: 20 },
+    cardTitle: { fontFamily: FONTS.semibold, fontSize: 18, color: COLORS.text },
+    empty: { alignItems: 'center' },
+    emptyText: { fontFamily: FONTS.medium, fontSize: 15, color: COLORS.muted, textAlign: 'center', marginBottom: 8 },
+});

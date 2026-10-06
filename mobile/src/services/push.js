@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import * as SecureStore from 'expo-secure-store';
+import { clearToken, readToken, writeToken } from '../api/tokenStore';
 import Constants from 'expo-constants';
 import { registerDevice, unregisterDevice } from '../api/endpoints';
 import { VENDOR_ROLES } from '../constants/theme';
@@ -66,7 +66,7 @@ export async function registerForPushNotifications(role) {
             platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
             appRole,
         });
-        await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
+        await writeToken(PUSH_TOKEN_KEY, token);
     }
     catch (err) {
         console.warn('[push] registerDevice failed', err);
@@ -76,7 +76,7 @@ export async function registerForPushNotifications(role) {
 }
 
 export async function unregisterPushNotifications() {
-    const token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY);
+    const token = await readToken(PUSH_TOKEN_KEY);
     if (!token)
         return;
     try {
@@ -85,5 +85,5 @@ export async function unregisterPushNotifications() {
     catch (err) {
         console.warn('[push] unregister failed', err);
     }
-    await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
+    await clearToken(PUSH_TOKEN_KEY);
 }

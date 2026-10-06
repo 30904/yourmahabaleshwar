@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import AuthFrame, { AuthLink, DevOtp, FormError, authErrorMessage } from '../../components/AuthFrame';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Field, Screen, Title, Muted, Card } from '../../components/ui';
-import { COLORS, VENDOR_ROLES } from '../../constants/theme';
+import { Button, Field, Muted } from '../../components/ui';
+import { FONTS, VENDOR_ROLES } from '../../constants/theme';
 export default function LoginScreen({ navigation }) {
     const { t } = useTranslation();
     const { login, verifyOtp, resendOtp, pendingOtp } = useAuth();
@@ -13,13 +15,31 @@ export default function LoginScreen({ navigation }) {
     const [step, setStep] = useState('form');
     const [devHint, setDevHint] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const showError = (e) => {
+        const message = authErrorMessage(e);
+        setError(message);
+        Alert.alert(t('common.error'), message);
+    };
+    const goHome = () => {
+        navigation.getParent()?.dispatch(CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs', params: { screen: 'HomeTab' } }],
+        }));
+    };
     const finishLogin = (user) => {
         const screen = user && VENDOR_ROLES.includes(user.role) ? 'VendorTab' : 'HomeTab';
-        navigation.getParent()?.navigate('MainTabs', { screen });
+        navigation.getParent()?.dispatch(CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs', params: { screen } }],
+        }));
     };
     const onLogin = async () => {
-        if (!email.trim() || !password)
-            return Alert.alert(t('common.error'), t('auth.needCredentials'));
+        if (!email.trim() || !password) {
+            setError(t('auth.needCredentials'));
+            return;
+        }
+        setError('');
         setLoading(true);
         try {
             const res = await login(email.trim(), password);
@@ -27,69 +47,96 @@ export default function LoginScreen({ navigation }) {
                 setStep('otp');
                 if (res.devCode)
                     setDevHint(res.devCode);
-                Alert.alert(t('auth.otpSent'), t('auth.otpHint'));
             }
             else if (res.user) {
                 finishLogin(res.user);
             }
         }
         catch (e) {
-            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+            showError(e);
         }
         finally {
             setLoading(false);
         }
     };
     const onVerify = async () => {
-        if (!otp.trim())
-            return Alert.alert(t('common.error'), t('auth.otp'));
+        if (!otp.trim()) {
+            setError(t('auth.otp'));
+            return;
+        }
+        setError('');
         setLoading(true);
         try {
             const user = await verifyOtp(otp.trim());
             finishLogin(user);
         }
         catch (e) {
-            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+            showError(e);
         }
         finally {
             setLoading(false);
         }
     };
     const onResend = async () => {
+        setError('');
         try {
             const r = await resendOtp();
             if (r.devCode)
                 setDevHint(r.devCode);
-            Alert.alert(t('auth.otpSent'), t('auth.otpHint'));
         }
         catch (e) {
-            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+            showError(e);
         }
     };
-    return (<Screen>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text style={{ color: COLORS.primary, fontWeight: '900', fontSize: 28, marginTop: 24 }}>
-          YOURMAHABALESHWAR
-        </Text>
-        <Title>{t('auth.signIn')}</Title>
-        <Muted>{t('auth.welcome')}</Muted>
-
-        {step === 'form' ? (<Card>
-            <Field label={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address"/>
-            <Field label={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry/>
-            <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: 'flex-end', marginBottom: 4 }}>
-              <Text style={{ color: COLORS.primary, fontWeight: '700' }}>{t('auth.forgotPassword')}</Text>
-            </Pressable>
-            <Button title={t('auth.signIn')} onPress={onLogin} loading={loading}/>
-            <Button title={t('auth.register')} onPress={() => navigation.navigate('Register')} variant="outline"/>
-            <Button title={t('auth.vendorRegister')} onPress={() => navigation.navigate('VendorRegister')} variant="outline"/>
-          </Card>) : (<Card>
-            <Muted>{t('auth.otpHint')}</Muted>
-            {(devHint || pendingOtp?.devCode) && (<Text style={{ marginTop: 8, color: COLORS.accent }}>Dev OTP: {devHint || pendingOtp?.devCode}</Text>)}
-            <Field label={t('auth.otp')} value={otp} onChangeText={setOtp} keyboardType="numeric" maxLength={6}/>
-            <Button title={t('auth.verify')} onPress={onVerify} loading={loading}/>
-            <Button title={t('auth.resendOtp')} variant="outline" onPress={onResend}/>
-          </Card>)}
-      </ScrollView>
-    </Screen>);
+    return (
+        <AuthFrame
+            title={t('auth.signIn')}
+            subtitle={t('auth.signInSubtitle')}
+            onBack={goHome}
+            backLabel={t('auth.back')}
+            footer={step === 'form' ? (
+                <>
+                    <Text style={styles.newHere}>
+                        <Text style={styles.newHereMuted}>{t('auth.newHere')} </Text>
+                        <Text style={styles.create} onPress={() => navigation.navigate('Register')}>{t('auth.register')}</Text>
+                    </Text>
+                    <View style={styles.demo}>
+                        <Text style={styles.demoText}>Demo: admin@yourmahabaleshwar.com / Admin@123 (password only). Customer/vendor need OTP after password.</Text>
+                    </View>
+                </>
+            ) : null}
+        >
+            {step === 'form' ? (
+                <>
+                    <Field label={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address" />
+                    <Field label={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry />
+                    <AuthLink title={t('auth.forgotPassword')} align="right" onPress={() => navigation.navigate('ForgotPassword')} />
+                    <FormError message={error} />
+                    <Button title={t('common.continue')} onPress={onLogin} loading={loading} />
+                </>
+            ) : (
+                <>
+                    <Muted>{t('auth.otpHint')}</Muted>
+                    <DevOtp code={devHint || pendingOtp?.devCode} />
+                    <Field label={t('auth.otp')} value={otp} onChangeText={setOtp} keyboardType="numeric" maxLength={6} />
+                    <FormError message={error} />
+                    <Button title={t('auth.verify')} onPress={onVerify} loading={loading} />
+                    <AuthLink title={t('auth.resendOtp')} onPress={onResend} />
+                </>
+            )}
+        </AuthFrame>
+    );
 }
+
+const styles = StyleSheet.create({
+    newHere: { textAlign: 'center', marginTop: 24 },
+    newHereMuted: { fontFamily: FONTS.regular, fontSize: 14, color: '#475569' },
+    create: { fontFamily: FONTS.bold, fontSize: 14, color: '#003580' },
+    demo: {
+        marginTop: 16,
+        backgroundColor: '#EFF6FF',
+        borderRadius: 8,
+        padding: 12,
+    },
+    demoText: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 18, color: '#475569' },
+});

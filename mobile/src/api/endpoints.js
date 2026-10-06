@@ -1,6 +1,6 @@
 import api, { API_BASE } from './client';
 import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { readToken } from './tokenStore';
 export const login = (email, password) => api.post('/auth/login', { email, password }).then((r) => r.data.data);
 export const register = (payload) => api.post('/auth/register', payload).then((r) => r.data.data);
 export const registerVendor = (payload) => api.post('/auth/register-vendor', payload).then((r) => r.data.data);
@@ -63,7 +63,7 @@ export async function downloadInvoice(bookingId) {
     }
     const { File, Paths } = await import('expo-file-system');
     const Sharing = await import('expo-sharing');
-    const token = await SecureStore.getItemAsync('accessToken');
+    const token = await readToken('accessToken');
     const destination = new File(Paths.cache, `invoice-${bookingId}.pdf`);
     const file = await File.downloadFileAsync(`${API_BASE}/bookings/${bookingId}/invoice`, destination, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -155,6 +155,8 @@ export const orderStayRenewal = (listingType, listingId) => api.post(`/stay-subs
 export const confirmStayRenewal = (listingType, listingId, body) => api.post(`/stay-subscriptions/${listingType}/${listingId}/renew/confirm`, body).then((r) => r.data.data);
 export const fetchVendorAdCatalog = () => api.get('/ads/packages').then((r) => r.data.data);
 export const fetchMyHomepageAds = () => api.get('/ads/mine').then((r) => r.data.data?.items || []);
+export const fetchHomepageHeroAds = () => api.get('/ads/homepage-hero').then((r) => r.data.data?.items || []);
+export const trackHomepageAdEvent = (adId, event = 'impression') => api.post(`/ads/${adId}/track`, { event }).catch(() => null);
 export const orderHomepageAd = (body) => api.post('/ads/order', body).then((r) => r.data.data);
 export const confirmHomepageAd = (body) => api.post('/ads/confirm', body).then((r) => r.data.data);
 export const fetchFormSchema = (tenant) => api.get('/admin/public/form-schemas', { params: { formKind: 'vendor', tenant } }).then((r) => r.data.data);

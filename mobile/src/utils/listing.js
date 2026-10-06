@@ -40,6 +40,19 @@ export function listingPlace(item, type) {
     return item?.location || item?.vertical || 'Mahabaleshwar';
 }
 
+export function scoreFromRating(rating = 4) {
+    return Math.round(Math.min(10, Number(rating) * 1.9) * 10) / 10;
+}
+
+export function scoreLabelFromRating(rating = 4) {
+    const value = Number(rating);
+    if (value >= 4.8) return 'Exceptional';
+    if (value >= 4.5) return 'Wonderful';
+    if (value >= 4.2) return 'Excellent';
+    if (value >= 3.8) return 'Very Good';
+    return 'Good';
+}
+
 export function listingPrice(item) {
     const amount = item?.priceFrom
         ?? item?.pricePerNight

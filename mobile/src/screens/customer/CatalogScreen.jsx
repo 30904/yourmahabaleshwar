@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, Text } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { listCatalog } from '../../api/endpoints';
 import { DriverBookingIntro } from '../../components/DriverRateChart';
 import HorseRateChart from '../../components/HorseRateChart';
+import ListingCard from '../../components/ListingCard';
 import TaxiRateChart from '../../components/TaxiRateChart';
-import { Card, Loading, Muted, Screen, Title } from '../../components/ui';
-import { COLORS } from '../../constants/theme';
-import { formatCurrency } from '../../utils/format';
-import { listingImage, listingPlace, listingPrice } from '../../utils/listing';
+import { Loading, Muted, Screen, Title } from '../../components/ui';
+
 export default function CatalogScreen({ route, navigation }) {
     const { t } = useTranslation();
     const { path, title, type, query } = route.params;
@@ -17,6 +16,7 @@ export default function CatalogScreen({ route, navigation }) {
     const isCombo = type === 'COMBO';
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+
     useEffect(() => {
         setLoading(true);
         listCatalog(path, query)
@@ -24,23 +24,32 @@ export default function CatalogScreen({ route, navigation }) {
             .catch(() => setItems([]))
             .finally(() => setLoading(false));
     }, [path, query]);
-    if (loading)
-        return <Loading />;
-    return (<Screen style={{ paddingTop: 8 }}>
-      <Title>{title}</Title>
-      {isShop ? <Muted>{t(shopVertical === 'MAPRO' ? 'shop.maproSub' : 'shop.strawberrySub')}</Muted> : null}
-      {isCombo ? <Muted>{t('shop.comboSub')}</Muted> : null}
-      <FlatList data={items} keyExtractor={(item) => item._id || item.slug} ListHeaderComponent={type === 'TAXI' ? <TaxiRateChart /> : type === 'DRIVER' ? <DriverBookingIntro /> : type === 'HORSE' ? <HorseRateChart /> : null} ListEmptyComponent={<Muted>{t('common.empty')}</Muted>} renderItem={({ item }) => (<Pressable onPress={() => navigation.navigate('ListingDetail', {
-                path,
-                slug: item.slug,
-                type,
-            })}>
-            <Card>
-              {listingImage(item) ? (<Image source={{ uri: listingImage(item) }} style={{ height: 140, borderRadius: 10, marginBottom: 10 }}/>) : null}
-              <Text style={{ fontWeight: '800', color: COLORS.text, fontSize: 16 }}>{item.name}</Text>
-              {isShop ? (item.shortDescription ? <Muted>{item.shortDescription}</Muted> : null) : isCombo ? (item.description ? <Muted>{item.description}</Muted> : null) : <Muted>{listingPlace(item, type)}</Muted>}
-              {type === 'GUIDE' && item.package6hr != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.package6hr)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('guide.sixHourShort')}</Text></Text>) : type === 'TAXI' && item.perTripPrice != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.perTripPrice)} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('taxi.perTripShort')}</Text></Text>) : type === 'HORSE' && listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))} <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}>{t('horse.perRoute')}</Text></Text>) : isShop && item.price != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.price)}{item.unit ? <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted }}> / {item.unit}</Text> : null}</Text>) : isCombo && item.comboPrice != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(item.comboPrice)}{item.originalPrice != null ? <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted, textDecorationLine: 'line-through' }}> {formatCurrency(item.originalPrice)}</Text> : null}{item.originalPrice > item.comboPrice ? <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.success }}> {t('shop.save')} {formatCurrency(item.originalPrice - item.comboPrice)}</Text> : null}</Text>) : listingPrice(item) != null ? (<Text style={{ marginTop: 4, fontWeight: '700', color: COLORS.primary }}>{formatCurrency(listingPrice(item))}</Text>) : null}
-            </Card>
-          </Pressable>)}/>
-    </Screen>);
+
+    if (loading) return <Loading />;
+
+    const openListing = (item) => navigation.navigate('ListingDetail', { path, slug: item.slug, type });
+
+    return (
+        <Screen style={{ paddingTop: 8, paddingBottom: 0 }}>
+            <FlatList
+                data={items}
+                style={{ flex: 1 }}
+                keyExtractor={(item) => item._id || item.slug}
+                ListHeaderComponent={(
+                    <View>
+                        <Title>{title}</Title>
+                        {isShop ? <Muted>{t(shopVertical === 'MAPRO' ? 'shop.maproSub' : 'shop.strawberrySub')}</Muted> : null}
+                        {isCombo ? <Muted>{t('shop.comboSub')}</Muted> : null}
+                        {type === 'TAXI' ? <TaxiRateChart /> : null}
+                        {type === 'DRIVER' ? <DriverBookingIntro /> : null}
+                        {type === 'HORSE' ? <HorseRateChart /> : null}
+                    </View>
+                )}
+                ListEmptyComponent={<Muted>{t('common.empty')}</Muted>}
+                renderItem={({ item }) => (
+                    <ListingCard item={item} type={type} onPress={() => openListing(item)} />
+                )}
+            />
+        </Screen>
+    );
 }
