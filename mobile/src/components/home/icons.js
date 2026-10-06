@@ -143,10 +143,6 @@ export const Hotel = makeIcon([
     ["rect", { x: "4", y: "2", width: "16", height: "20", rx: "2", key: "1uxh74" }]
   ]);
 
-export const HomeSimple = makeIcon([
-    ["path", { d: "M4 10.5 12 4l8 6.5V20H4Z", key: "simple-home" }]
-]);
-
 export const Home = makeIcon([
     ["path", { d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", key: "5wwlr5" }],
     [

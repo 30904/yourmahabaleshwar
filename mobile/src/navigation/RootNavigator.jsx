@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Loading } from '../components/ui';
 import { COLORS, FONTS } from '../constants/theme';
-import { Calendar, HomeSimple, User } from '../components/home/icons';
+import { Calendar, Home, User } from '../components/home/icons';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import VendorRegisterScreen from '../screens/auth/VendorRegisterScreen';
@@ -59,7 +59,7 @@ function MainTabs() {
         }}>
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{
             title: t('nav.home'),
-            tabBarIcon: ({ color }) => <HomeSimple size={22} color={color} strokeWidth={2} />,
+            tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={2} />,
         }}/>
       <Tab.Screen name="Bookings" component={user ? BookingsScreen : AccountScreen} options={{
             title: t('nav.bookings'),
