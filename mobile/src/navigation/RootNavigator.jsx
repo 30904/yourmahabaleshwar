@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
@@ -44,6 +45,8 @@ function AuthNavigator() {
 function MainTabs() {
     const { t } = useTranslation();
     const { isVendor, user } = useAuth();
+    const insets = useSafeAreaInsets();
+    const bottomInset = Math.max(insets.bottom, 0);
     return (<Tab.Navigator screenOptions={{
             headerShown: false,
             tabBarActiveTintColor: COLORS.primary,
@@ -53,9 +56,9 @@ function MainTabs() {
                 backgroundColor: '#fff',
                 borderTopWidth: 1,
                 borderTopColor: COLORS.border,
-                height: 64,
+                height: 56 + bottomInset,
                 paddingTop: 6,
-                paddingBottom: 8,
+                paddingBottom: bottomInset > 0 ? bottomInset : 8,
             },
         }}>
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{

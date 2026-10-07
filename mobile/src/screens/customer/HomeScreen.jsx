@@ -12,7 +12,7 @@ export default function HomeScreen() {
     return (
         <Screen style={{ padding: 0 }}>
             <HomeHeader navigation={navigation}>
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1 }} removeClippedSubviews={false}>
                 <HomeHero navigation={navigation} />
                 <HomeCategoryStrip navigation={navigation} />
                 <HomeDeals navigation={navigation} />

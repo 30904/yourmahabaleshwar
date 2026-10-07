@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Building2, Calendar, CalendarDays, Car, CreditCard, FileText, Home, Languages, LayoutDashboard, Megaphone, Menu, Phone, ShoppingBag, Star, Tag, Tent, Trees, Wallet, X } from './icons';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS, FONTS } from '../../constants/theme';
 import { AVAILABILITY_ROLES } from '../../utils/vendorAvailability';
@@ -72,7 +71,6 @@ function MenuPanel({ children }) {
 
 export default function HomeHeader({ navigation, children }) {
     const { t } = useTranslation();
-    const insets = useSafeAreaInsets();
     const { user, isVendor } = useAuth();
     const [open, setOpen] = useState(false);
     const [enquire, setEnquire] = useState(false);
@@ -102,7 +100,7 @@ export default function HomeHeader({ navigation, children }) {
 
     return (
         <View style={styles.shell}>
-            <View style={[styles.bar, { paddingTop: insets.top }]}>
+            <View style={styles.bar}>
             <View style={styles.row}>
                 <Pressable onPress={() => navigation.navigate('HomeTab')} accessibilityLabel="Go to homepage">
                     <Image source={logo} style={styles.logo} resizeMode="contain" />

@@ -126,21 +126,23 @@ export default function HomeHero({ navigation }) {
     };
 
     return (
-        <View style={styles.hero}>
-            <LinearGradient
-                colors={['#001a40', '#003580', '#004a9e']}
-                locations={[0, 0.5, 1]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-            />
-            <Image source={{ uri: HERO_IMG }} style={styles.heroImage} resizeMode="cover" />
-            <LinearGradient
-                colors={['rgba(0, 26, 64, 0.75)', 'rgba(0, 53, 128, 0.85)', 'rgba(0, 53, 128, 0.95)']}
-                locations={[0, 0.55, 1]}
-                style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.content}>
+        <View style={styles.hero} collapsable={false}>
+            <View style={styles.backdrop} pointerEvents="none">
+                <LinearGradient
+                    colors={['#001a40', '#003580', '#004a9e']}
+                    locations={[0, 0.5, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                />
+                <Image source={{ uri: HERO_IMG }} style={styles.heroImage} resizeMode="cover" />
+                <LinearGradient
+                    colors={['rgba(0, 26, 64, 0.75)', 'rgba(0, 53, 128, 0.85)', 'rgba(0, 53, 128, 0.95)']}
+                    locations={[0, 0.55, 1]}
+                    style={StyleSheet.absoluteFill}
+                />
+            </View>
+            <View style={styles.content} collapsable={false}>
                 <View style={styles.pills}>
                     <View style={styles.pill}>
                         <ShieldCheck size={14} color="#fff" strokeWidth={2} />
@@ -263,9 +265,10 @@ export default function HomeHero({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    hero: { backgroundColor: '#003580', overflow: 'hidden' },
-    heroImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.35 },
-    content: { paddingHorizontal: 16, paddingTop: 40, paddingBottom: 80 },
+    hero: { backgroundColor: '#003580', position: 'relative' },
+    backdrop: { ...StyleSheet.absoluteFillObject, zIndex: 0, elevation: 0 },
+    heroImage: { ...StyleSheet.absoluteFillObject, opacity: 0.35 },
+    content: { paddingHorizontal: 16, paddingTop: 40, paddingBottom: 80, position: 'relative', zIndex: 1, elevation: 1 },
     pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     pill: {
         flexDirection: 'row',
