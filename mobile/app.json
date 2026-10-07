@@ -24,7 +24,11 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE", "POST_NOTIFICATIONS"],
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -35,9 +39,11 @@
       [
         "expo-notifications",
         {
-          "color": "#0B3D2E"
+          "color": "#003580"
         }
-      ]
+      ],
+      "expo-sharing",
+      "expo-font"
     ],
     "extra": {
       "apiUrl": "https://www.yourmahabaleshwar.com/api",

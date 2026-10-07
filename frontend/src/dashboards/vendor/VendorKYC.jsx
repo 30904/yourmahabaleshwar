@@ -243,13 +243,12 @@ export default function VendorKYC() {
                 value={files[d.code] || null}
                 existingUrl={!files[d.code] ? existing : ''}
                 onChange={(file) => onFile(d.code, file)}
-                disabled={status === 'APPROVED'}
               />
             );
           })}
         </div>
 
-        <Button type="submit" className="mt-2" disabled={saving || status === 'APPROVED'}>
+        <Button type="submit" className="mt-2" disabled={saving}>
           {saving ? t('common.loading') : t('vendor.submitKyc')}
         </Button>
       </form>

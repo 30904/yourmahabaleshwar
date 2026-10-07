@@ -8,6 +8,7 @@ import User from '../models/User.js';
 import { createOrder, verifyPaymentSignature, createRefund } from '../services/razorpayService.js';
 import { generateInvoicePdf } from '../services/invoiceService.js';
 import { createNotification } from '../services/notificationService.js';
+import { sendWhatsAppPaymentCompleted } from '../services/whatsappService.js';
 import { BOOKING_STATUS, REFUND_STATUS } from '../constants/booking.js';
 import { success, error } from '../utils/apiResponse.js';
 
@@ -133,6 +134,14 @@ export const verifyPayment = async (req, res) => {
       sendMail: true,
       sendSms: true,
     });
+    try {
+      await sendWhatsAppPaymentCompleted({
+        phone: booking.customer.phone,
+        amount: booking.total ?? payment.amount,
+      });
+    } catch (err) {
+      console.error('[payment] WhatsApp payment_completed failed:', err?.message || err);
+    }
   }
   if (booking?.vendor) {
     await createNotification({

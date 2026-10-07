@@ -27,6 +27,7 @@ const resolveWishlistItems = async (wishlist = []) => {
     else if (type === 'TAXI') item = await Driver.findById(id);
     else if (type === 'HOMESTAY') item = await Homestay.findById(id);
     else if (type === 'HORSE') item = await Horse.findById(id);
+    else if (type === 'DRIVER') item = await Driver.findById(id);
     if (item) results.push({ itemType: type, item, addedAt: entry.addedAt });
   }
   return results;
@@ -47,6 +48,13 @@ router.patch('/me', async (req, res) => {
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
+  }
+  if (req.body.email !== undefined) {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!email) return error(res, 'Email is required', 400);
+    const taken = await User.findOne({ email, _id: { $ne: req.user._id } });
+    if (taken) return error(res, 'Email already in use', 400);
+    updates.email = email;
   }
   const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
   return success(res, user);

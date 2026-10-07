@@ -1,24 +1,25 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { fetchMe, login as loginApi, logoutApi, register as registerApi, registerVendor as registerVendorApi, sendOtp as sendOtpApi, verifyOtp as verifyOtpApi, } from '../api/endpoints';
+import { fetchMe, login as loginApi, logoutApi, register as registerApi, registerVendor as registerVendorApi, sendOtp as sendOtpApi, updateProfile, verifyOtp as verifyOtpApi, } from '../api/endpoints';
+import { clearToken, readToken, writeToken } from '../api/tokenStore';
 import { VENDOR_ROLES } from '../constants/theme';
-import { registerForPushNotifications } from '../services/push';
+import { registerForPushNotifications, unregisterPushNotifications } from '../services/push';
 const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [pendingOtp, setPendingOtp] = useState(null);
     const persistSession = async (payload) => {
-        await SecureStore.setItemAsync('accessToken', payload.accessToken);
-        await SecureStore.setItemAsync('refreshToken', payload.refreshToken);
+        await writeToken('accessToken', payload.accessToken);
+        await writeToken('refreshToken', payload.refreshToken);
         setUser(payload.user);
         setPendingOtp(null);
         registerForPushNotifications(payload.user.role).catch(() => { });
+        return payload.user;
     };
     useEffect(() => {
         (async () => {
             try {
-                const token = await SecureStore.getItemAsync('accessToken');
+                const token = await readToken('accessToken');
                 if (!token)
                     return;
                 const me = await fetchMe();
@@ -26,8 +27,8 @@ export function AuthProvider({ children }) {
                 registerForPushNotifications(me.role).catch(() => { });
             }
             catch {
-                await SecureStore.deleteItemAsync('accessToken');
-                await SecureStore.deleteItemAsync('refreshToken');
+                await clearToken('accessToken');
+                await clearToken('refreshToken');
             }
             finally {
                 setLoading(false);
@@ -46,8 +47,8 @@ export function AuthProvider({ children }) {
             });
             return { requiresOtp: true, devCode: data.devCode };
         }
-        await persistSession(data);
-        return {};
+        const user = await persistSession(data);
+        return { user };
     }, []);
     const register = useCallback(async (payload) => {
         const data = await registerApi(payload);
@@ -61,8 +62,8 @@ export function AuthProvider({ children }) {
             });
             return { requiresOtp: true, devCode: data.devCode };
         }
-        await persistSession(data);
-        return {};
+        const user = await persistSession(data);
+        return { user };
     }, []);
     const registerVendor = useCallback(async (payload) => {
         const data = await registerVendorApi(payload);
@@ -76,17 +77,21 @@ export function AuthProvider({ children }) {
             });
             return { requiresOtp: true, devCode: data.devCode };
         }
-        return {};
+        const user = await persistSession(data);
+        return { user };
     }, []);
     const verifyOtp = useCallback(async (code) => {
         if (!pendingOtp)
             throw new Error('No pending OTP');
+        const identifier = String(pendingOtp.identifier || '').trim();
+        if (!identifier)
+            throw new Error('No pending OTP');
         const data = await verifyOtpApi({
-            identifier: pendingOtp.identifier,
-            code,
-            purpose: pendingOtp.purpose,
+            identifier,
+            code: String(code || '').replace(/\D/g, ''),
+            purpose: pendingOtp.purpose || 'LOGIN',
         });
-        await persistSession(data);
+        return persistSession(data);
     }, [pendingOtp]);
     const resendOtp = useCallback(async () => {
         if (!pendingOtp)
@@ -100,15 +105,26 @@ export function AuthProvider({ children }) {
         setPendingOtp((p) => (p ? { ...p, devCode: data.devCode } : p));
         return { devCode: data.devCode };
     }, [pendingOtp]);
+    const saveProfile = useCallback(async (body) => {
+        const updated = await updateProfile(body);
+        setUser(updated);
+        return updated;
+    }, []);
     const logout = useCallback(async () => {
+        try {
+            await unregisterPushNotifications();
+        }
+        catch {
+            /* ignore */
+        }
         try {
             await logoutApi();
         }
         catch {
             /* ignore */
         }
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await clearToken('accessToken');
+        await clearToken('refreshToken');
         setUser(null);
     }, []);
     const value = useMemo(() => ({
@@ -121,8 +137,9 @@ export function AuthProvider({ children }) {
         registerVendor,
         verifyOtp,
         resendOtp,
+        saveProfile,
         logout,
-    }), [user, loading, pendingOtp, login, register, registerVendor, verifyOtp, resendOtp, logout]);
+    }), [user, loading, pendingOtp, login, register, registerVendor, verifyOtp, resendOtp, saveProfile, logout]);
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => {

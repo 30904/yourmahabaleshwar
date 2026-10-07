@@ -2278,6 +2278,7 @@
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
+    z-index: 20;
     display: flex;
     gap: 0.35rem;
   }

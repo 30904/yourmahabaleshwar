@@ -71,13 +71,14 @@ export default function FileDropzone({
         <input
           ref={inputRef}
           type="file"
-          className="hidden"
           accept={accept}
           disabled={disabled}
+          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
           onChange={(e) => {
             pickFile(e.target.files?.[0]);
             e.target.value = '';
           }}
+          onClick={(e) => e.stopPropagation()}
         />
 
         {previewUrl && isImage ? (
