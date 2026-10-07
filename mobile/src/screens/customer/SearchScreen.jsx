@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { useTranslation } from 'react-i18next';
 import { globalSearch } from '../../api/endpoints';
 import ListingCard from '../../components/ListingCard';
+import HomeFooter from '../../components/home/HomeFooter';
 import { openCategory } from '../../components/home/homeNav';
 import { Button, Card, Loading, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
@@ -12,9 +13,6 @@ const SECTIONS = [
     { key: 'resorts', titleKey: 'nav.resorts', path: '/hotels', type: 'RESORT', pick: (data) => (data.hotels || []).filter((item) => String(item.type || '').toUpperCase() === 'RESORT') },
     { key: 'homestays', titleKey: 'nav.homestays', path: '/homestays', type: 'HOMESTAY', pick: (data) => data.homestays || [] },
     { key: 'tents', titleKey: 'nav.tents', path: '/tents', type: 'TENT', pick: (data) => data.tents || [] },
-    { key: 'guides', titleKey: 'nav.guides', path: '/guides', type: 'GUIDE', pick: (data) => data.guides || [] },
-    { key: 'drivers', titleKey: 'search.taxiDrivers', path: '/drivers', type: 'DRIVER', pick: (data) => data.drivers || [] },
-    { key: 'horses', titleKey: 'nav.horses', path: '/horses', type: 'HORSE', pick: (data) => data.horses || [] },
 ];
 
 const SHORTCUTS = ['guides', 'tents', 'taxi', 'drivers', 'horses', 'homestays', 'hotels', 'resorts'];
@@ -110,6 +108,7 @@ export default function SearchScreen({ route, navigation }) {
                         ))}
                     </View>
                 </View>
+                <HomeFooter bleed={0} />
             </ScrollView>
         </Screen>
     );

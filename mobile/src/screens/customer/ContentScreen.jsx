@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { publicBlogs, publicFaqs, sendEnquiry } from '../../api/endpoints';
+import HomeFooter from '../../components/home/HomeFooter';
 import { Button, Card, Field, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 
@@ -79,8 +80,8 @@ export default function ContentScreen({ route }) {
 
     if (!page) {
         return (
-            <Screen>
-                <ScrollView>
+            <Screen style={{ paddingHorizontal: 0, paddingBottom: 0 }}>
+                <ScrollView contentContainerStyle={styles.menuPage}>
                     <Text style={styles.pageTitle}>{t('content.menu')}</Text>
                     {MENU.map((id) => (
                         <Pressable key={id} onPress={() => setPage(id)} style={styles.menu}>
@@ -88,6 +89,7 @@ export default function ContentScreen({ route }) {
                             <Text style={styles.chevron}>›</Text>
                         </Pressable>
                     ))}
+                    <HomeFooter />
                 </ScrollView>
             </Screen>
         );
@@ -206,6 +208,7 @@ export default function ContentScreen({ route }) {
                         </Card>
                     ) : null}
                 </View>
+                <HomeFooter bleed={0} />
             </ScrollView>
         </Screen>
     );
@@ -213,6 +216,7 @@ export default function ContentScreen({ route }) {
 
 const styles = StyleSheet.create({
     screen: { padding: 0 },
+    menuPage: { paddingHorizontal: 16, paddingTop: 16 },
     page: { paddingBottom: 28 },
     pageTitle: {
         fontFamily: FONTS.bold,

@@ -1,16 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { addWishlist, createBooking, getBySlug, getWishlist, removeWishlist } from '../../api/endpoints';
+import { addWishlist, createBooking, fetchReviews, getBySlug, getWishlist, removeWishlist } from '../../api/endpoints';
 import DriverRateChart, { DRIVER_PACKAGES, driverPackagePrice } from '../../components/DriverRateChart';
 import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../components/HorseRateChart';
 import GuideRateChart, { GUIDE_CHART_PACKAGES, guideChartPrice } from '../../components/GuideRateChart';
 import TaxiRateChart, { taxiChartPrice } from '../../components/TaxiRateChart';
+import HomeFooter from '../../components/home/HomeFooter';
+import StayGuestForm from '../../components/booking/StayGuestForm';
+import { DateField, FormHeader, RadioChoices, TermsCard, TimeField } from '../../components/booking/formChrome';
 import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
-import { formatTime12, listingPlace, listingPrice, mediaUrl, wishlistPath } from '../../utils/listing';
+import { formatTime12, listingPlace, listingPrice, mediaUrl, scoreFromRating, scoreLabelFromRating, wishlistPath } from '../../utils/listing';
+import { MapPin } from '../../components/home/icons';
 function tomorrow() {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -22,10 +26,10 @@ function dayAfter() {
     return d.toISOString().slice(0, 10);
 }
 function FormSection({ title, children }) {
-    return (<View style={styles.formSection}>
+    return (<Card>
       <Text style={styles.formSectionTitle}>{title}</Text>
       {children}
-    </View>);
+    </Card>);
 }
 function TotalBox({ lines, totalLabel, total }) {
     return (<View style={styles.totalBox}>
@@ -38,6 +42,23 @@ function TotalBox({ lines, totalLabel, total }) {
         <Text style={styles.totalFinalValue}>{formatCurrency(total || 0)}</Text>
       </View>
     </View>);
+}
+function ContactFields({ contact, setContact, t, ns, showDrop, timeLabel, showAge }) {
+    const set = (key) => (value) => setContact((prev) => ({ ...prev, [key]: value }));
+    return (<>
+      {showAge ? <Field label={t(`${ns}.age`)} value={contact.leadAge} onChangeText={set('leadAge')} keyboardType="numeric"/> : null}
+      <Field label={t(`${ns}.email`)} value={contact.email} onChangeText={set('email')} keyboardType="email-address"/>
+      <Field label={t(`${ns}.hotelOrPickupAddress`)} value={contact.address} onChangeText={set('address')}/>
+      <Field label={t(`${ns}.cityState`)} value={contact.cityState} onChangeText={set('cityState')}/>
+      <Field label={t(`${ns}.pinCode`)} value={contact.pincode} onChangeText={set('pincode')} keyboardType="numeric" maxLength={6} autofillPincode/>
+      <Field label={t(`${ns}.emergencyName`)} value={contact.emergencyName} onChangeText={set('emergencyName')}/>
+      <Field label={t(`${ns}.emergencyMobile`)} value={contact.emergencyMobile} onChangeText={set('emergencyMobile')} keyboardType="phone-pad"/>
+      <TimeField label={timeLabel} value={contact.startTime} onChange={set('startTime')}/>
+      {showDrop ? <Field label={t(`${ns}.dropLocation`)} value={contact.dropLocation} onChangeText={set('dropLocation')}/> : null}
+      <Field label={t(`${ns}.specialRequests`)} value={contact.specialRequests} onChangeText={set('specialRequests')}/>
+      <Field label={t(`${ns}.advanceAmount`)} value={contact.advanceAmount} onChangeText={set('advanceAmount')} keyboardType="numeric"/>
+      <RadioChoices label={t(`${ns}.paymentMode`)} value={contact.paymentMode} onChange={set('paymentMode')} options={[['CASH', t(`${ns}.payCash`)], ['ONLINE', t(`${ns}.payOnline`)], ['CARD', t(`${ns}.payCard`)]]}/>
+    </>);
 }
 function Choice({ selected, onPress, title, detail }) {
     return (<Pressable onPress={onPress} style={[styles.choice, selected && styles.choiceOn]}>
@@ -75,7 +96,31 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [horsePackage, setHorsePackage] = useState('sightseeing');
     const [photoIndex, setPhotoIndex] = useState(0);
     const [saved, setSaved] = useState(false);
+    const [showForm, setShowForm] = useState(false);
+    const [detailTab, setDetailTab] = useState('overview');
+    const [reviews, setReviews] = useState([]);
+    const scrollRef = useRef(null);
+    const scrollToForm = useRef(false);
+    const [contact, setContact] = useState({
+        email: '',
+        address: '',
+        cityState: 'Mahabaleshwar, Maharashtra',
+        pincode: '',
+        emergencyName: '',
+        emergencyMobile: '',
+        startTime: '09:00',
+        paymentMode: 'ONLINE',
+        specialRequests: '',
+        dropLocation: '',
+        advanceAmount: '',
+        leadAge: '',
+    });
+    const openService = type === 'GUIDE' || type === 'TAXI' || type === 'DRIVER' || type === 'HORSE';
     useEffect(() => {
+        if (openService) {
+            navigation.replace('ServiceBook', { type });
+            return;
+        }
         getBySlug(path, slug)
             .then((data) => {
             const stay = data?.hotel ? { ...data.hotel, rooms: data.rooms || data.hotel.rooms || [] } : data;
@@ -85,7 +130,25 @@ export default function ListingDetailScreen({ route, navigation }) {
         })
             .catch(() => setItem(null))
             .finally(() => setLoading(false));
-    }, [path, slug]);
+    }, [path, slug, openService, navigation, type]);
+    useEffect(() => {
+        setShowForm(false);
+        setPhotoIndex(0);
+        setDetailTab('overview');
+        setReviews([]);
+    }, [slug]);
+    useEffect(() => {
+        if (!item?._id || !['HOTEL', 'RESORT', 'HOMESTAY', 'TENT'].includes(type)) return;
+        const listingType = type === 'HOMESTAY' ? 'HOMESTAY' : type === 'TENT' ? 'TENT' : (item.type === 'RESORT' || type === 'RESORT' ? 'RESORT' : 'HOTEL');
+        fetchReviews(listingType, item._id).then(setReviews).catch(() => setReviews([]));
+    }, [item?._id, item?.type, type]);
+    useEffect(() => {
+        if (!user) return;
+        setContact((prev) => ({
+            ...prev,
+            email: prev.email || user.email || '',
+        }));
+    }, [user]);
     useEffect(() => {
         if (!user || !item?._id || !wishlistPath(type))
             return;
@@ -115,6 +178,43 @@ export default function ListingDetailScreen({ route, navigation }) {
             Alert.alert(t('common.error'), e.response?.data?.message || e.message);
         }
     };
+    const submitStay = async (body) => {
+        setBooking(true);
+        try {
+            const created = await createBooking(type, body);
+            Alert.alert(t('stayGuestBooking.bookingCreated'), created.bookingNumber || '');
+            navigation.navigate('MainTabs', { screen: 'Bookings' });
+        }
+        catch (e) {
+            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+        }
+        finally {
+            setBooking(false);
+        }
+    };
+    const startTime = contact.startTime || '09:00';
+    const serviceLead = (pickup = '') => ({
+        fullName: leadName.trim(),
+        age: contact.leadAge ? Number(contact.leadAge) : undefined,
+        mobile: leadMobile.trim(),
+        email: contact.email.trim() || user?.email || '',
+        address: contact.address.trim(),
+        cityState: contact.cityState.trim(),
+        pincode: contact.pincode.trim(),
+        comingFrom: contact.emergencyName.trim() || pickup,
+        goingTo: contact.dropLocation.trim() || contact.emergencyMobile.trim(),
+        purpose: 'TOURISM',
+    });
+    const serviceNotes = (fallback) => {
+        const emergencyNote = [contact.emergencyName, contact.emergencyMobile].filter(Boolean).join(' · ');
+        return [contact.specialRequests.trim(), emergencyNote ? `Emergency: ${emergencyNote}` : ''].filter(Boolean).join('\n') || fallback;
+    };
+    const serviceMoney = (total) => ({
+        formDate: new Date().toISOString(),
+        checkInTime: startTime,
+        advanceAmount: contact.advanceAmount !== '' ? Number(contact.advanceAmount) : total,
+        paymentMode: contact.paymentMode || 'ONLINE',
+    });
     const onBook = async () => {
         if (!user) {
             Alert.alert(t('auth.signIn'), 'Please sign in to book');
@@ -143,6 +243,10 @@ export default function ListingDetailScreen({ route, navigation }) {
             }
             if (!leadName.trim() || !leadMobile.trim()) {
                 Alert.alert(t('common.error'), t('booking.needContact'));
+                return;
+            }
+            if (!contact.email.trim()) {
+                Alert.alert(t('common.error'), t('guideGuestBooking.validation.email'));
                 return;
             }
             if ((type === 'TAXI' || type === 'DRIVER') && !pickupLocation.trim()) {
@@ -232,23 +336,20 @@ export default function ListingDetailScreen({ route, navigation }) {
                 body.bikeAddon = bikeAddon;
                 body.checkIn = checkIn;
                 body.guestRegistration = {
+                    ...serviceMoney(packagePrice),
                     acceptTerms: true,
                     acceptedTermsAt: new Date().toISOString(),
                     adults: 1,
-                    checkInTime: '09:00',
-                    leadGuest: {
-                        fullName: leadName.trim(),
-                        mobile: leadMobile.trim(),
-                        email: user.email || '',
-                    },
+                    leadGuest: serviceLead(),
                     tourDetails: {
                         packageType: pkg,
                         bikeAddon,
-                        startTime: '09:00',
+                        startTime,
                         touristCount: 1,
+                        pickupLocation: contact.address.trim(),
                         packagePrice,
                         bikeAddonPrice: bikeAddon ? packagePrice - guideChartPrice(pkg, false) : 0,
-                        specialRequests: item.name || '',
+                        specialRequests: serviceNotes(item.name || ''),
                     },
                 };
             }
@@ -260,27 +361,23 @@ export default function ListingDetailScreen({ route, navigation }) {
                 body.taxiType = 'PER_TRIP';
                 body.checkIn = checkIn;
                 body.guestRegistration = {
+                    ...serviceMoney(tripPrice),
                     acceptTerms: true,
                     acceptedTermsAt: new Date().toISOString(),
                     adults: passengers,
-                    checkInTime: '09:00',
-                    leadGuest: {
-                        fullName: leadName.trim(),
-                        mobile: leadMobile.trim(),
-                        email: user.email || '',
-                        comingFrom: pickupLocation.trim(),
-                    },
+                    leadGuest: serviceLead(pickupLocation.trim()),
                     taxiDetails: {
                         tripType: 'ROUTE',
                         routeId: taxiRoute,
                         carType: taxiCar,
-                        startTime: '09:00',
+                        startTime,
                         passengerCount: passengers,
                         pickupLocation: pickupLocation.trim(),
+                        dropLocation: contact.dropLocation.trim(),
                         tripPrice,
                         perTripPrice: tripPrice,
                         hourlyRate: 0,
-                        specialRequests: item.name || '',
+                        specialRequests: serviceNotes(item.name || ''),
                     },
                 };
             }
@@ -293,27 +390,23 @@ export default function ListingDetailScreen({ route, navigation }) {
                 body.taxiType = 'PER_TRIP';
                 body.checkIn = checkIn;
                 body.guestRegistration = {
+                    ...serviceMoney(tripPrice),
                     acceptTerms: true,
                     acceptedTermsAt: new Date().toISOString(),
                     adults: passengers,
-                    checkInTime: '09:00',
-                    leadGuest: {
-                        fullName: leadName.trim(),
-                        mobile: leadMobile.trim(),
-                        email: user.email || '',
-                        comingFrom: pickupLocation.trim(),
-                    },
+                    leadGuest: serviceLead(pickupLocation.trim()),
                     taxiDetails: {
                         tripType: 'PACKAGE',
                         packageId: pkg.id,
                         packageName: t(pkg.nameKey),
-                        startTime: '09:00',
+                        startTime,
                         passengerCount: passengers,
                         pickupLocation: pickupLocation.trim(),
+                        dropLocation: contact.dropLocation.trim(),
                         tripPrice,
                         perTripPrice: tripPrice,
                         hourlyRate: 0,
-                        specialRequests: item.name || '',
+                        specialRequests: serviceNotes(item.name || ''),
                     },
                 };
             }
@@ -324,23 +417,19 @@ export default function ListingDetailScreen({ route, navigation }) {
                 body.open = true;
                 body.checkIn = checkIn;
                 body.guestRegistration = {
+                    ...serviceMoney(routePrice),
                     acceptTerms: true,
                     acceptedTermsAt: new Date().toISOString(),
                     adults: riders,
-                    checkInTime: '09:00',
-                    leadGuest: {
-                        fullName: leadName.trim(),
-                        mobile: leadMobile.trim(),
-                        email: user.email || '',
-                    },
+                    leadGuest: serviceLead(),
                     horseDetails: {
                         routeId: pkg.id,
                         routeName: t(pkg.nameKey),
-                        startTime: '09:00',
+                        startTime,
                         riderCount: riders,
                         safetyAcknowledged: true,
                         routePrice,
-                        specialRequests: item.name || '',
+                        specialRequests: serviceNotes(item.name || ''),
                     },
                 };
             }
@@ -407,21 +496,55 @@ export default function ListingDetailScreen({ route, navigation }) {
                     : type === 'COMBO'
                         ? (Number(item.comboPrice) || 0)
                         : (selectedRoom?.basePrice ?? listingPrice(item));
-    const typeLabel = (type === 'HOTEL' || type === 'RESORT')
-        ? (type === 'RESORT' || item.type === 'RESORT' ? t('nav.resorts') : t('nav.hotels'))
-        : type === 'HOMESTAY' ? t('nav.homestays')
-            : type === 'TENT' ? t('nav.tents')
-                : type === 'GUIDE' ? t('nav.guides')
-                    : type === 'TAXI' ? t('nav.taxi')
-                        : type === 'DRIVER' ? t('nav.drivers')
-                            : type === 'HORSE' ? t('nav.horses')
-                                : type === 'COMBO' ? t('nav.combos')
-                                    : (item.vertical === 'MAPRO' ? t('nav.mapro') : t('nav.strawberries'));
-    const score = item.score || item.rating;
     const cover = images[photoIndex] || images[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200';
     const stay = type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT';
+    const rating = item.rating ?? (stay ? 4 : null);
+    const score = item.score ?? (rating != null ? scoreFromRating(rating) : null);
+    const scoreLabel = item.scoreLabel || (rating != null ? scoreLabelFromRating(rating) : '');
+    const reviewCount = item.reviewCount ?? (score ? 0 : null);
+    const place = type === 'COMBO' || type === 'PRODUCT' ? '' : listingPlace(item, type);
+    const priceNote = stay
+        ? `${t('listing.perNight')} · ${t('listing.taxesAtCheckout')}`
+        : type === 'GUIDE'
+            ? `${t('guide.sixHourShort').replace(/^\//, '').trim()} · ${t('listing.taxesAtCheckout')}`
+            : type === 'TAXI' || type === 'DRIVER'
+                ? `${t('taxi.perTripShort')} · ${t('listing.taxesAtCheckout')}`
+                : type === 'HORSE'
+                    ? `${t('horse.perRoute')} · ${t('listing.taxesAtCheckout')}`
+                    : t('listing.taxesAtCheckout');
+    const actionTitle = type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('listing.bookNow');
+    const serviceNs = type === 'TAXI' ? 'taxiGuestBooking' : type === 'DRIVER' ? 'driverGuestBooking' : type === 'HORSE' ? 'horseGuestBooking' : type === 'GUIDE' ? 'guideGuestBooking' : '';
+    const serviceTitle = type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : serviceNs ? t(`${serviceNs}.formTitle`) : t('booking.bookNow');
+    const serviceSubtitle = serviceNs ? t(`${serviceNs}.formSubtitle`, { name: item.name }) : '';
+    const serviceDateLabel = serviceNs ? t(`${serviceNs}.formDate`) : t('stayGuestBooking.formDate');
+    const needsRoom = type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY';
+    const openForm = () => {
+        if (!user) {
+            navigation.navigate('Auth');
+            return;
+        }
+        if (needsRoom && !rooms.length) return;
+        scrollToForm.current = true;
+        setShowForm(true);
+    };
+    const onFormLayout = (event) => {
+        if (!scrollToForm.current) return;
+        scrollToForm.current = false;
+        const y = event.nativeEvent.layout.y;
+        setTimeout(() => {
+            if (Platform.OS === 'web' && typeof document !== 'undefined') {
+                document.getElementById('guest-booking-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+            scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+        }, 60);
+    };
+    const stayTabs = type === 'TENT'
+        ? [['overview', 'Overview'], ['reviews', 'Reviews'], ['policies', 'Policies']]
+        : [['overview', 'Overview'], ['rooms', 'Rooms'], ['reviews', 'Reviews'], ['policies', 'Policies']];
     return (<Screen style={{ padding: 0 }}>
-      <ScrollView contentContainerStyle={styles.page}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.page}>
+        <View style={styles.detail}>
         <View style={styles.article}>
           <View>
             <Image source={{ uri: cover }} style={styles.cover}/>
@@ -441,30 +564,53 @@ export default function ListingDetailScreen({ route, navigation }) {
           <View style={styles.articleBody}>
             <View style={styles.titleRow}>
               <Text style={styles.name}>{item.name}</Text>
-              {score ? (<View style={styles.score}>
-                <Text style={styles.scoreText}>{Number(score).toFixed(1)}</Text>
-              </View>) : null}
+              {score ? (
+                <View style={styles.scoreWrap}>
+                  <View style={styles.score}>
+                    <Text style={styles.scoreText}>{Number(score).toFixed(1)}</Text>
+                  </View>
+                  <View>
+                    {scoreLabel ? <Text style={styles.scoreLabel}>{scoreLabel}</Text> : null}
+                    {reviewCount != null ? <Text style={styles.reviews}>{Number(reviewCount).toLocaleString('en-IN')} {t('property.reviews')}</Text> : null}
+                  </View>
+                </View>
+              ) : null}
             </View>
-            <Text style={styles.typeLabel}>{typeLabel}</Text>
-            {type !== 'COMBO' && type !== 'PRODUCT' ? <Text style={styles.place}>{listingPlace(item, type)}</Text> : null}
+            {place ? (
+              <View style={styles.placeRow}>
+                <MapPin size={16} color={COLORS.primary} strokeWidth={2} />
+                <Text style={styles.place}>{place}</Text>
+              </View>
+            ) : null}
             {type === 'GUIDE' && item.languages?.length > 0 ? <Text style={styles.place}>{t('guide.languages')}: {item.languages.join(', ')}</Text> : null}
             {type === 'TENT' ? <Text style={styles.place}>{t('listing.tentCapacity', { guests: item.capacity || 2, count: item.totalTents || 1 })}</Text> : null}
             {(type === 'HOTEL' || type === 'RESORT') && item.amenities?.length > 0 ? (<View style={styles.chips}>
               {item.amenities.slice(0, 6).map((amenity) => (<Text key={amenity} style={styles.chip}>{amenity}</Text>))}
             </View>) : null}
+            {stay && rooms.length > 0 ? (
+              <Text style={styles.roomLine}>
+                {t(rooms.length === 1 ? 'listing.roomTypeOne' : 'listing.roomTypeMany', { count: rooms.length })}
+                {selectedRoom?.name ? ` · ${t('listing.selectedRoom', { name: selectedRoom.name })}` : ''}
+              </Text>
+            ) : null}
             <View style={styles.pricePanel}>
               <Text style={styles.from}>{t('listing.from')}</Text>
-              {nightPrice != null ? (<Text style={styles.price}>
-                {formatCurrency(nightPrice)}
-                {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={styles.priceSuffix}> {t('listing.perNight')}</Text> : null}
-                {type === 'GUIDE' ? <Text style={styles.priceSuffix}> {t('guide.sixHourShort')}</Text> : null}
-                {type === 'TAXI' ? <Text style={styles.priceSuffix}> {t('taxi.perTripShort')}</Text> : null}
-                {type === 'PRODUCT' && item.unit ? <Text style={styles.priceSuffix}> / {item.unit}</Text> : null}
-                {type === 'COMBO' && item.originalPrice != null ? <Text style={styles.struck}> {formatCurrency(item.originalPrice)}</Text> : null}
-              </Text>) : <Text style={styles.price}>—</Text>}
-              {(type === 'HOTEL' || type === 'RESORT') ? <Text style={styles.priceNote}>{t('listing.perNight')} · {t('property.inclTaxes')}</Text> : null}
-              {(type === 'HOMESTAY' || type === 'TENT') ? <Text style={styles.priceNote}>{t('property.inclTaxes')}</Text> : null}
-              {stay && type !== 'TENT' && selectedRoom?.name ? <Text style={styles.roomName}>{selectedRoom.name}</Text> : null}
+              <Text style={styles.price}>{nightPrice != null ? formatCurrency(nightPrice) : '—'}</Text>
+              {type === 'COMBO' && item.originalPrice != null ? <Text style={styles.struck}>{formatCurrency(item.originalPrice)}</Text> : null}
+              {type === 'PRODUCT' && item.unit ? <Text style={styles.priceNote}>/ {item.unit}</Text> : <Text style={styles.priceNote}>{priceNote}</Text>}
+              {stay && selectedRoom?.name ? <Text style={styles.roomName}>{selectedRoom.name}</Text> : null}
+              <Text style={styles.formHint}>
+                {!user ? t('listing.signInToBook') : showForm ? t('listing.formOpenHint') : t('listing.formClosedHint')}
+              </Text>
+              <View style={styles.formAction}>
+                {!user ? (
+                  <Button title={t('listing.signInToBook')} onPress={() => navigation.navigate('Auth')} />
+                ) : showForm ? (
+                  <Button title={t('listing.hideBookingForm')} variant="outline" onPress={() => setShowForm(false)} />
+                ) : (
+                  <Button title={actionTitle} onPress={openForm} disabled={needsRoom && !rooms.length} />
+                )}
+              </View>
             </View>
           </View>
         </View>
@@ -476,7 +622,76 @@ export default function ListingDetailScreen({ route, navigation }) {
                 {part.nights ? ` · ${part.nights} ${t('shop.nights')}` : ''}
               </Muted>))}
           </Card>)}
-        {(type === 'HOMESTAY' || type === 'TENT') && item.amenities?.length > 0 && (<View style={{ marginTop: 10 }}>
+        {stay ? (
+          <View style={styles.tabsWrap}>
+            <View style={styles.tabs}>
+              {stayTabs.map(([id, label]) => (
+                <Pressable key={id} onPress={() => setDetailTab(id)} style={styles.tabBtn}>
+                  <Text style={[styles.tabText, detailTab === id && styles.tabTextOn]}>{label}</Text>
+                  {detailTab === id ? <View style={styles.tabLine} /> : <View style={styles.tabLineOff} />}
+                </Pressable>
+              ))}
+            </View>
+            {detailTab === 'overview' ? (
+              <View style={styles.tabBody}>
+                {item.description ? <Text style={styles.overviewText}>{item.description}</Text> : null}
+                {item.amenities?.length > 0 ? (
+                  <View>
+                    <Text style={styles.tabHeading}>Most popular facilities</Text>
+                    <View style={styles.facilityGrid}>
+                      {item.amenities.map((amenity) => <Text key={amenity} style={styles.facility}>{amenity}</Text>)}
+                    </View>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+            {detailTab === 'rooms' ? (
+              <View style={styles.tabBody}>
+                <Text style={styles.tabHeading}>Select your room</Text>
+                {rooms.map((room) => {
+                  const selected = String(room._id) === String(selectedRoom?._id);
+                  return (
+                    <View key={room._id} style={[styles.roomCard, selected && styles.roomCardOn]}>
+                      <Text style={styles.roomCardTitle}>{room.name}</Text>
+                      <Text style={styles.roomCardMeta}>{[room.type, room.capacity ? `${room.capacity} guests` : ''].filter(Boolean).join(' · ')}</Text>
+                      {room.freeCancellation !== false ? <Text style={styles.roomFree}>{t('property.freeCancellation')}</Text> : null}
+                      <View style={styles.roomCardFoot}>
+                        <Text style={styles.roomCardPrice}>{room.basePrice != null ? `${formatCurrency(room.basePrice)}/night` : ''}</Text>
+                        <Pressable onPress={() => setRoomId(room._id)} style={[styles.roomPick, selected && styles.roomPickOn]}>
+                          <Text style={[styles.roomPickText, selected && styles.roomPickTextOn]}>{selected ? 'Selected' : 'Select rooms'}</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+            {detailTab === 'reviews' ? (
+              <Card>
+                {score ? <Text style={styles.tabHeading}>{Number(score).toFixed(1)} {scoreLabel} · {(reviews.length || reviewCount || 0).toLocaleString('en-IN')} {t('property.reviews')}</Text> : null}
+                {reviews.length > 0 ? reviews.slice(0, 5).map((review) => (
+                  <View key={review._id} style={styles.reviewCard}>
+                    <Text style={styles.reviewName}>{review.user?.name || 'Guest'} · {review.rating}/5</Text>
+                    {review.comment ? <Text style={styles.reviewText}>{review.comment}</Text> : null}
+                  </View>
+                )) : <Muted>{t('property.noReviewsYet', { defaultValue: 'No guest reviews yet. Complete a booking to be the first to review.' })}</Muted>}
+              </Card>
+            ) : null}
+            {detailTab === 'policies' ? (
+              <Card>
+                <Text style={styles.policyText}><Text style={styles.policyStrong}>Check-in:</Text> {formatTime12(item.checkInTime || '14:00')} · <Text style={styles.policyStrong}>Check-out:</Text> {formatTime12(item.checkOutTime || '11:00')}</Text>
+                <Text style={styles.policyText}>{(typeof item.cancellationPolicyText === 'string' && item.cancellationPolicyText) || (typeof item.cancellationPolicy === 'string' && item.cancellationPolicy) || t('listing.freeCancellation')}</Text>
+                {item.houseRules?.length > 0 ? (
+                  <View>
+                    <Text style={styles.tabHeading}>{t('listing.houseRules')}</Text>
+                    {item.houseRules.map((rule) => <Text key={rule} style={styles.policyText}>{`•  ${rule}`}</Text>)}
+                  </View>
+                ) : null}
+              </Card>
+            ) : null}
+          </View>
+        ) : null}
+        {!stay && (type === 'HOMESTAY' || type === 'TENT') && item.amenities?.length > 0 && (<View style={{ marginTop: 10 }}>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>{t('listing.amenities')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {item.amenities.map((amenity) => (<Text key={amenity} style={{ backgroundColor: COLORS.primarySoft, color: COLORS.primary, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4, fontSize: 12, fontWeight: '600' }}>{amenity}</Text>))}
@@ -490,8 +705,8 @@ export default function ListingDetailScreen({ route, navigation }) {
         {type === 'HORSE' && item.stable?.safetyGearProvided ? <Muted>{t('horse.safetyGear')}</Muted> : null}
         {type === 'PRODUCT' && (item.description || item.shortDescription) ? <Muted>{item.description || item.shortDescription}</Muted> : null}
         {type === 'PRODUCT' && item.deliveryNote ? <Muted>{item.deliveryNote}</Muted> : null}
-        {type === 'TAXI' ? <Muted>{item.description || t('taxi.description')}</Muted> : type !== 'PRODUCT' && (item.bio || item.description || item.horseDetails) ? <Muted>{item.bio || item.description || item.horseDetails}</Muted> : null}
-        {(type === 'HOMESTAY' || type === 'TENT') && (<Card>
+        {type === 'TAXI' ? <Muted>{item.description || t('taxi.description')}</Muted> : !stay && type !== 'PRODUCT' && (item.bio || item.description || item.horseDetails) ? <Muted>{item.bio || item.description || item.horseDetails}</Muted> : null}
+        {!stay && (type === 'HOMESTAY' || type === 'TENT') && (<Card>
             <Muted>{t('listing.checkTimes', { in: formatTime12(item.checkInTime || '14:00'), out: formatTime12(item.checkOutTime || '11:00') })}</Muted>
             <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 10 }}>{t('listing.cancellation')}</Text>
             <Muted>{(typeof item.cancellationPolicyText === 'string' && item.cancellationPolicyText)
@@ -521,64 +736,61 @@ export default function ListingDetailScreen({ route, navigation }) {
             {horseRoutes.map((route) => (<Muted key={route._id || route.name}>{route.name} · {route.durationMinutes || 30} {t('horse.minutes')} · {formatCurrency(route.price)}</Muted>))}
           </Card>)}
         {type === 'HORSE' && <HorseRateChart selectedPackage={horsePackage} onSelectPackage={setHorsePackage} />}
-        <Card>
-          <Text style={styles.formTitle}>{type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('booking.bookNow')}</Text>
+        {showForm ? (
+          <View nativeID="guest-booking-form" onLayout={onFormLayout}>
+          {stay ? (
+            <StayGuestForm type={type} item={item} user={user} roomId={roomId} onRoomChange={setRoomId} onConfirm={submitStay} submitting={booking} />
+          ) : (<>
+          <FormHeader title={serviceTitle} subtitle={serviceSubtitle} dateLabel={serviceDateLabel} />
           {type === 'GUIDE' ? (<>
-            <FormSection title={t('booking.sectionTrip')}>
-              <Field label={t('guide.tourDate')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+            <FormSection title={t('guideGuestBooking.section1')}>
+              <DateField label={t('guideGuestBooking.tourDate')} value={checkIn} onChange={setCheckIn}/>
               {GUIDE_CHART_PACKAGES.map((pkg) => (<Choice key={pkg.id} selected={guidePackage === pkg.id} onPress={() => setGuidePackage(pkg.id)} title={t(pkg.nameKey)} detail={`${t(pkg.durationKey)} · ${formatCurrency(bikeAddon ? pkg.withBike : pkg.guideOnly)}`}/>))}
               <Choice selected={bikeAddon} onPress={() => setBikeAddon((value) => !value)} title={t('guide.bikeAddon', { price: formatCurrency(guideChartPrice(guidePackage, true) - guideChartPrice(guidePackage, false)) })}/>
             </FormSection>
-            <FormSection title={t('booking.sectionGuest')}>
-              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+            <FormSection title={t('guideGuestBooking.section2')}>
+              <Field label={t('guideGuestBooking.fullName')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
+              <Field label={t('guideGuestBooking.mobile')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+              <ContactFields contact={contact} setContact={setContact} t={t} ns="guideGuestBooking" timeLabel={t('guideGuestBooking.startTime')}/>
             </FormSection>
-            <FormSection title={t('booking.sectionPayment')}>
-              <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(guideChartPrice(guidePackage, bikeAddon)) }]} totalLabel={t('booking.total')} total={guideChartPrice(guidePackage, bikeAddon)}/>
+            <FormSection title={t('guideGuestBooking.section4')}>
+              <TotalBox lines={[{ label: t('guideGuestBooking.subtotalLabel'), value: formatCurrency(guideChartPrice(guidePackage, bikeAddon)) }]} totalLabel={t('guideGuestBooking.totalLabel')} total={guideChartPrice(guidePackage, bikeAddon)}/>
             </FormSection>
-            <FormSection title={t('booking.sectionTerms')}>
-              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
-                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-              </Pressable>
-            </FormSection>
+            <TermsCard ns="guideGuestBooking" title={t('guideGuestBooking.section5')} label={t('guideGuestBooking.acceptTerms')} accepted={acceptTerms} onToggle={() => setAcceptTerms((value) => !value)} />
           </>) : type === 'TAXI' || type === 'DRIVER' ? (<>
-            <FormSection title={t('booking.sectionTrip')}>
-              <Field label={type === 'TAXI' ? t('taxi.tripDate') : t('driver.tripDate')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
-              <Field label={type === 'TAXI' ? t('taxi.pickup') : t('driver.pickup')} value={pickupLocation} onChangeText={setPickupLocation}/>
-              <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
+            <FormSection title={t(serviceNs + '.section1')}>
+              <DateField label={t(`${serviceNs}.tripDate`)} value={checkIn} onChange={setCheckIn}/>
+              <Field label={t(`${serviceNs}.pickupLocation`)} value={pickupLocation} onChangeText={setPickupLocation}/>
+              <Field label={t(`${serviceNs}.passengerCount`)} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
             </FormSection>
-            <FormSection title={t('booking.sectionGuest')}>
-              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+            <FormSection title={t(`${serviceNs}.section2`)}>
+              <Field label={t(`${serviceNs}.fullName`)} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
+              <Field label={t(`${serviceNs}.mobile`)} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+              <ContactFields contact={contact} setContact={setContact} t={t} ns={serviceNs} showDrop timeLabel={t(`${serviceNs}.pickupTime`)}/>
             </FormSection>
-            <FormSection title={t('booking.sectionPayment')}>
-              <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(type === 'TAXI' ? taxiChartPrice(taxiRoute) : driverPackagePrice(driverPackage)) }]} totalLabel={t('booking.total')} total={type === 'TAXI' ? taxiChartPrice(taxiRoute) : driverPackagePrice(driverPackage)}/>
+            <FormSection title={t(`${serviceNs}.section4`)}>
+              <TotalBox lines={[{ label: t(`${serviceNs}.subtotalLabel`), value: formatCurrency(type === 'TAXI' ? taxiChartPrice(taxiRoute) : driverPackagePrice(driverPackage)) }]} totalLabel={t(`${serviceNs}.totalLabel`)} total={type === 'TAXI' ? taxiChartPrice(taxiRoute) : driverPackagePrice(driverPackage)}/>
             </FormSection>
-            <FormSection title={t('booking.sectionTerms')}>
-              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
-                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-              </Pressable>
-            </FormSection>
+            <TermsCard ns={serviceNs} title={t(`${serviceNs}.section6`)} label={t(`${serviceNs}.acceptTerms`)} accepted={acceptTerms} onToggle={() => setAcceptTerms((value) => !value)} />
           </>) : type === 'HORSE' ? (<>
-            <FormSection title={t('booking.sectionTrip')}>
-              <Field label={t('horse.rideDate')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
-              <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
+            <FormSection title={t('horseGuestBooking.section1')}>
+              <DateField label={t('horseGuestBooking.rideDate')} value={checkIn} onChange={setCheckIn}/>
+              <Field label={t('horseGuestBooking.riderCount')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
             </FormSection>
-            <FormSection title={t('booking.sectionGuest')}>
-              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+            <FormSection title={t('horseGuestBooking.section2')}>
+              <Field label={t('horseGuestBooking.fullName')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
+              <Field label={t('horseGuestBooking.mobile')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+              <ContactFields contact={contact} setContact={setContact} t={t} ns="horseGuestBooking" showAge timeLabel={t('horseGuestBooking.startTime')}/>
             </FormSection>
-            <FormSection title={t('booking.sectionPayment')}>
-              <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(horseChartPrice(horsePackage)) }]} totalLabel={t('booking.total')} total={horseChartPrice(horsePackage)}/>
+            <FormSection title={t('horseGuestBooking.section5')}>
+              <TotalBox lines={[{ label: t('horseGuestBooking.subtotalLabel'), value: formatCurrency(horseChartPrice(horsePackage)) }]} totalLabel={t('horseGuestBooking.totalLabel')} total={horseChartPrice(horsePackage)}/>
             </FormSection>
-            <FormSection title={t('booking.sectionTerms')}>
-              <Pressable onPress={() => setAcceptSafety((value) => !value)} style={{ marginBottom: 8 }}>
-                <Text style={[styles.termsText, acceptSafety && styles.termsOn]}>{acceptSafety ? '✓ ' : ''}{t('horse.acceptSafety')}</Text>
+            <TermsCard ns="horseGuestBooking" title={t('horseGuestBooking.section6')} label={t('horseGuestBooking.acceptTerms')} accepted={acceptTerms} onToggle={() => setAcceptTerms((value) => !value)} extra={(
+              <Pressable onPress={() => setAcceptSafety((value) => !value)} style={styles.safetyRow}>
+                <View style={[styles.checkBox, acceptSafety && styles.checkBoxOn]}>{acceptSafety ? <Text style={styles.checkTick}>✓</Text> : null}</View>
+                <Text style={styles.safetyText}>{t('horseGuestBooking.acceptSafety')}</Text>
               </Pressable>
-              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
-                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-              </Pressable>
-            </FormSection>
+            )} />
           </>) : type === 'PRODUCT' ? (<>
             <FormSection title={t('shop.orderNow')}>
               <Field label={t('shop.quantity')} value={productQty} onChangeText={setProductQty} keyboardType="numeric"/>
@@ -589,62 +801,53 @@ export default function ListingDetailScreen({ route, navigation }) {
             </FormSection>
           </>) : type === 'COMBO' ? (<>
             <FormSection title={t('booking.sectionDates')}>
-              <Field label={t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
+              <DateField label={t('booking.checkIn')} value={checkIn} onChange={setCheckIn}/>
             </FormSection>
             <FormSection title={t('booking.sectionPayment')}>
               <TotalBox lines={[{ label: t('booking.subtotal'), value: formatCurrency(Number(item.comboPrice) || 0) }]} totalLabel={t('booking.total')} total={Number(item.comboPrice) || 0}/>
             </FormSection>
-          </>) : (type === 'HOTEL' || type === 'RESORT' || type === 'HOMESTAY' || type === 'TENT') ? (<>
-            <FormSection title={t('booking.sectionDates')}>
-              <Field label={t('booking.checkIn')} value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"/>
-              <Field label={t('booking.checkOut')} value={checkOut} onChangeText={setCheckOut} placeholder="YYYY-MM-DD"/>
-              {type === 'TENT' ? <Field label={t('booking.tentQuantity')} value={tentQuantity} onChangeText={setTentQuantity} keyboardType="numeric"/> : null}
-              {rooms.map((room) => (<Choice key={room._id} selected={String(room._id) === String(selectedRoom?._id)} onPress={() => setRoomId(room._id)} title={room.name} detail={room.basePrice != null ? formatCurrency(room.basePrice) : null}/>))}
-            </FormSection>
-            <FormSection title={t('booking.sectionGuest')}>
-              <Field label={t('auth.name')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-              <Field label={t('auth.phone')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
-            </FormSection>
-            <FormSection title={t('booking.sectionId')}>
-              <View style={styles.idRow}>
-                {[['AADHAAR', 'booking.idAadhaar'], ['VOTER', 'booking.idVoter'], ['DRIVING_LICENSE', 'booking.idDriving'], ['PASSPORT', 'booking.idPassport']].map(([value, label]) => (<Pressable key={value} onPress={() => setIdType(value)} style={[styles.idChip, idType === value && styles.idChipOn]}>
-                    <Text style={styles.idChipText}>{t(label)}</Text>
-                  </Pressable>))}
-              </View>
-              <Field label={t('booking.idNumber')} value={idNumber} onChangeText={setIdNumber} autoCapitalize="characters"/>
-            </FormSection>
-            <FormSection title={t('booking.sectionParty')}>
-              <Field label={t('booking.adults')} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
-              <Field label={t('booking.children')} value={children} onChangeText={setChildren} keyboardType="numeric"/>
-            </FormSection>
-            <FormSection title={t('booking.sectionPayment')}>
-              {(() => {
-                const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
-                const qty = type === 'TENT' ? Math.max(1, Number(tentQuantity) || 1) : 1;
-                const ready = Number.isFinite(nights) && nights >= 1 && nightPrice != null;
-                const amount = ready ? nightPrice * nights * qty : 0;
-                return (<TotalBox lines={[
-                    type !== 'TENT' && selectedRoom ? { label: t('booking.rooms'), value: selectedRoom.name } : null,
-                    ready ? { label: t('booking.nightsCount', { count: nights }), value: String(nights) } : null,
-                    nightPrice != null ? { label: t('booking.tariff'), value: formatCurrency(nightPrice) } : null,
-                    ready ? { label: t('booking.subtotal'), value: formatCurrency(amount) } : null,
-                ]} totalLabel={t('booking.total')} total={amount}/>);
-            })()}
-            </FormSection>
-            <FormSection title={t('booking.sectionTerms')}>
-              <Pressable onPress={() => setAcceptTerms((value) => !value)}>
-                <Text style={[styles.termsText, acceptTerms && styles.termsOn]}>{acceptTerms ? '✓ ' : ''}{t('booking.acceptTerms')}</Text>
-              </Pressable>
-            </FormSection>
           </>) : (<Field label={t('booking.guests')} value={guests} onChangeText={setGuests} keyboardType="numeric"/>)}
-          <Button title={type === 'PRODUCT' ? t('shop.orderNow') : type === 'COMBO' ? t('shop.bookCombo') : t('booking.bookNow')} onPress={onBook} loading={booking}/>
-        </Card>
+          {stay ? null : <Button title={actionTitle} onPress={onBook} loading={booking}/>}
+        </>)}
+          </View>
+        ) : null}
+        </View>
+        <HomeFooter bleed={0} />
       </ScrollView>
     </Screen>);
 }
 
 const styles = StyleSheet.create({
-    page: { padding: 16, paddingBottom: 28 },
+    page: { paddingBottom: 0 },
+    detail: { paddingHorizontal: 16, paddingTop: 16 },
+    tabsWrap: { marginTop: 8, marginBottom: 8 },
+    tabs: { flexDirection: 'row', gap: 18, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    tabBtn: { paddingBottom: 0 },
+    tabText: { fontFamily: FONTS.medium, fontSize: 14, color: '#64748B', paddingBottom: 10 },
+    tabTextOn: { fontFamily: FONTS.semibold, color: COLORS.action },
+    tabLine: { height: 3, backgroundColor: COLORS.action, borderRadius: 2 },
+    tabLineOff: { height: 3, backgroundColor: 'transparent' },
+    tabBody: { marginTop: 16, gap: 12 },
+    tabHeading: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.text, marginBottom: 8 },
+    overviewText: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 22, color: '#334155' },
+    facilityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    facility: { width: '46%', fontFamily: FONTS.regular, fontSize: 14, color: COLORS.body },
+    roomCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 16, marginBottom: 12 },
+    roomCardOn: { borderColor: COLORS.primary, borderWidth: 2 },
+    roomCardTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.text },
+    roomCardMeta: { fontFamily: FONTS.regular, fontSize: 13, color: '#64748B', marginTop: 4 },
+    roomFree: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.success, marginTop: 8 },
+    roomCardFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, gap: 8 },
+    roomCardPrice: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
+    roomPick: { borderWidth: 1, borderColor: COLORS.primary, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+    roomPickOn: { backgroundColor: COLORS.action, borderColor: COLORS.action },
+    roomPickText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
+    roomPickTextOn: { color: '#fff' },
+    reviewCard: { borderWidth: 1, borderColor: '#F1F5F9', borderRadius: 12, padding: 12, marginBottom: 8 },
+    reviewName: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.text },
+    reviewText: { fontFamily: FONTS.regular, fontSize: 13, color: '#475569', marginTop: 4 },
+    policyText: { fontFamily: FONTS.regular, fontSize: 14, color: '#475569', lineHeight: 22, marginBottom: 8 },
+    policyStrong: { fontFamily: FONTS.bold, color: COLORS.text },
     article: {
         backgroundColor: COLORS.card,
         borderRadius: 16,
@@ -696,6 +899,7 @@ const styles = StyleSheet.create({
     articleBody: { padding: 16 },
     titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
     name: { flex: 1, fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary, letterSpacing: -0.4 },
+    scoreWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     score: {
         minWidth: 36,
         backgroundColor: COLORS.primary,
@@ -707,8 +911,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scoreText: { fontFamily: FONTS.bold, color: '#fff', fontSize: 14 },
-    typeLabel: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.muted, marginTop: 6, textTransform: 'uppercase', letterSpacing: 0.6 },
-    place: { fontFamily: FONTS.regular, fontSize: 14, color: '#475569', marginTop: 6, lineHeight: 20 },
+    scoreLabel: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.text },
+    reviews: { fontFamily: FONTS.regular, fontSize: 12, color: '#64748B' },
+    placeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 8 },
+    place: { flex: 1, fontFamily: FONTS.regular, fontSize: 14, color: '#475569', lineHeight: 20 },
+    roomLine: { fontFamily: FONTS.medium, fontSize: 12, color: '#64748B', marginTop: 12 },
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
     chip: {
         backgroundColor: '#EFF6FF',
@@ -724,20 +931,29 @@ const styles = StyleSheet.create({
         marginTop: 16,
         backgroundColor: '#F8FAFC',
         borderRadius: RADIUS.button,
-        padding: 14,
+        padding: 16,
+        alignItems: 'flex-end',
     },
     from: { fontFamily: FONTS.medium, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: '#64748B' },
-    price: { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary, marginTop: 4 },
+    price: { fontFamily: FONTS.bold, fontSize: 28, color: COLORS.primary, marginTop: 4 },
+    formHint: { fontFamily: FONTS.regular, fontSize: 12, color: '#64748B', marginTop: 12, textAlign: 'left', alignSelf: 'stretch' },
+    formAction: { alignSelf: 'stretch' },
     priceSuffix: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.muted },
     struck: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.muted, textDecorationLine: 'line-through' },
     priceNote: { fontFamily: FONTS.regular, fontSize: 12, color: '#64748B', marginTop: 4 },
     roomName: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.body, marginTop: 8 },
     formTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: 12 },
     formSection: { marginBottom: 14, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-    formSectionTitle: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primary, marginBottom: 8 },
+    formSectionTitle: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.text, marginBottom: 12 },
+    safetyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 12 },
+    checkBox: { width: 18, height: 18, borderRadius: 4, borderWidth: 1, borderColor: COLORS.inputBorder, alignItems: 'center', justifyContent: 'center', marginTop: 2, backgroundColor: '#fff' },
+    checkBoxOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+    checkTick: { color: '#fff', fontSize: 12, fontFamily: FONTS.bold },
+    safetyText: { flex: 1, fontFamily: FONTS.regular, fontSize: 14, color: COLORS.body, lineHeight: 20 },
     choice: { padding: 10, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8, backgroundColor: '#fff' },
     choiceOn: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
     choiceTitle: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.text },
+    payLabel: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.body, marginBottom: 8, marginTop: 4 },
     idRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
     idChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#fff' },
     idChipOn: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },

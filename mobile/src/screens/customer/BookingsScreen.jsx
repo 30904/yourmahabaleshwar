@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Modal, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useFocusEffect } from '@react-navigation/native';
+import HomeFooter from '../../components/home/HomeFooter';
 import { useTranslation } from 'react-i18next';
 import {
   createPaymentOrder,
@@ -45,6 +46,11 @@ const activeTrip = (b) =>
 function when(value) {
   if (!value) return '';
   return new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function stayDate(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 const STATUS_TONE = {
@@ -185,40 +191,47 @@ export default function BookingsScreen() {
   if (loading && !items.length) return <Loading />;
 
   return (
-    <Screen>
-      <Text style={styles.pageTitle}>{t('nav.bookings')}</Text>
-      <Text style={styles.pageHint}>{t('booking.manageHint')}</Text>
+    <Screen style={{ paddingHorizontal: 0, paddingBottom: 0 }}>
       <FlatList
         style={styles.list}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: 16 }]}
+        ListFooterComponentStyle={{ width: '100%' }}
         data={items}
         keyExtractor={(item) => item._id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+        ListHeaderComponent={(
+          <View style={styles.header}>
+            <Text style={styles.pageTitle}>{t('nav.bookings')}</Text>
+            <Text style={styles.pageHint}>{t('booking.manageHint')}</Text>
+          </View>
+        )}
+        ListFooterComponent={<HomeFooter />}
         ListEmptyComponent={(
           <Card style={styles.empty}>
             <Text style={styles.emptyText}>{t('booking.noBookings')}</Text>
           </Card>
         )}
-        renderItem={({ item }) => (
+        renderItem={({ item }) => {
+          const dates = [stayDate(item.checkIn), stayDate(item.checkOut)].filter(Boolean).join(' – ');
+          const guest = item.guestRegistration?.leadGuest;
+          const guestBits = [
+            guest?.mobile,
+            item.guests?.adults != null ? `${item.guests.adults} ${t('booking.adults')}` : '',
+            item.guests?.children ? `${item.guests.children} ${t('booking.children')}` : '',
+          ].filter(Boolean);
+          return (
           <Card>
             <View style={styles.cardTop}>
-              <View style={styles.cardMain}>
-                <Text style={styles.bookingTitle}>{bookingTitle(item)}</Text>
-                <Text style={styles.meta}>
-                  {item.bookingNumber || item._id} · {item.type}
-                  {item.checkIn ? ` · ${new Date(item.checkIn).toLocaleDateString()}` : ''}
-                </Text>
-              </View>
+              <Text style={styles.bookingTitle}>{bookingTitle(item)}</Text>
               <StatusBadge status={item.status} />
             </View>
+            <Text style={styles.ref} numberOfLines={1}>{item.bookingNumber || item._id}</Text>
+            <Text style={styles.meta}>{[item.type, dates].filter(Boolean).join(' · ')}</Text>
             <Text style={styles.total}>{formatCurrency(item.total)}</Text>
-            {item.guestRegistration?.leadGuest?.fullName ? (
+            {guest?.fullName ? (
               <View style={styles.guestBox}>
-                <Text style={styles.guestName}>
-                  {item.guestRegistration.leadGuest.fullName}
-                  {item.guestRegistration.leadGuest.mobile ? ` · ${item.guestRegistration.leadGuest.mobile}` : ''}
-                  {item.guests?.adults != null ? ` · ${item.guests.adults} ${t('booking.adults')}` : ''}
-                  {item.guests?.children ? ` · ${item.guests.children} ${t('booking.children')}` : ''}
-                </Text>
+                <Text style={styles.guestName}>{guest.fullName}</Text>
+                {guestBits.length ? <Text style={styles.guestMeta}>{guestBits.join(' · ')}</Text> : null}
               </View>
             ) : null}
             {item.refundStatus && item.refundStatus !== 'NONE' ? (
@@ -406,7 +419,8 @@ export default function BookingsScreen() {
               )}
             </View>
           </Card>
-        )}
+          );
+        }}
       />
       <Modal visible={!!checkout} animationType="slide" onRequestClose={() => setCheckout(null)}>
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -432,14 +446,15 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     letterSpacing: -0.4,
   },
+  header: { marginBottom: 4 },
   pageHint: {
     fontFamily: FONTS.regular,
     fontSize: 14,
     color: COLORS.muted,
     marginTop: 4,
-    marginBottom: 12,
   },
   list: { flex: 1 },
+  listContent: { paddingBottom: 24 },
   empty: { alignItems: 'center', paddingVertical: 28 },
   emptyText: {
     fontFamily: FONTS.medium,
@@ -447,18 +462,20 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     textAlign: 'center',
   },
-  cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  cardMain: { flex: 1 },
-  bookingTitle: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text },
-  meta: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 4, lineHeight: 18 },
-  badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontFamily: FONTS.semibold, fontSize: 11 },
-  total: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginTop: 10 },
+  cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  bookingTitle: { flex: 1, fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text },
+  ref: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.muted, marginTop: 8 },
+  meta: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 2 },
+  badge: { flexShrink: 0, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontFamily: FONTS.semibold, fontSize: 11, letterSpacing: 0.3 },
+  total: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.text, marginTop: 10 },
   guestBox: {
     marginTop: 10,
     backgroundColor: '#F8FAFC',
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  guestName: { fontFamily: FONTS.regular, fontSize: 12, color: '#475569', lineHeight: 18 },
+  guestName: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.text },
+  guestMeta: { fontFamily: FONTS.regular, fontSize: 12, color: '#475569', marginTop: 2 },
 });

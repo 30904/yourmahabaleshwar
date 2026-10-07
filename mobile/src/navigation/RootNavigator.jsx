@@ -2,12 +2,11 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Loading } from '../components/ui';
 import { COLORS, FONTS } from '../constants/theme';
-import { Calendar, Home, User } from '../components/home/icons';
+import { Calendar, Home, LayoutDashboard, User, Wallet } from '../components/home/icons';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import VendorRegisterScreen from '../screens/auth/VendorRegisterScreen';
@@ -16,11 +15,13 @@ import HomeScreen from '../screens/customer/HomeScreen';
 import SearchScreen from '../screens/customer/SearchScreen';
 import ContentScreen from '../screens/customer/ContentScreen';
 import CatalogScreen from '../screens/customer/CatalogScreen';
+import ServiceBookScreen from '../screens/customer/ServiceBookScreen';
 import ListingDetailScreen from '../screens/customer/ListingDetailScreen';
 import BookingsScreen from '../screens/customer/BookingsScreen';
 import AccountScreen from '../screens/customer/AccountScreen';
 import FavoritesScreen from '../screens/customer/FavoritesScreen';
 import VendorHubScreen from '../screens/vendor/VendorHubScreen';
+import VendorWalletScreen from '../screens/vendor/VendorWalletScreen';
 import VendorKycScreen from '../screens/vendor/VendorKycScreen';
 import VendorListingsScreen from '../screens/vendor/VendorListingsScreen';
 import VendorListingFormScreen from '../screens/vendor/VendorListingFormScreen';
@@ -47,7 +48,7 @@ function MainTabs() {
             headerShown: false,
             tabBarActiveTintColor: COLORS.primary,
             tabBarInactiveTintColor: '#64748B',
-            tabBarLabelStyle: { fontFamily: FONTS.medium, fontSize: 11 },
+            tabBarLabelStyle: { fontFamily: FONTS.medium, fontSize: isVendor ? 10 : 11 },
             tabBarStyle: {
                 backgroundColor: '#fff',
                 borderTopWidth: 1,
@@ -61,20 +62,26 @@ function MainTabs() {
             title: t('nav.home'),
             tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={2} />,
         }}/>
+      {isVendor ? (
+      <Tab.Screen name="Overview" component={VendorHubScreen} options={{
+            title: t('nav.overview'),
+            tabBarIcon: ({ color }) => <LayoutDashboard size={22} color={color} strokeWidth={2} />,
+        }}/>
+      ) : null}
       <Tab.Screen name="Bookings" component={user ? BookingsScreen : AccountScreen} options={{
             title: t('nav.bookings'),
             tabBarIcon: ({ color }) => <Calendar size={22} color={color} strokeWidth={2} />,
         }}/>
+      {isVendor ? (
+      <Tab.Screen name="Wallet" component={VendorWalletScreen} options={{
+            title: t('nav.wallet'),
+            tabBarIcon: ({ color }) => <Wallet size={22} color={color} strokeWidth={2} />,
+        }}/>
+      ) : null}
       <Tab.Screen name="Account" component={AccountScreen} options={{
             title: t('nav.account'),
             tabBarIcon: ({ color }) => <User size={22} color={color} strokeWidth={2} />,
         }}/>
-      {isVendor ? (
-      <Tab.Screen name="VendorTab" component={VendorHubScreen} options={{
-            title: t('nav.vendor'),
-            tabBarIcon: ({ color }) => <Text style={{ color }}>◆</Text>,
-        }}/>
-      ) : null}
     </Tab.Navigator>);
 }
 export default function RootNavigator() {
@@ -88,9 +95,11 @@ export default function RootNavigator() {
         <RootStack.Screen name="Search" component={SearchScreen} options={{ title: 'Search' }}/>
         <RootStack.Screen name="Content" component={ContentScreen} options={{ title: 'Info' }}/>
         <RootStack.Screen name="Catalog" component={CatalogScreen} options={{ title: 'Explore' }}/>
+        <RootStack.Screen name="ServiceBook" component={ServiceBookScreen} options={{ title: '' }}/>
         <RootStack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: 'Details' }}/>
         <RootStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Saved' }}/>
         <RootStack.Screen name="VendorHub" component={VendorHubScreen} options={{ title: 'Vendor' }}/>
+        <RootStack.Screen name="VendorWallet" component={VendorWalletScreen} options={{ title: 'Wallet' }}/>
         <RootStack.Screen name="VendorKyc" component={VendorKycScreen} options={{ title: 'KYC' }}/>
         <RootStack.Screen name="VendorListings" component={VendorListingsScreen} options={{ title: 'Listings' }}/>
         <RootStack.Screen name="VendorListingForm" component={VendorListingFormScreen} options={{ title: 'Listing' }}/>

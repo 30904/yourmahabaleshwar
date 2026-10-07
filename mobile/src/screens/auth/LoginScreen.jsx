@@ -28,7 +28,7 @@ export default function LoginScreen({ navigation }) {
         }));
     };
     const finishLogin = (user) => {
-        const screen = user && VENDOR_ROLES.includes(user.role) ? 'VendorTab' : 'HomeTab';
+        const screen = user && VENDOR_ROLES.includes(user.role) ? 'Overview' : 'HomeTab';
         navigation.getParent()?.dispatch(CommonActions.reset({
             index: 0,
             routes: [{ name: 'MainTabs', params: { screen } }],

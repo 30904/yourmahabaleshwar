@@ -18,7 +18,7 @@ export function Muted({ children }) {
     return <Text style={styles.muted}>{children}</Text>;
 }
 
-export function Button({ title, onPress, variant = 'primary', disabled, loading }) {
+export function Button({ title, onPress, variant = 'primary', disabled, loading, style }) {
     const outline = variant === 'outline';
     const danger = variant === 'danger';
     const [pressed, setPressed] = useState(false);
@@ -35,6 +35,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading 
                 pressed && !outline && !danger && styles.btnPressed,
                 pressed && outline && styles.btnOutlinePressed,
                 (disabled || loading) && styles.btnDisabled,
+                style,
             ]}
         >
             {loading ? (
@@ -48,6 +49,8 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading 
     );
 }
 
+export const MAHABALESHWAR_PINCODE = '412806';
+
 export function Field({
     label,
     value,
@@ -57,6 +60,9 @@ export function Field({
     placeholder,
     maxLength,
     autoCapitalize = 'none',
+    onFocus,
+    multiline,
+    autofillPincode,
 }) {
     const [focused, setFocused] = useState(false);
     return (
@@ -70,9 +76,14 @@ export function Field({
                 placeholder={placeholder}
                 maxLength={maxLength}
                 autoCapitalize={autoCapitalize}
-                onFocus={() => setFocused(true)}
+                multiline={multiline}
+                onFocus={() => {
+                    setFocused(true);
+                    if (autofillPincode && !String(value || '').trim()) onChangeText?.(MAHABALESHWAR_PINCODE);
+                    onFocus?.();
+                }}
                 onBlur={() => setFocused(false)}
-                style={[styles.input, focused && styles.inputFocused]}
+                style={[styles.input, multiline && styles.inputMulti, focused && styles.inputFocused]}
                 placeholderTextColor={COLORS.muted}
             />
         </View>
@@ -151,6 +162,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         color: COLORS.body,
     },
+    inputMulti: { minHeight: 88, textAlignVertical: 'top', paddingTop: 10 },
     inputFocused: {
         borderColor: COLORS.focus,
         ...Platform.select({

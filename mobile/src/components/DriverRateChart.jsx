@@ -32,9 +32,10 @@ export function driverPackagePrice(packageId) {
     return DRIVER_PACKAGES.find((pkg) => pkg.id === packageId)?.price ?? DRIVER_PACKAGES[0].price;
 }
 
-export default function DriverRateChart({ selectedPackage, onSelectPackage }) {
+export default function DriverRateChart({ selectedPackage, onSelectPackage, embedded = false }) {
     const { t } = useTranslation();
-    return (<Card>
+    const Wrap = embedded ? View : Card;
+    return (<Wrap>
       <Text style={{ fontWeight: '800', color: COLORS.text }}>{t('driver.rateChartTitle')}</Text>
       <Muted>{t('driver.openRateHint')}</Muted>
       {DRIVER_PACKAGES.map((pkg) => {
@@ -52,7 +53,7 @@ export default function DriverRateChart({ selectedPackage, onSelectPackage }) {
       </View>
       <Text style={{ fontWeight: '800', color: COLORS.text, marginTop: 12 }}>{t('driver.extraChargesTitle')}</Text>
       {EXTRAS.map((extra) => (<Muted key={extra.key}>{t(extra.key)} · {formatCurrency(extra.amount)}</Muted>))}
-    </Card>);
+    </Wrap>);
 }
 
 export function DriverBookingIntro() {

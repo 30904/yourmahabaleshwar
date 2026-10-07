@@ -5,7 +5,7 @@ import { Card, Muted } from './ui';
 import { COLORS } from '../constants/theme';
 import { formatCurrency } from '../utils/format';
 
-const CARS = [
+export const TAXI_CARS = [
     { id: 'AC_4_SEATER', key: 'taxi.carTypes.ac4' },
     { id: 'AC_7_SEATER', key: 'taxi.carTypes.ac7' },
     { id: 'NON_AC_4_SEATER', key: 'taxi.carTypes.nonAc4' },
@@ -13,7 +13,7 @@ const CARS = [
     { id: 'MINI_TRAVELS_19_SEATER', key: 'taxi.carTypes.miniTravels19' },
 ];
 
-const TOURS = [
+export const TAXI_TOURS = [
     { id: 'tour_mahabaleshwar_1', price: 1200, key: 'mahabaleshwar1' },
     { id: 'tour_mahabaleshwar_2', price: 1200, key: 'mahabaleshwar2' },
     { id: 'tour_pratapgad', price: 1600, key: 'pratapgad' },
@@ -22,7 +22,7 @@ const TOURS = [
     { id: 'tour_tapola', price: 1450, key: 'tapola' },
 ];
 
-const ROUTES = [
+export const TAXI_ROUTES = [
     { id: 'local_5km', nameKey: 'taxi.chartRows.local5km', dropId: 'local_5km_drop', drop: 400, returnId: 'local_5km_return', return: 800 },
     { id: 'mapro', nameKey: 'taxi.chartRows.mapro', dropId: 'mapro_drop', drop: 600, returnId: 'mapro_return', return: 800 },
     { id: 'panchgani_wai', nameKey: 'taxi.chartRows.panchganiWai', dropId: 'panchgani_wai_drop', drop: 800, returnId: 'panchgani_wai_return', return: 1200 },
@@ -34,21 +34,21 @@ const ROUTES = [
     { id: 'mumbai', nameKey: 'taxi.chartRows.mumbai', dropId: 'mumbai_drop', drop: 16000, returnId: 'mumbai_return', return: 17000, toll: true },
 ];
 
-const COASTAL = [
+export const TAXI_COASTAL = [
     { id: 'alibag', price: 15000, nameKey: 'taxi.alibag' },
     { id: 'matheran', price: 17500, nameKey: 'taxi.matheran' },
     { id: 'ganpatipule', price: 16000, nameKey: 'taxi.ganpatipule' },
 ];
 
 export function taxiChartPrice(routeId) {
-    const tour = TOURS.find((item) => item.id === routeId);
+    const tour = TAXI_TOURS.find((item) => item.id === routeId);
     if (tour) return tour.price;
-    const coastal = COASTAL.find((item) => item.id === routeId);
+    const coastal = TAXI_COASTAL.find((item) => item.id === routeId);
     if (coastal) return coastal.price;
-    const route = ROUTES.find((item) => item.dropId === routeId || item.returnId === routeId);
+    const route = TAXI_ROUTES.find((item) => item.dropId === routeId || item.returnId === routeId);
     if (route?.dropId === routeId) return route.drop;
     if (route?.returnId === routeId) return route.return;
-    return TOURS[0].price;
+    return TAXI_TOURS[0].price;
 }
 
 function spots(value) {
@@ -66,13 +66,14 @@ function choiceStyle(selected) {
     };
 }
 
-export default function TaxiRateChart({ selectedCar, onSelectCar, selectedRoute, onSelectRoute }) {
+export default function TaxiRateChart({ selectedCar, onSelectCar, selectedRoute, onSelectRoute, embedded = false }) {
     const { t } = useTranslation();
     const pick = (id) => onSelectRoute && onSelectRoute(id);
-    return (<Card>
+    const Wrap = embedded ? View : Card;
+    return (<Wrap>
       <Text style={{ fontWeight: '800', color: COLORS.text }}>{t('taxi.carTypeLabel')}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-        {CARS.map((car) => {
+        {TAXI_CARS.map((car) => {
             const selected = selectedCar === car.id;
             const label = t(car.key);
             return onSelectCar ? (<Pressable key={car.id} onPress={() => onSelectCar(car.id)} style={choiceStyle(selected)}>
@@ -84,7 +85,7 @@ export default function TaxiRateChart({ selectedCar, onSelectCar, selectedRoute,
       <Muted>{t('taxi.openRateHint')}</Muted>
       <Text style={{ fontWeight: '800', color: COLORS.text, marginTop: 12 }}>{t('taxi.localToursTitle')}</Text>
       <Muted>{t('taxi.localToursNote')}</Muted>
-      {TOURS.map((tour) => {
+      {TAXI_TOURS.map((tour) => {
             const selected = selectedRoute === tour.id;
             const points = spots(t(`taxi.tours.${tour.key}.points`, { returnObjects: true }));
             const body = (<>
@@ -98,7 +99,7 @@ export default function TaxiRateChart({ selectedCar, onSelectCar, selectedRoute,
         })}
       <Text style={{ fontWeight: '800', color: COLORS.text, marginTop: 12 }}>{t('taxi.outstationTitle')}</Text>
       <Muted>{t('taxi.outstationNote')}</Muted>
-      {ROUTES.map((route) => (<View key={route.id} style={{ marginTop: 10 }}>
+      {TAXI_ROUTES.map((route) => (<View key={route.id} style={{ marginTop: 10 }}>
           <Text style={{ fontWeight: '700', color: COLORS.text }}>{t(route.nameKey)}{route.toll ? ` ${t('taxi.tollExtra')}` : ''}</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
             {route.drop != null && (onSelectRoute ? (<Pressable onPress={() => pick(route.dropId)} style={choiceStyle(selectedRoute === route.dropId)}>
@@ -114,10 +115,10 @@ export default function TaxiRateChart({ selectedCar, onSelectCar, selectedRoute,
       <Text style={{ fontWeight: '700', color: COLORS.text, marginTop: 8 }}>{t('taxi.chartRows.coastal')} {t('taxi.tollExtra')}</Text>
       <Muted>{t('taxi.chartRows.coastalRates')}</Muted>
       {onSelectRoute && (<View style={{ marginTop: 8 }}>
-          {COASTAL.map((route) => (<Pressable key={route.id} onPress={() => pick(route.id)} style={choiceStyle(selectedRoute === route.id)}>
+          {TAXI_COASTAL.map((route) => (<Pressable key={route.id} onPress={() => pick(route.id)} style={choiceStyle(selectedRoute === route.id)}>
               <Text style={{ fontWeight: '700', color: COLORS.text }}>{t(route.nameKey)}</Text>
               <Muted>{formatCurrency(route.price)}</Muted>
             </Pressable>))}
         </View>)}
-    </Card>);
+    </Wrap>);
 }

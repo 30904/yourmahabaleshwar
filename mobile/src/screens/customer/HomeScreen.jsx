@@ -11,8 +11,8 @@ export default function HomeScreen() {
     const navigation = useNavigation();
     return (
         <Screen style={{ padding: 0 }}>
-            <HomeHeader navigation={navigation} />
-            <ScrollView>
+            <HomeHeader navigation={navigation}>
+            <ScrollView style={{ flex: 1 }}>
                 <HomeHero navigation={navigation} />
                 <HomeCategoryStrip navigation={navigation} />
                 <HomeDeals navigation={navigation} />
@@ -21,8 +21,9 @@ export default function HomeScreen() {
                 <HomeDestinations navigation={navigation} />
                 <HomeServices navigation={navigation} />
                 <HomeWhyBook />
-                <HomeFooter navigation={navigation} />
+                <HomeFooter bleed={0} />
             </ScrollView>
+            </HomeHeader>
         </Screen>
     );
 }

@@ -249,6 +249,65 @@ export const Trees = makeIcon([
     ]
   ]);
 
+export const LayoutDashboard = makeIcon([
+    ["rect", { width: "7", height: "9", x: "3", y: "3", rx: "1" }],
+    ["rect", { width: "7", height: "5", x: "14", y: "3", rx: "1" }],
+    ["rect", { width: "7", height: "9", x: "14", y: "12", rx: "1" }],
+    ["rect", { width: "7", height: "5", x: "3", y: "16", rx: "1" }]
+]);
+
+export const Building2 = makeIcon([
+    ["path", { d: "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" }],
+    ["path", { d: "M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" }],
+    ["path", { d: "M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" }],
+    ["path", { d: "M10 6h4" }],
+    ["path", { d: "M10 10h4" }],
+    ["path", { d: "M10 14h4" }],
+    ["path", { d: "M10 18h4" }]
+]);
+
+export const Tag = makeIcon([
+    ["path", { d: "M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" }],
+    ["circle", { cx: "7.5", cy: "7.5", r: "1.5" }]
+]);
+
+export const CalendarDays = makeIcon([
+    ["path", { d: "M8 2v4" }],
+    ["path", { d: "M16 2v4" }],
+    ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2" }],
+    ["path", { d: "M3 10h18" }],
+    ["path", { d: "M8 14h.01" }],
+    ["path", { d: "M12 14h.01" }],
+    ["path", { d: "M16 14h.01" }],
+    ["path", { d: "M8 18h.01" }],
+    ["path", { d: "M12 18h.01" }],
+    ["path", { d: "M16 18h.01" }]
+]);
+
+export const Megaphone = makeIcon([
+    ["path", { d: "m3 11 18-5v12L3 14v-3z" }],
+    ["path", { d: "M11.6 16.8a3 3 0 1 1-5.8-1.6" }]
+]);
+
+export const FileText = makeIcon([
+    ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" }],
+    ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4" }],
+    ["path", { d: "M10 9H8" }],
+    ["path", { d: "M16 13H8" }],
+    ["path", { d: "M16 17H8" }]
+]);
+
+export const ShoppingBag = makeIcon([
+    ["path", { d: "M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" }],
+    ["path", { d: "M3 6h18" }],
+    ["path", { d: "M16 10a4 4 0 0 1-8 0" }]
+]);
+
+export const Wallet = makeIcon([
+    ["path", { d: "M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" }],
+    ["path", { d: "M3 5v14a2 2 0 0 0 2 2h15v-7" }]
+]);
+
 export const User = makeIcon([
     ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
     ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]

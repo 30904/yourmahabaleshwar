@@ -16,9 +16,11 @@ export const logoutApi = () => api.post('/auth/logout').then((r) => r.data);
 export const listCatalog = (path, params) => api.get(path, { params }).then((r) => r.data.data);
 export const globalSearch = (q) => api.get('/search', { params: { q, limit: 20 } }).then((r) => r.data.data);
 export const publicFaqs = () => api.get('/admin/public/faqs').then((r) => r.data.data);
+export const fetchServiceHubImages = () => api.get('/admin/public/service-hub-images').then((r) => r.data.data);
 export const publicBlogs = () => api.get('/admin/public/blogs').then((r) => r.data.data);
 export const sendEnquiry = (body) => api.post('/enquiries', body).then((r) => r.data);
 export const getBySlug = (path, slug) => api.get(`${path}/${slug}`).then((r) => r.data.data);
+export const fetchReviews = (listingType, listingId) => api.get('/reviews', { params: { listingType, listingId } }).then((r) => r.data.data || []);
 export const createBooking = (type, body) => {
     const map = {
         HOTEL: '/bookings/hotel',
@@ -77,6 +79,8 @@ export const getWallet = () => api.get('/admin/wallet').then((r) => r.data.data)
 export const purchasePoints = (body) => api.post('/admin/subscriptions/points/purchase', body).then((r) => r.data.data);
 export const getMySubscription = () => api.get('/admin/subscriptions/me').then((r) => r.data.data);
 export const getMyKyc = () => api.get('/users/kyc').then((r) => r.data.data);
+export const getDocumentRequirements = (vendorType) =>
+    api.get('/admin/document-requirements', { params: { vendorType } }).then((r) => r.data.data);
 export const submitKyc = (form) => api.post('/users/kyc', form).then((r) => r.data.data);
 export const registerDevice = (payload) => api.post('/users/devices', payload).then((r) => r.data.data);
 export const unregisterDevice = (token) =>

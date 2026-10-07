@@ -28,9 +28,10 @@ function choiceStyle(selected) {
     };
 }
 
-export default function HorseRateChart({ selectedPackage, onSelectPackage }) {
+export default function HorseRateChart({ selectedPackage, onSelectPackage, embedded = false }) {
     const { t } = useTranslation();
-    return (<Card>
+    const Wrap = embedded ? View : Card;
+    return (<Wrap>
       <Text style={{ fontWeight: '800', color: COLORS.text }}>{t('horse.rateChartTitle')}</Text>
       <Muted>{t('horse.openRateHint')}</Muted>
       {HORSE_CHART_PACKAGES.map((pkg) => {
@@ -41,5 +42,5 @@ export default function HorseRateChart({ selectedPackage, onSelectPackage }) {
             </>);
             return onSelectPackage ? (<Pressable key={pkg.id} onPress={() => onSelectPackage(pkg.id)} style={choiceStyle(selected)}>{body}</Pressable>) : (<View key={pkg.id} style={{ marginTop: 10 }}>{body}</View>);
         })}
-    </Card>);
+    </Wrap>);
 }

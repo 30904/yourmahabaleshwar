@@ -3,6 +3,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'rea
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { getWishlist, removeWishlist } from '../../api/endpoints';
+import HomeFooter from '../../components/home/HomeFooter';
 import { Button, Card, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { formatCurrency } from '../../utils/format';
@@ -36,14 +37,19 @@ export default function FavoritesScreen() {
         return <Loading />;
 
     return (
-        <Screen>
-            <Text style={styles.pageTitle}>{t('account.favorites')}</Text>
-            <Text style={styles.hint}>{t('account.favoritesHint')}</Text>
+        <Screen style={{ paddingHorizontal: 0, paddingBottom: 0 }}>
+            <View style={styles.intro}>
+                <Text style={styles.pageTitle}>{t('account.favorites')}</Text>
+                <Text style={styles.hint}>{t('account.favoritesHint')}</Text>
+            </View>
             <FlatList
                 style={styles.list}
+                contentContainerStyle={styles.listContent}
+                ListFooterComponentStyle={{ width: '100%' }}
                 data={items}
                 keyExtractor={(row) => `${row.itemType}-${row.item?._id}`}
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+                ListFooterComponent={<HomeFooter />}
                 ListEmptyComponent={(
                     <Card style={styles.empty}>
                         <Text style={styles.emptyText}>{t('account.noFavorites')}</Text>
@@ -84,6 +90,8 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
+    intro: { paddingHorizontal: 16 },
+    listContent: { paddingHorizontal: 16 },
     pageTitle: {
         fontFamily: FONTS.bold,
         fontSize: 22,

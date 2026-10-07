@@ -38,7 +38,7 @@ export default function VendorRegisterScreen({ navigation }) {
             parent?.dispatch(CommonActions.reset({
                 index: 1,
                 routes: [
-                    { name: 'MainTabs', params: { screen: 'VendorTab' } },
+                    { name: 'MainTabs', params: { screen: 'Overview' } },
                     { name: 'VendorKyc' },
                 ],
             }));
@@ -46,7 +46,7 @@ export default function VendorRegisterScreen({ navigation }) {
         }
         parent?.dispatch(CommonActions.reset({
             index: 0,
-            routes: [{ name: 'MainTabs', params: { screen: 'VendorTab' } }],
+            routes: [{ name: 'MainTabs', params: { screen: 'Overview' } }],
         }));
     };
     const onSubmit = async () => {

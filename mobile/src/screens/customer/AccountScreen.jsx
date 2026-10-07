@@ -4,8 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import i18n from '../../i18n';
 import { useAuth } from '../../context/AuthContext';
+import HomeFooter from '../../components/home/HomeFooter';
 import { Button, Card, Field, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
+
+function roleLabel(role) {
+    return String(role || '')
+        .toLowerCase()
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 function MenuRow({ title, onPress }) {
     return (
@@ -64,16 +72,16 @@ export default function AccountScreen() {
     return (
         <Screen style={styles.screen}>
             <ScrollView contentContainerStyle={styles.page}>
+                <View style={styles.inner}>
                 <Text style={styles.pageTitle}>{t('nav.account')}</Text>
                 <Card>
                     <Text style={styles.cardTitle}>{t('account.profile')}</Text>
-                    {user.email ? <Text style={styles.email}>{user.email}</Text> : null}
                     <Field label={t('auth.name')} value={name} onChangeText={setName} autoCapitalize="words" />
                     <Field label={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
                     <Field label={t('auth.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
                     {user.role ? (
                         <View style={styles.role}>
-                            <Text style={styles.roleText}>{user.role}</Text>
+                            <Text style={styles.roleText}>{roleLabel(user.role)}</Text>
                         </View>
                     ) : null}
                     <Button title={t('account.save')} onPress={onSave} loading={saving} />
@@ -81,18 +89,22 @@ export default function AccountScreen() {
                 <Card>
                     <Text style={styles.cardTitle}>{t('account.language')}</Text>
                     <View style={styles.langRow}>
-                        <View style={styles.langBtn}>
-                            <Button title="English" variant={i18n.language === 'en' ? 'primary' : 'outline'} onPress={() => i18n.changeLanguage('en')} />
-                        </View>
-                        <View style={styles.langBtn}>
-                            <Button title="मराठी" variant={i18n.language === 'mr' ? 'primary' : 'outline'} onPress={() => i18n.changeLanguage('mr')} />
-                        </View>
+                        {[['en', 'English'], ['mr', 'मराठी']].map(([code, label]) => {
+                            const on = i18n.language?.startsWith(code);
+                            return (
+                                <Pressable key={code} onPress={() => { i18n.changeLanguage(code); if (typeof localStorage !== 'undefined') localStorage.setItem('lang', code); }} style={[styles.lang, on && styles.langOn]}>
+                                    <Text style={[styles.langText, on && styles.langTextOn]}>{label}</Text>
+                                </Pressable>
+                            );
+                        })}
                     </View>
                 </Card>
                 <MenuRow title={t('account.favorites')} onPress={() => navigation.navigate('Favorites')} />
                 <MenuRow title={t('content.menu')} onPress={() => navigation.navigate('Content')} />
-                {isVendor ? <MenuRow title={t('nav.vendor')} onPress={() => navigation.navigate('VendorHub')} /> : null}
+                {isVendor ? <MenuRow title={t('nav.overview')} onPress={() => navigation.navigate('Overview')} /> : null}
                 <Button title={t('auth.logout')} variant="danger" onPress={() => logout()} />
+                </View>
+                <HomeFooter bleed={0} />
             </ScrollView>
         </Screen>
     );
@@ -100,7 +112,8 @@ export default function AccountScreen() {
 
 const styles = StyleSheet.create({
     screen: { padding: 0 },
-    page: { padding: 16, paddingBottom: 28 },
+    page: { paddingBottom: 0 },
+    inner: { padding: 16, paddingBottom: 0 },
     pageTitle: {
         fontFamily: FONTS.bold,
         fontSize: 24,
@@ -108,19 +121,30 @@ const styles = StyleSheet.create({
         letterSpacing: -0.4,
         marginBottom: 12,
     },
-    cardTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: 4 },
-    email: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginBottom: 12 },
+    cardTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: 12 },
     role: {
         alignSelf: 'flex-start',
         backgroundColor: COLORS.primarySoft,
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 4,
-        marginBottom: 4,
+        marginTop: 2,
     },
-    roleText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary },
+    roleText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary, letterSpacing: 0.2 },
     langRow: { flexDirection: 'row', gap: 8 },
-    langBtn: { flex: 1 },
+    lang: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 44,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+        backgroundColor: '#fff',
+    },
+    langOn: { backgroundColor: COLORS.action, borderColor: COLORS.action },
+    langText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primary },
+    langTextOn: { color: '#fff' },
     menu: {
         flexDirection: 'row',
         alignItems: 'center',
