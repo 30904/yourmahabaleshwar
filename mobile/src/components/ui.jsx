@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { HeaderHeightContext } from '@react-navigation/elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
 
 export function Screen({ children, style }) {
-    return <View style={[styles.screen, style]}>{children}</View>;
+    const insets = useSafeAreaInsets();
+    const headerHeight = useContext(HeaderHeightContext) || 0;
+    const flat = StyleSheet.flatten(style) || {};
+    const contentTop = flat.padding === 0 ? 0 : (typeof flat.paddingTop === 'number' ? flat.paddingTop : 16);
+    const paddingTop = (headerHeight > 0 ? 0 : insets.top) + contentTop;
+    return <View style={[styles.screen, style, { paddingTop }]}>{children}</View>;
 }
 
 export function Card({ children, style }) {
