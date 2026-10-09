@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { fetchMe, login as loginApi, logoutApi, register as registerApi, registerVendor as registerVendorApi, sendOtp as sendOtpApi, updateProfile, verifyOtp as verifyOtpApi, } from '../api/endpoints';
+import { isNetworkError, subscribeReconnect } from '../api/network';
 import { clearToken, readToken, writeToken } from '../api/tokenStore';
 import { VENDOR_ROLES } from '../constants/theme';
 import { registerForPushNotifications, unregisterPushNotifications } from '../services/push';
@@ -26,14 +27,31 @@ export function AuthProvider({ children }) {
                 setUser(me);
                 registerForPushNotifications(me.role).catch(() => { });
             }
-            catch {
-                await clearToken('accessToken');
-                await clearToken('refreshToken');
+            catch (error) {
+                if (!isNetworkError(error)) {
+                    await clearToken('accessToken');
+                    await clearToken('refreshToken');
+                }
             }
             finally {
                 setLoading(false);
             }
         })();
+        return subscribeReconnect(async () => {
+            try {
+                const token = await readToken('accessToken');
+                if (!token) return;
+                const me = await fetchMe();
+                setUser(me);
+            }
+            catch (error) {
+                if (!isNetworkError(error)) {
+                    await clearToken('accessToken');
+                    await clearToken('refreshToken');
+                    setUser(null);
+                }
+            }
+        });
     }, []);
     const login = useCallback(async (email, password) => {
         const data = await loginApi(email, password);

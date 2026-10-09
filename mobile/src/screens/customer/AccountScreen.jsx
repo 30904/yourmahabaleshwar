@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import i18n from '../../i18n';
 import { useAuth } from '../../context/AuthContext';
-import HomeFooter from '../../components/home/HomeFooter';
+import { useConfirm } from '../../components/confirm';
 import { Button, Card, Field, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 
@@ -24,14 +24,50 @@ function MenuRow({ title, onPress }) {
     );
 }
 
+const SUPPORT_LINKS = [
+    ['footer.helpCentre', 'faq'],
+    ['footer.contactUs', 'contact'],
+    ['footer.cancellation', 'cancel'],
+];
+
+const COMPANY_LINKS = [
+    ['footer.about', 'about'],
+    ['footer.blog', 'blogs'],
+    ['footer.privacy', 'privacy'],
+    ['footer.terms', 'terms'],
+];
+
+function AccountLinks({ navigation, t }) {
+    const openPage = (page) => navigation.navigate('Content', { page });
+    return (
+        <View>
+            <Text style={styles.sectionLabel}>{t('footer.support')}</Text>
+            {SUPPORT_LINKS.map(([labelKey, page]) => (
+                <MenuRow key={page} title={t(labelKey)} onPress={() => openPage(page)} />
+            ))}
+            <Text style={styles.sectionLabel}>{t('footer.company')}</Text>
+            {COMPANY_LINKS.map(([labelKey, page]) => (
+                <MenuRow key={page} title={t(labelKey)} onPress={() => openPage(page)} />
+            ))}
+            <View style={styles.credit}>
+                <Text style={styles.creditLine}>{t('footer.ventureOf')} SM Enterprise</Text>
+                <Text style={styles.creditLine}>{t('footer.poweredBy')} Celeris Venture Systems Pvt. Ltd.</Text>
+                <Text style={styles.creditCopy}>{t('footer.copyright')}</Text>
+            </View>
+        </View>
+    );
+}
+
 export default function AccountScreen() {
     const { t } = useTranslation();
     const { user, logout, isVendor, saveProfile } = useAuth();
+    const confirm = useConfirm();
     const navigation = useNavigation();
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [saving, setSaving] = useState(false);
+    const [signingOut, setSigningOut] = useState(false);
 
     useEffect(() => {
         setName(user?.name || '');
@@ -59,12 +95,14 @@ export default function AccountScreen() {
 
     if (!user) {
         return (
-            <Screen>
-                <Text style={styles.pageTitle}>{t('nav.account')}</Text>
-                <Muted>{t('auth.welcome')}</Muted>
-                <Button title={t('auth.signIn')} onPress={() => navigation.navigate('Auth')} />
-                <Button title={t('auth.register')} variant="outline" onPress={() => navigation.navigate('Auth')} />
-                <Button title={t('content.menu')} variant="outline" onPress={() => navigation.navigate('Content')} />
+            <Screen style={styles.screen}>
+                <ScrollView contentContainerStyle={styles.inner}>
+                    <Text style={styles.pageTitle}>{t('nav.account')}</Text>
+                    <Muted>{t('auth.welcome')}</Muted>
+                    <Button title={t('auth.signIn')} onPress={() => navigation.navigate('Auth')} />
+                    <Button title={t('auth.register')} variant="outline" onPress={() => navigation.navigate('Auth')} />
+                    <AccountLinks navigation={navigation} t={t} />
+                </ScrollView>
             </Screen>
         );
     }
@@ -100,11 +138,29 @@ export default function AccountScreen() {
                     </View>
                 </Card>
                 <MenuRow title={t('account.favorites')} onPress={() => navigation.navigate('Favorites')} />
-                <MenuRow title={t('content.menu')} onPress={() => navigation.navigate('Content')} />
                 {isVendor ? <MenuRow title={t('nav.overview')} onPress={() => navigation.navigate('Overview')} /> : null}
-                <Button title={t('auth.logout')} variant="danger" onPress={() => logout()} />
+                <Button title={t('auth.logout')} variant="danger" loading={signingOut} onPress={() => {
+                    confirm({
+                        title: t('auth.logout'),
+                        message: t('account.signOutAsk'),
+                        cancelText: t('common.cancel'),
+                        confirmText: t('auth.logout'),
+                        destructive: true,
+                        loadingText: t('account.signingOut'),
+                        loadingMs: 1200,
+                        onConfirm: async () => {
+                            setSigningOut(true);
+                            try {
+                                await logout();
+                            }
+                            finally {
+                                setSigningOut(false);
+                            }
+                        },
+                    });
+                }} />
+                <AccountLinks navigation={navigation} t={t} />
                 </View>
-                <HomeFooter bleed={0} />
             </ScrollView>
         </Screen>
     );
@@ -159,4 +215,14 @@ const styles = StyleSheet.create({
     },
     menuText: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.primary },
     chevron: { fontFamily: FONTS.semibold, fontSize: 22, color: COLORS.muted },
+    sectionLabel: {
+        fontFamily: FONTS.semibold,
+        fontSize: 13,
+        color: COLORS.muted,
+        marginTop: 8,
+        marginBottom: 8,
+    },
+    credit: { alignItems: 'center', paddingTop: 8, paddingBottom: 24 },
+    creditLine: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.muted, textAlign: 'center', lineHeight: 18 },
+    creditCopy: { fontFamily: FONTS.regular, fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 8 },
 });

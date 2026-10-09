@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import { fetchMyVendorListings } from '../../api/endpoints';
 import { Button, Card, Loading, Screen } from '../../components/ui';
@@ -50,6 +51,7 @@ export default function VendorListingsScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     const filtered = useMemo(() => {
         if (!statusFilter)

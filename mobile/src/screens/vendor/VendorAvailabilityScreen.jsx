@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { fetchMyAvailability, patchListingAvailability } from '../../api/endpoints';
+import { useReconnect } from '../../api/useReconnect';
 import { Button, Card, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -20,6 +21,8 @@ export default function VendorAvailabilityScreen() {
     const [listings, setListings] = useState([]);
     const [selectedKey, setSelectedKey] = useState('');
     const [loading, setLoading] = useState(true);
+    const [onlineTick, setOnlineTick] = useState(0);
+    useReconnect(useCallback(() => setOnlineTick((n) => n + 1), []));
     const [busyDate, setBusyDate] = useState('');
     const { from, to } = useMemo(() => monthWindow(year, month), [year, month]);
     const cells = useMemo(() => monthCells(year, month), [year, month]);
@@ -52,7 +55,7 @@ export default function VendorAvailabilityScreen() {
         return () => {
             cancelled = true;
         };
-    }, [allowed, from, to]);
+    }, [allowed, from, to, onlineTick]);
 
     const selected = listings.find((item) => listingKey(item) === selectedKey) || listings[0];
     const blocked = selected?.blockedDates || [];

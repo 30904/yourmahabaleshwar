@@ -2,7 +2,8 @@ import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Modal, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useFocusEffect } from '@react-navigation/native';
-import HomeFooter from '../../components/home/HomeFooter';
+import { isNetworkError } from '../../api/network';
+import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import {
   createPaymentOrder,
@@ -79,23 +80,24 @@ export default function BookingsScreen() {
   const [endBookingId, setEndBookingId] = useState(null);
   const [overtimeHours, setOvertimeHours] = useState('0');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = isVendor ? await vendorBookings() : await myBookings();
       setItems(Array.isArray(data) ? data : []);
-    } catch {
-      setItems([]);
+    } catch (error) {
+      if (!isNetworkError(error)) setItems([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isVendor]);
 
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [isVendor])
+    }, [load])
   );
+  useReconnect(load);
 
   const recordPayment = async (payment, response) => {
     await verifyPayment({
@@ -195,7 +197,6 @@ export default function BookingsScreen() {
       <FlatList
         style={styles.list}
         contentContainerStyle={[styles.listContent, { paddingHorizontal: 16 }]}
-        ListFooterComponentStyle={{ width: '100%' }}
         data={items}
         keyExtractor={(item) => item._id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
@@ -205,7 +206,6 @@ export default function BookingsScreen() {
             <Text style={styles.pageHint}>{t('booking.manageHint')}</Text>
           </View>
         )}
-        ListFooterComponent={<HomeFooter />}
         ListEmptyComponent={(
           <Card style={styles.empty}>
             <Text style={styles.emptyText}>{t('booking.noBookings')}</Text>

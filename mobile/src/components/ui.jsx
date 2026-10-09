@@ -1,8 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { HeaderHeightContext } from '@react-navigation/elements';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
+import { Eye, EyeOff } from './home/icons';
 
 export function Screen({ children, style }) {
     const insets = useSafeAreaInsets();
@@ -63,6 +65,7 @@ export function Field({
     value,
     onChangeText,
     secureTextEntry,
+    reveal,
     keyboardType,
     placeholder,
     maxLength,
@@ -71,28 +74,43 @@ export function Field({
     multiline,
     autofillPincode,
 }) {
+    const { t } = useTranslation();
     const [focused, setFocused] = useState(false);
+    const [shown, setShown] = useState(false);
+    const canReveal = secureTextEntry && reveal;
     return (
         <View style={styles.field}>
             {label ? <Text style={styles.label}>{label}</Text> : null}
-            <TextInput
-                value={value}
-                onChangeText={onChangeText}
-                secureTextEntry={secureTextEntry}
-                keyboardType={keyboardType}
-                placeholder={placeholder}
-                maxLength={maxLength}
-                autoCapitalize={autoCapitalize}
-                multiline={multiline}
-                onFocus={() => {
-                    setFocused(true);
-                    if (autofillPincode && !String(value || '').trim()) onChangeText?.(MAHABALESHWAR_PINCODE);
-                    onFocus?.();
-                }}
-                onBlur={() => setFocused(false)}
-                style={[styles.input, multiline && styles.inputMulti, focused && styles.inputFocused]}
-                placeholderTextColor={COLORS.muted}
-            />
+            <View style={canReveal ? styles.inputWrap : null}>
+                <TextInput
+                    value={value}
+                    onChangeText={onChangeText}
+                    secureTextEntry={secureTextEntry && !shown}
+                    keyboardType={keyboardType}
+                    placeholder={placeholder}
+                    maxLength={maxLength}
+                    autoCapitalize={autoCapitalize}
+                    multiline={multiline}
+                    onFocus={() => {
+                        setFocused(true);
+                        if (autofillPincode && !String(value || '').trim()) onChangeText?.(MAHABALESHWAR_PINCODE);
+                        onFocus?.();
+                    }}
+                    onBlur={() => setFocused(false)}
+                    style={[styles.input, multiline && styles.inputMulti, focused && styles.inputFocused, canReveal && styles.inputReveal]}
+                    placeholderTextColor={COLORS.muted}
+                />
+                {canReveal ? (
+                    <Pressable
+                        onPress={() => setShown((open) => !open)}
+                        style={styles.eye}
+                        accessibilityRole="button"
+                        accessibilityLabel={shown ? t('auth.hidePassword') : t('auth.showPassword')}
+                    >
+                        {shown ? <EyeOff size={18} color={COLORS.muted} /> : <Eye size={18} color={COLORS.muted} />}
+                    </Pressable>
+                ) : null}
+            </View>
         </View>
     );
 }
@@ -157,6 +175,17 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: COLORS.body,
         marginBottom: 6,
+    },
+    inputWrap: { position: 'relative' },
+    inputReveal: { paddingRight: 44 },
+    eye: {
+        position: 'absolute',
+        right: 4,
+        top: 0,
+        bottom: 0,
+        width: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     input: {
         fontFamily: FONTS.regular,

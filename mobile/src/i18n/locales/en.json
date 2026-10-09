@@ -52,6 +52,8 @@
     "vendorRegister": "List your property",
     "email": "Email",
     "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "phone": "Phone",
     "name": "Full name",
     "otp": "OTP code",
@@ -699,6 +701,9 @@
     "saveListing": "Save",
     "savedListing": "Saved",
     "removeListing": "Remove",
+    "signOutAsk": "Are you sure you want to sign out?",
+    "signingOut": "Signing out...",
+    "removeSavedAsk": "Remove this listing from saved?",
     "signInToSave": "Sign in to save this listing"
   },
   "booking": {

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { fetchMyVendorListings, fetchVendorReviews, getMyKyc, getMySubscription, getWallet, vendorBookings } from '../../api/endpoints';
+import { useReconnect } from '../../api/useReconnect';
 import HomeHeader from '../../components/home/HomeHeader';
 import { Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
@@ -108,6 +109,7 @@ export default function VendorHubScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     if (loading) return <Loading />;
 

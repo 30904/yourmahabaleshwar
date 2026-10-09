@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { publicBlogs, publicFaqs, sendEnquiry } from '../../api/endpoints';
-import HomeFooter from '../../components/home/HomeFooter';
+import { loadPublic } from '../../api/publicCache';
 import { Button, Card, Field, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 
@@ -52,12 +52,26 @@ export default function ContentScreen({ route }) {
 
     useEffect(() => {
         if (page !== 'faq' && page !== 'blogs') return undefined;
+        let alive = true;
         setLoading(true);
         const load = page === 'faq'
-            ? publicFaqs().then((rows) => setFaqs(rows?.length ? rows : FALLBACK_FAQS)).catch(() => setFaqs(FALLBACK_FAQS))
-            : publicBlogs().then((rows) => setBlogs(rows || [])).catch(() => setBlogs([]));
-        load.finally(() => setLoading(false));
-        return undefined;
+            ? loadPublic('content:faqs', publicFaqs, (rows) => {
+                if (alive) setFaqs(rows?.length ? rows : FALLBACK_FAQS);
+            })
+            : loadPublic('content:blogs', publicBlogs, (rows) => {
+                if (alive) setBlogs(rows || []);
+            });
+        load.catch(() => {
+            if (!alive) return;
+            if (page === 'faq') setFaqs(FALLBACK_FAQS);
+            else setBlogs([]);
+        }).finally(() => {
+            if (alive) setLoading(false);
+        });
+        return () => {
+            alive = false;
+            load.cancel?.();
+        };
     }, [page]);
 
     const send = async () => {
@@ -89,7 +103,6 @@ export default function ContentScreen({ route }) {
                             <Text style={styles.chevron}>›</Text>
                         </Pressable>
                     ))}
-                    <HomeFooter />
                 </ScrollView>
             </Screen>
         );
@@ -208,7 +221,6 @@ export default function ContentScreen({ route }) {
                         </Card>
                     ) : null}
                 </View>
-                <HomeFooter bleed={0} />
             </ScrollView>
         </Screen>
     );

@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useFocusEffect } from '@react-navigation/native';
+import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import {
     confirmServicePoints,
@@ -74,6 +75,7 @@ export default function VendorSubscriptionScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     const pay = async ({ orderResult, description, confirm }) => {
         const order = orderResult?.order;

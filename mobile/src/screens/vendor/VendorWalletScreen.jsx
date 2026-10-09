@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMySubscription, getWallet, purchasePoints } from '../../api/endpoints';
+import { useReconnect } from '../../api/useReconnect';
 import { Button, Card, Field, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { formatCurrency } from '../../utils/format';
@@ -27,6 +28,7 @@ export default function VendorWalletScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     const onBuyPoints = async () => {
         const count = Number(buyPoints);

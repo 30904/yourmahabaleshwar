@@ -3,7 +3,9 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'rea
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { getWishlist, removeWishlist } from '../../api/endpoints';
-import HomeFooter from '../../components/home/HomeFooter';
+import { isNetworkError } from '../../api/network';
+import { useReconnect } from '../../api/useReconnect';
+import { useConfirm } from '../../components/confirm';
 import { Button, Card, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { formatCurrency } from '../../utils/format';
@@ -12,26 +14,28 @@ import { listingPrice, wishlistPath } from '../../utils/listing';
 export default function FavoritesScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
+    const confirm = useConfirm();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const load = async () => {
+    const load = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getWishlist();
             setItems(Array.isArray(data) ? data : []);
         }
-        catch {
-            setItems([]);
+        catch (error) {
+            if (!isNetworkError(error)) setItems([]);
         }
         finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useFocusEffect(useCallback(() => {
         load();
-    }, []));
+    }, [load]));
+    useReconnect(load);
 
     if (loading && !items.length)
         return <Loading />;
@@ -49,7 +53,6 @@ export default function FavoritesScreen() {
                 data={items}
                 keyExtractor={(row) => `${row.itemType}-${row.item?._id}`}
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
-                ListFooterComponent={<HomeFooter />}
                 ListEmptyComponent={(
                     <Card style={styles.empty}>
                         <Text style={styles.emptyText}>{t('account.noFavorites')}</Text>
@@ -75,9 +78,18 @@ export default function FavoritesScreen() {
                                 <Button
                                     title={t('account.removeListing')}
                                     variant="outline"
-                                    onPress={async () => {
-                                        await removeWishlist(listing._id, row.itemType);
-                                        load();
+                                    onPress={() => {
+                                        confirm({
+                                            title: t('account.removeListing'),
+                                            message: t('account.removeSavedAsk'),
+                                            cancelText: t('common.cancel'),
+                                            confirmText: t('account.removeListing'),
+                                            destructive: true,
+                                            onConfirm: async () => {
+                                                await removeWishlist(listing._id, row.itemType);
+                                                load();
+                                            },
+                                        });
                                     }}
                                 />
                             </View>

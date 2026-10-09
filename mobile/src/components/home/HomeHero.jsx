@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, MapPin, Search, ShieldCheck, Star, Users } from './icons';
 import { useTranslation } from 'react-i18next';
 import { fetchHomepageHeroAds, trackHomepageAdEvent } from '../../api/endpoints';
+import { loadPublic } from '../../api/publicCache';
 import { COLORS, FONTS } from '../../constants/theme';
 import { formatCurrency } from '../../utils/format';
 import { mediaUrl } from '../../utils/listing';
@@ -94,20 +95,22 @@ export default function HomeHero({ navigation }) {
 
     useEffect(() => {
         let alive = true;
-        fetchHomepageHeroAds()
-            .then((items) => {
-                if (!alive) return;
-                const next = (items || []).slice(0, 3);
-                setAds(next);
+        const job = loadPublic('ads:homepage-hero', fetchHomepageHeroAds, (items, meta) => {
+            if (!alive) return;
+            const next = (items || []).slice(0, 3);
+            setAds(next);
+            if (meta?.fresh) {
                 next.forEach((ad) => {
                     if (ad.adId) trackHomepageAdEvent(ad.adId, 'impression');
                 });
-            })
-            .catch(() => {
-                if (alive) setAds([]);
-            });
+            }
+        });
+        job.catch(() => {
+            if (alive) setAds([]);
+        });
         return () => {
             alive = false;
+            job.cancel();
         };
     }, []);
 

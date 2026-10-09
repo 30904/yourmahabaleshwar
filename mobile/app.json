@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "scheme": "yourmahabaleshwar",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
@@ -43,7 +43,16 @@
         }
       ],
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/logo.png",
+          "resizeMode": "contain",
+          "imageWidth": 240
+        }
+      ]
     ],
     "extra": {
       "apiUrl": "https://www.yourmahabaleshwar.com/api",

@@ -3,6 +3,7 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { addWishlist, removeWishlist } from '../api/endpoints';
+import { useConfirm } from './confirm';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/format';
@@ -49,6 +50,7 @@ function priceParts(item, type, t) {
 
 export default function ListingCard({ item, type, onPress }) {
     const { t } = useTranslation();
+    const confirm = useConfirm();
     const { user } = useAuth();
     const navigation = useNavigation();
     const [saved, setSaved] = useState(false);
@@ -78,8 +80,23 @@ export default function ListingCard({ item, type, onPress }) {
         }
         try {
             if (saved) {
-                await removeWishlist(item._id, type);
-                setSaved(false);
+                confirm({
+                    title: t('account.removeListing'),
+                    message: t('account.removeSavedAsk'),
+                    cancelText: t('common.cancel'),
+                    confirmText: t('account.removeListing'),
+                    destructive: true,
+                    onConfirm: async () => {
+                        try {
+                            await removeWishlist(item._id, type);
+                            setSaved(false);
+                        }
+                        catch (error) {
+                            Alert.alert(t('common.error'), error.response?.data?.message || error.message);
+                        }
+                    },
+                });
+                return;
             }
             else {
                 await addWishlist(item._id, type);

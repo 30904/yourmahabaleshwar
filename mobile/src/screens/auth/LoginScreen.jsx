@@ -109,7 +109,7 @@ export default function LoginScreen({ navigation }) {
             {step === 'form' ? (
                 <>
                     <Field label={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address" />
-                    <Field label={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry />
+                    <Field label={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry reveal />
                     <AuthLink title={t('auth.forgotPassword')} align="right" onPress={() => navigation.navigate('ForgotPassword')} />
                     <FormError message={error} />
                     <Button title={t('common.continue')} onPress={onLogin} loading={loading} />

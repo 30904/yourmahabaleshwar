@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { fetchServiceHubImages } from '../../api/endpoints';
-import HomeFooter from '../../components/home/HomeFooter';
+import { loadPublic } from '../../api/publicCache';
 import { Button, Card, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { mediaUrl } from '../../utils/listing';
@@ -101,17 +101,17 @@ export default function ServiceHubScreen({ type, navigation }) {
     useEffect(() => {
         navigation.setOptions({ title: '' });
         let alive = true;
-        fetchServiceHubImages()
-            .then((data) => {
-                if (!alive) return;
-                const list = Array.isArray(data?.images?.[type]) ? data.images[type] : [];
-                setImages(list.map(imageUrl).filter(Boolean));
-            })
-            .catch(() => {
-                if (alive) setImages([]);
-            });
+        const job = loadPublic('service-hub-images', fetchServiceHubImages, (data) => {
+            if (!alive) return;
+            const list = Array.isArray(data?.images?.[type]) ? data.images[type] : [];
+            setImages(list.map(imageUrl).filter(Boolean));
+        });
+        job.catch(() => {
+            if (alive) setImages([]);
+        });
         return () => {
             alive = false;
+            job.cancel();
         };
     }, [navigation, type]);
 
@@ -152,7 +152,6 @@ export default function ServiceHubScreen({ type, navigation }) {
                         <View key={key} style={styles.feature}><Text style={styles.featureText}>{t(key)}</Text></View>
                     ))}
                 </View>
-                <HomeFooter bleed={0} />
             </ScrollView>
             <Modal visible={enquireOpen} transparent animationType="fade" onRequestClose={() => setEnquireOpen(false)}>
                 <Pressable style={styles.backdrop} onPress={() => setEnquireOpen(false)}>

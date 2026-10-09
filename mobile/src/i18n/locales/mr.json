@@ -52,6 +52,8 @@
     "vendorRegister": "मालमत्ता यादीत टाका",
     "email": "ईमेल",
     "password": "पासवर्ड",
+    "showPassword": "पासवर्ड दाखवा",
+    "hidePassword": "पासवर्ड लपवा",
     "phone": "फोन",
     "name": "पूर्ण नाव",
     "otp": "OTP कोड",
@@ -699,6 +701,9 @@
     "saveListing": "जतन करा",
     "savedListing": "जतन केले",
     "removeListing": "काढा",
+    "signOutAsk": "तुम्हाला खात्री आहे की साइन आउट करायचे आहे?",
+    "signingOut": "साइन आउट होत आहे...",
+    "removeSavedAsk": "ही यादी जतन केलेल्यांमधून काढायची?",
     "signInToSave": "ही यादी जतन करण्यासाठी साइन इन करा"
   },
   "booking": {

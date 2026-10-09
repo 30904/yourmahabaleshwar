@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BadgeCheck, Car, CarTaxiFront, Clock, CreditCard, Gift, Headphones, Home, Hotel, Languages, Shield, Star, Tent, Trees, Users } from './icons';
 import { useTranslation } from 'react-i18next';
 import { listCatalog } from '../../api/endpoints';
+import { loadPublic } from '../../api/publicCache';
 import { Button } from '../ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import ListingCard from '../ListingCard';
@@ -106,20 +107,22 @@ export function HomePropertyTabs({ navigation }) {
 
     useEffect(() => {
         let alive = true;
+        let showed = false;
         setLoading(true);
-        setItems([]);
-        listCatalog(tab.path, tab.params)
-            .then((data) => {
-                if (alive) setItems(catalogItems(data).slice(0, 3));
-            })
-            .catch(() => {
-                if (alive) setItems([]);
-            })
-            .finally(() => {
-                if (alive) setLoading(false);
-            });
+        const job = loadPublic(`catalog:${tab.path}:${JSON.stringify(tab.params || {})}`, () => listCatalog(tab.path, tab.params), (data) => {
+            if (!alive) return;
+            showed = true;
+            setItems(catalogItems(data).slice(0, 3));
+            setLoading(false);
+        });
+        job.catch(() => {
+            if (alive && !showed) setItems([]);
+        }).finally(() => {
+            if (alive) setLoading(false);
+        });
         return () => {
             alive = false;
+            job.cancel();
         };
     }, [tab]);
 

@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Line, Path } from 'react-native-svg/src/index';
 import { useTranslation } from 'react-i18next';
 import { getDocumentRequirements, getMyKyc, submitKyc } from '../../api/endpoints';
+import { useReconnect } from '../../api/useReconnect';
 import { Button, Card, Field, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -224,6 +225,8 @@ export default function VendorKycScreen() {
     const [pan, setPan] = useState('');
     const [gstNumber, setGstNumber] = useState('');
     const [bank, setBank] = useState(emptyBank);
+    const [onlineTick, setOnlineTick] = useState(0);
+    useReconnect(useCallback(() => setOnlineTick((n) => n + 1), []));
 
     useEffect(() => {
         let active = true;
@@ -252,7 +255,7 @@ export default function VendorKycScreen() {
         return () => {
             active = false;
         };
-    }, [vendorType, t]);
+    }, [vendorType, t, onlineTick]);
 
     const setBankField = (key, value) => setBank((prev) => ({ ...prev, [key]: value }));
 

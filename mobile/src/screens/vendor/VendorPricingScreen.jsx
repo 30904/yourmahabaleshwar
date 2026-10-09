@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import { fetchMyVendorListing, fetchMyVendorListings, patchVendorListingPrices } from '../../api/endpoints';
 import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
@@ -85,6 +86,7 @@ export default function VendorPricingScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     const setRowField = (key, field, value, index) => {
         setDrafts((prev) => {

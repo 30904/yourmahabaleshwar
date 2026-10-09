@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import { fetchVendorReviews } from '../../api/endpoints';
 import { Button, Card, Loading, Screen } from '../../components/ui';
@@ -35,6 +36,7 @@ export default function VendorReviewsScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     if (loading && !items.length)
         return <Loading />;
