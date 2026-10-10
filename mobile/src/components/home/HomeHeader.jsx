@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Building2, Calendar, CalendarDays, Car, CreditCard, FileText, Home, Languages, LayoutDashboard, Megaphone, Menu, Phone, ShoppingBag, Star, Tag, Tent, Trees, Wallet, X } from './icons';
+import { Building2, Calendar, CalendarDays, Car, CreditCard, FileText, Home, Languages, LayoutDashboard, Megaphone, Menu, Phone, ShoppingBag, Star, Tag, Tent, Trees, User, Wallet, X } from './icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS, FONTS } from '../../constants/theme';
@@ -102,23 +102,19 @@ export default function HomeHeader({ navigation, children }) {
         <View style={styles.shell}>
             <View style={styles.bar}>
             <View style={styles.row}>
-                <Pressable onPress={() => navigation.navigate('HomeTab')} accessibilityLabel="Go to homepage">
+                <Pressable style={styles.sideBtn} onPress={() => setOpen((value) => !value)} accessibilityLabel="Menu">
+                    {open ? <X size={22} color="#475569" strokeWidth={2} /> : <Menu size={22} color="#475569" strokeWidth={2} />}
+                </Pressable>
+                <Pressable style={styles.logoWrap} onPress={() => navigation.navigate('HomeTab')} accessibilityLabel="Go to homepage">
                     <Image source={logo} style={styles.logo} resizeMode="contain" />
                 </Pressable>
-                <View style={styles.actions}>
-                    {user ? (
-                        <Pressable style={styles.signIn} onPress={() => navigation.navigate('Account')}>
-                            <Text style={styles.signInText} numberOfLines={1}>{user.name?.split(' ')[0] || t('nav.account')}</Text>
-                        </Pressable>
-                    ) : (
-                        <Pressable style={styles.signIn} onPress={() => navigation.navigate('Auth')}>
-                            <Text style={styles.signInText}>{t('auth.signIn')}</Text>
-                        </Pressable>
-                    )}
-                    <Pressable style={styles.menuBtn} onPress={() => setOpen((value) => !value)} accessibilityLabel="Menu">
-                        {open ? <X size={22} color="#475569" strokeWidth={2} /> : <Menu size={22} color="#475569" strokeWidth={2} />}
-                    </Pressable>
-                </View>
+                <Pressable
+                    style={styles.sideBtn}
+                    onPress={() => navigation.navigate(user ? 'Account' : 'Auth')}
+                    accessibilityLabel={user ? t('nav.account') : t('auth.signIn')}
+                >
+                    <User size={22} color="#475569" strokeWidth={2} />
+                </Pressable>
             </View>
             </View>
             {open ? (
@@ -183,10 +179,10 @@ export default function HomeHeader({ navigation, children }) {
 }
 
 const styles = StyleSheet.create({
-    shell: { flex: 1, backgroundColor: '#fff' },
+    shell: { flex: 1, backgroundColor: COLORS.bg },
     body: { flex: 1 },
     bar: {
-        backgroundColor: 'rgba(255,255,255,0.95)',
+        backgroundColor: '#fff',
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(226,232,240,0.8)',
         zIndex: 20,
@@ -197,22 +193,10 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 8,
     },
-    logo: { width: 150, height: 44 },
-    actions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    signIn: {
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        backgroundColor: '#fff',
-        maxWidth: 120,
-    },
-    signInText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
-    menuBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18 },
+    sideBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
+    logoWrap: { flex: 1, alignItems: 'center' },
+    logo: { width: 148, height: 42 },
     menuFill: {
         flex: 1,
         backgroundColor: '#fff',

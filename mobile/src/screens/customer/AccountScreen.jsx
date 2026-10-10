@@ -137,7 +137,7 @@ export default function AccountScreen() {
                         })}
                     </View>
                 </Card>
-                <MenuRow title={t('account.favorites')} onPress={() => navigation.navigate('Favorites')} />
+                <MenuRow title={t('account.favorites')} onPress={() => navigation.navigate(isVendor ? 'Favorites' : 'Saved')} />
                 {isVendor ? <MenuRow title={t('nav.overview')} onPress={() => navigation.navigate('Overview')} /> : null}
                 <Button title={t('auth.logout')} variant="danger" loading={signingOut} onPress={() => {
                     confirm({

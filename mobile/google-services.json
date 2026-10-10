@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "574262852762",
+    "project_id": "yourmahabaleshwar",
+    "storage_bucket": "yourmahabaleshwar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:574262852762:android:b41b160becee3d4550b323",
+        "android_client_info": {
+          "package_name": "com.smenterprises.yourmahabaleshwar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxHQQLlr5qv7ax25BWJpjPhaO6tox67no"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

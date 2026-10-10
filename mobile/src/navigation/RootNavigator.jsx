@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Loading } from '../components/ui';
 import { COLORS, FONTS } from '../constants/theme';
-import { Calendar, Home, LayoutDashboard, User, Wallet } from '../components/home/icons';
+import { Calendar, Heart, Home, LayoutDashboard, User, Wallet } from '../components/home/icons';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import VendorRegisterScreen from '../screens/auth/VendorRegisterScreen';
@@ -75,6 +75,12 @@ function MainTabs() {
             title: t('nav.bookings'),
             tabBarIcon: ({ color }) => <Calendar size={22} color={color} strokeWidth={2} />,
         }}/>
+      {!isVendor ? (
+      <Tab.Screen name="Saved" component={user ? FavoritesScreen : AccountScreen} options={{
+            title: t('nav.saved'),
+            tabBarIcon: ({ color }) => <Heart size={22} color={color} strokeWidth={2} />,
+        }}/>
+      ) : null}
       {isVendor ? (
       <Tab.Screen name="Wallet" component={VendorWalletScreen} options={{
             title: t('nav.wallet'),

@@ -73,6 +73,7 @@ export function Field({
     onFocus,
     multiline,
     autofillPincode,
+    soft,
 }) {
     const { t } = useTranslation();
     const [focused, setFocused] = useState(false);
@@ -97,7 +98,7 @@ export function Field({
                         onFocus?.();
                     }}
                     onBlur={() => setFocused(false)}
-                    style={[styles.input, multiline && styles.inputMulti, focused && styles.inputFocused, canReveal && styles.inputReveal]}
+                    style={[styles.input, soft && styles.inputSoft, multiline && styles.inputMulti, focused && styles.inputFocused, canReveal && styles.inputReveal]}
                     placeholderTextColor={COLORS.muted}
                 />
                 {canReveal ? (
@@ -186,6 +187,11 @@ const styles = StyleSheet.create({
         width: 40,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    inputSoft: {
+        backgroundColor: '#F1F5F9',
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
     },
     input: {
         fontFamily: FONTS.regular,
