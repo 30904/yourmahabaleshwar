@@ -163,9 +163,6 @@ export default function LoginPage() {
               {t('auth.createAccount')}
             </Link>
           </p>
-          <p className="mt-4 rounded-booking bg-blue-50 p-3 text-xs text-slate-600">
-            Demo: admin@yourmahabaleshwar.com / Admin@123 (password only). Customer/vendor need OTP after password.
-          </p>
         </div>
       </div>
     </div>
