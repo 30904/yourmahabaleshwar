@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CommonActions } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,15 @@ export default function LoginScreen({ navigation }) {
     const [devHint, setDevHint] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
+    useEffect(() => {
+        const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardOpen(true));
+        const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardOpen(false));
+        return () => {
+            show.remove();
+            hide.remove();
+        };
+    }, []);
     const showError = (message) => {
         setError(message);
     };
@@ -105,7 +114,7 @@ export default function LoginScreen({ navigation }) {
                         style={StyleSheet.absoluteFill}
                     />
                 </View>
-                <View style={styles.sheet}>
+                <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
                     <Image source={logo} style={styles.logo} resizeMode="contain" />
                     <View style={styles.middle}>
                         {step === 'form' ? (
@@ -130,6 +139,7 @@ export default function LoginScreen({ navigation }) {
                             </>
                         )}
                     </View>
+                    {keyboardOpen ? null : (
                     <View style={styles.footer}>
                         {step === 'form' ? (
                             <Text style={styles.newHere}>
@@ -148,6 +158,7 @@ export default function LoginScreen({ navigation }) {
                             })}
                         </View>
                     </View>
+                    )}
                 </View>
             </KeyboardAvoidingView>
         </Screen>

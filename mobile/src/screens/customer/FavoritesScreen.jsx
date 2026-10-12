@@ -12,7 +12,6 @@ import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { listingImage, listingPlace, listingPrice, wishlistPath } from '../../utils/listing';
-import { useDeviceInsets } from '../../utils/deviceInsets';
 
 const TYPE_ICON = {
     HOTEL: Hotel,
@@ -37,7 +36,6 @@ export default function FavoritesScreen() {
     const navigation = useNavigation();
     const { isVendor } = useAuth();
     const confirm = useConfirm();
-    const insets = useDeviceInsets();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -87,7 +85,7 @@ export default function FavoritesScreen() {
                 keyExtractor={(row) => `${row.itemType}-${row.item?._id}`}
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
                 ListHeaderComponent={(
-                    <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                    <View style={styles.band}>
                         <View style={styles.bandRow}>
                             <Text style={styles.pageTitle}>{t('account.favorites')}</Text>
                             <View style={styles.countPill}>
@@ -154,7 +152,8 @@ const styles = StyleSheet.create({
     listContent: { paddingBottom: 24 },
     band: {
         paddingHorizontal: 16,
-        paddingBottom: 18,
+        paddingTop: 16,
+        paddingBottom: 16,
         backgroundColor: COLORS.primary,
     },
     bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },

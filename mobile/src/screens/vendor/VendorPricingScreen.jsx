@@ -10,7 +10,6 @@ import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { pricingDraftFromListing, pricingPayloadFromDraft, validatePricingDraft } from '../../utils/vendorPricing';
 import { listingImage } from '../../utils/listing';
-import { useDeviceInsets } from '../../utils/deviceInsets';
 
 const listingKey = (item) => `${item.vertical}-${item.id}`;
 
@@ -52,7 +51,6 @@ export default function VendorPricingScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
     const { user } = useAuth();
-    const insets = useDeviceInsets();
     const [rows, setRows] = useState([]);
     const [drafts, setDrafts] = useState({});
     const [saving, setSaving] = useState({});
@@ -137,7 +135,7 @@ export default function VendorPricingScreen() {
     return (
         <Screen style={styles.screen}>
             <ScrollView contentContainerStyle={styles.page}>
-                <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.band}>
                     <View style={styles.bandRow}>
                         <Text style={styles.pageTitle}>{t('vendor.pricing')}</Text>
                         <View style={styles.countPill}>
@@ -185,7 +183,7 @@ export default function VendorPricingScreen() {
 const styles = StyleSheet.create({
     screen: { padding: 0 },
     page: { paddingBottom: 24 },
-    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingBottom: 18 },
+    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
     bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
     pageTitle: { flex: 1, fontFamily: FONTS.bold, fontSize: 26, color: '#fff', letterSpacing: -0.4 },
     countPill: { backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },

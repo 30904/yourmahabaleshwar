@@ -9,7 +9,6 @@ import { createPaymentOrder, myBookings, vendorBookings, verifyPayment } from '.
 import { Button, Loading, Screen } from '../../components/ui';
 import { Car, Home, Hotel, Tent, Trees, Users } from '../../components/home/icons';
 import { COLORS, FONTS } from '../../constants/theme';
-import { useDeviceInsets } from '../../utils/deviceInsets';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { bookingTitle } from '../../utils/listing';
@@ -45,7 +44,6 @@ function StatusBadge({ status }) {
 export default function BookingsScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
-    const insets = useDeviceInsets();
     const { isVendor, user } = useAuth();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -141,7 +139,7 @@ export default function BookingsScreen() {
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
                 ListHeaderComponent={(
                     <View>
-                        <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                        <View style={styles.band}>
                             <View style={styles.bandRow}>
                                 <Text style={styles.pageTitle}>{t('nav.bookings')}</Text>
                                 <View style={styles.countPill}>
@@ -222,7 +220,8 @@ export default function BookingsScreen() {
 const styles = StyleSheet.create({
     band: {
         paddingHorizontal: 16,
-        paddingBottom: 18,
+        paddingTop: 16,
+        paddingBottom: 16,
         backgroundColor: COLORS.primary,
     },
     bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },

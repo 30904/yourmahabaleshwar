@@ -51,7 +51,7 @@
           "backgroundColor": "#FFFFFF",
           "image": "./assets/logo.png",
           "resizeMode": "contain",
-          "imageWidth": 240
+          "imageWidth": 140
         }
       ]
     ],

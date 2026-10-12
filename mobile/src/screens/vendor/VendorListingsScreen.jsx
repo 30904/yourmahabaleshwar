@@ -10,7 +10,6 @@ import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { listingImage } from '../../utils/listing';
-import { useDeviceInsets } from '../../utils/deviceInsets';
 import { canVendorEditListing, listingStatusOf } from '../../utils/vendorListingForm';
 
 const STATUS_FILTERS = ['APPROVED', 'PENDING', 'REJECTED'];
@@ -34,7 +33,6 @@ export default function VendorListingsScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
     const { user } = useAuth();
-    const insets = useDeviceInsets();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState(null);
@@ -89,7 +87,7 @@ export default function VendorListingsScreen() {
                 onRefresh={load}
                 ListHeaderComponent={(
                     <View>
-                        <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                        <View style={styles.band}>
                             <View style={styles.bandRow}>
                                 <Text style={styles.pageTitle}>{t('vendor.listings')}</Text>
                                 <View style={styles.countPill}>
@@ -173,7 +171,7 @@ const styles = StyleSheet.create({
     screen: { padding: 0 },
     list: { flex: 1 },
     page: { paddingBottom: 24 },
-    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingBottom: 18 },
+    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
     bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
     pageTitle: { flex: 1, fontFamily: FONTS.bold, fontSize: 26, color: '#fff', letterSpacing: -0.4 },
     countPill: { backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },

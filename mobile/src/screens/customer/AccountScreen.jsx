@@ -7,7 +7,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../components/confirm';
 import { Button, Card, Field, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
-import { useDeviceInsets } from '../../utils/deviceInsets';
 
 function roleLabel(role) {
     return String(role || '')
@@ -48,7 +47,6 @@ export default function AccountScreen() {
     const confirm = useConfirm();
     const navigation = useNavigation();
     const route = useRoute();
-    const insets = useDeviceInsets();
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [phone, setPhone] = useState(user?.phone || '');
@@ -136,7 +134,7 @@ export default function AccountScreen() {
     return (
         <Screen style={{ padding: 0 }}>
             <ScrollView contentContainerStyle={styles.page}>
-                <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.band}>
                     <View style={styles.bandRow}>
                         <Text style={styles.pageTitle}>{user ? t('nav.profile') : guestTitle}</Text>
                         {user?.role ? (
@@ -224,7 +222,8 @@ const styles = StyleSheet.create({
     page: { paddingBottom: 8 },
     band: {
         paddingHorizontal: 16,
-        paddingBottom: 18,
+        paddingTop: 16,
+        paddingBottom: 16,
         backgroundColor: COLORS.primary,
     },
     bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
