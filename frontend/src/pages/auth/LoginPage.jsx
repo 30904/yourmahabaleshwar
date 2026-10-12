@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Logo from '../../components/common/Logo';
 
@@ -28,6 +29,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState('credentials');
   const { register, handleSubmit } = useForm();
   const [otpCode, setOtpCode] = useState('');
@@ -107,7 +109,22 @@ export default function LoginPage() {
               </div>
               <div>
                 <label className="text-sm font-medium">{t('auth.password')}</label>
-                <input className="input-field mt-1" type="password" {...register('password', { required: true })} />
+                <div className="relative mt-1">
+                  <input
+                    className="input-field pr-11"
+                    style={{ paddingRight: '2.75rem' }}
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password', { required: true })}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-500"
+                    onClick={() => setShowPassword((open) => !open)}
+                    aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
               <Link to="/forgot-password" className="block text-right text-sm text-primary hover:underline">
                 {t('auth.forgotPassword')}
@@ -145,9 +162,6 @@ export default function LoginPage() {
             <Link to="/register" className="font-bold text-primary">
               {t('auth.createAccount')}
             </Link>
-          </p>
-          <p className="mt-4 rounded-booking bg-blue-50 p-3 text-xs text-slate-600">
-            Demo: admin@yourmahabaleshwar.com / Admin@123 (password only). Customer/vendor need OTP after password.
           </p>
         </div>
       </div>

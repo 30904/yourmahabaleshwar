@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { globalSearch } from '../../api/endpoints';
+import { loadPublic } from '../../api/publicCache';
 import ListingCard from '../../components/ListingCard';
-import HomeFooter from '../../components/home/HomeFooter';
 import { openCategory } from '../../components/home/homeNav';
 import { Button, Card, Loading, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
@@ -29,11 +29,17 @@ export default function SearchScreen({ route, navigation }) {
         if (!q) return;
         setLoading(true);
         setSearched(q);
+        let showed = false;
         try {
-            setData(await globalSearch(q));
+            const job = loadPublic(`search:${q.toLowerCase()}`, () => globalSearch(q), (next) => {
+                showed = true;
+                setData(next);
+                setLoading(false);
+            });
+            await job;
         }
         catch {
-            setData({ hotels: [], tents: [], guides: [], drivers: [], homestays: [], horses: [] });
+            if (!showed) setData({ hotels: [], tents: [], guides: [], drivers: [], homestays: [], horses: [] });
         }
         finally {
             setLoading(false);
@@ -108,7 +114,6 @@ export default function SearchScreen({ route, navigation }) {
                         ))}
                     </View>
                 </View>
-                <HomeFooter bleed={0} />
             </ScrollView>
         </Screen>
     );

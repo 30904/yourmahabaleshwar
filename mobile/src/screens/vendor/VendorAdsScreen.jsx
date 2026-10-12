@@ -1,9 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import { confirmHomepageAd, fetchMyHomepageAds, fetchMyVendorListings, fetchVendorAdCatalog, orderHomepageAd } from '../../api/endpoints';
+import VendorPageBand from '../../components/VendorPageBand';
 import { Button, Card, Loading, Screen } from '../../components/ui';
 import { Megaphone } from '../../components/home/icons';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
@@ -80,6 +82,7 @@ function paymentIds(response, order) {
 
 export default function VendorAdsScreen() {
     const { t } = useTranslation();
+    const navigation = useNavigation();
     const { user } = useAuth();
     const allowed = AD_ROLES.has(user?.role);
     const [catalog, setCatalog] = useState(null);
@@ -90,6 +93,10 @@ export default function VendorAdsScreen() {
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
     const [checkout, setCheckout] = useState(null);
+
+    useLayoutEffect(() => {
+        navigation.setOptions({ headerShown: false });
+    }, [navigation]);
 
     const load = useCallback(() => {
         if (!allowed) {
@@ -115,6 +122,7 @@ export default function VendorAdsScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     const options = useMemo(() => listings.map((item) => ({
         key: `${item.vertical}:${item.id || item._id}`,
@@ -202,8 +210,13 @@ export default function VendorAdsScreen() {
         }
     };
 
-    if (!allowed)
-        return (<Screen><Text style={styles.hint}>{t('vendorAds.notAvailable')}</Text></Screen>);
+    if (!allowed) {
+        return (
+            <Screen style={styles.screen}>
+                <VendorPageBand title={t('vendorAds.nav')} line={t('vendorAds.notAvailable')} />
+            </Screen>
+        );
+    }
     if (loading)
         return <Loading />;
 
@@ -219,15 +232,19 @@ export default function VendorAdsScreen() {
         ...options.map((opt) => ({ value: opt.key, label: `${opt.name} (${opt.listingType})` })),
     ];
 
-    return (<Screen>
+    const adCount = ads.length;
+
+    return (<Screen style={styles.screen}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.pageTitle}>{t('vendorAds.title')}</Text>
-        <Text style={styles.subtitle}>{t('vendorAds.subtitle')}</Text>
+        <VendorPageBand
+          title={t('vendorAds.nav')}
+          pill={t(adCount === 1 ? 'vendorAds.pillAdOne' : 'vendorAds.pillAds', { count: adCount })}
+          line={t('vendorAds.subtitle')}
+        />
+        <View style={styles.content}>
         <Card>
           <Text style={styles.slotsLabel}>{t('vendorAds.slotsOpen')}</Text>
           <Text style={styles.slotsValue}>{slotsRemaining}/{maxSlots}</Text>
-        </Card>
-        <Card>
           <Text style={styles.slotsHint}>{t('vendorAds.slotsHint')}</Text>
         </Card>
         <Card>
@@ -253,15 +270,16 @@ export default function VendorAdsScreen() {
             const tone = statusTone(ad.status);
             return (
               <View key={ad._id} style={[styles.ad, index === ads.length - 1 && styles.adLast]}>
-                <View style={styles.adCopy}>
-                  <Text style={styles.adTitle}>{ad.title}</Text>
-                  <Text style={styles.adMeta}>{ad.listingType} · {when(ad.startDate)} → {when(ad.endDate)} · {formatCurrency(ad.amountPaid || 0)}</Text>
+                <View style={styles.adHead}>
+                  <Text style={styles.adTitle} numberOfLines={2}>{ad.title}</Text>
+                  <View style={tone.box}><Text style={tone.text}>{ad.status}</Text></View>
                 </View>
-                <View style={tone.box}><Text style={tone.text}>{ad.status}</Text></View>
+                <Text style={styles.adMeta}>{ad.listingType} · {when(ad.startDate)} → {when(ad.endDate)} · {formatCurrency(ad.amountPaid || 0)}</Text>
               </View>
             );
           })}
         </Card>
+        </View>
       </ScrollView>
       <Modal visible={!!checkout} animationType="slide" onRequestClose={() => setCheckout(null)}>
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -273,26 +291,31 @@ export default function VendorAdsScreen() {
 }
 
 const styles = StyleSheet.create({
+    screen: { padding: 0 },
     scroll: { paddingBottom: 24 },
-    pageTitle: { fontFamily: FONTS.bold, fontSize: 20, color: '#0F172A' },
-    subtitle: { fontFamily: FONTS.regular, fontSize: 14, color: '#64748B', marginTop: 4, marginBottom: 16, lineHeight: 20 },
+    content: { paddingHorizontal: 16, paddingTop: 14 },
     hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 8, lineHeight: 20 },
     slotsLabel: { fontFamily: FONTS.regular, fontSize: 14, color: '#64748B' },
-    slotsValue: { fontFamily: FONTS.bold, fontSize: 30, color: COLORS.primary, marginTop: 8 },
-    slotsHint: { fontFamily: FONTS.regular, fontSize: 14, color: '#475569', lineHeight: 20 },
+    slotsValue: { fontFamily: FONTS.bold, fontSize: 30, color: COLORS.primary, marginTop: 4 },
+    slotsHint: { fontFamily: FONTS.regular, fontSize: 14, color: '#475569', lineHeight: 20, marginTop: 8 },
     buyHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-    cardTitle: { fontFamily: FONTS.semibold, fontSize: 16, color: '#0F172A' },
+    cardTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary, marginBottom: 8 },
     field: { marginBottom: 12 },
     fieldLabel: { fontFamily: FONTS.medium, fontSize: 14, color: '#334155' },
     selectBox: { marginTop: 6, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: RADIUS.input, backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 10 },
     selectText: { fontFamily: FONTS.regular, fontSize: 14, color: '#0F172A' },
     placeholder: { color: '#64748B' },
-    payButton: { alignSelf: 'flex-start', paddingHorizontal: 20 },
+    payButton: {
+        backgroundColor: COLORS.primary,
+        elevation: 0,
+        shadowOpacity: 0,
+        ...Platform.select({ web: { boxShadow: 'none' }, default: {} }),
+    },
     empty: { fontFamily: FONTS.regular, fontSize: 14, color: '#94A3B8', marginTop: 8 },
-    ad: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    ad: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
     adLast: { borderBottomWidth: 0, paddingBottom: 0 },
-    adCopy: { flexGrow: 1, flexShrink: 1, minWidth: 180 },
-    adTitle: { fontFamily: FONTS.medium, fontSize: 16, color: '#0F172A' },
+    adHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+    adTitle: { flex: 1, fontFamily: FONTS.semibold, fontSize: 15, color: '#0F172A' },
     adMeta: { fontFamily: FONTS.regular, fontSize: 12, color: '#64748B', marginTop: 4, lineHeight: 18 },
     badgeOk: { alignSelf: 'flex-start', backgroundColor: '#F0FDF4', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 2 },
     badgeOkText: { fontFamily: FONTS.semibold, fontSize: 12, color: '#15803D' },

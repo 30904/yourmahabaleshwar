@@ -43,6 +43,8 @@
     "signInSubtitle": "तुमच्या बुकिंग्ज व्यवस्थापित करण्यासाठी साइन इन करा",
     "email": "ईमेल",
     "password": "पासवर्ड",
+    "showPassword": "पासवर्ड दाखवा",
+    "hidePassword": "पासवर्ड लपवा",
     "phone": "फोन",
     "fullName": "पूर्ण नाव",
     "confirmPassword": "पासवर्ड पुष्टी करा",

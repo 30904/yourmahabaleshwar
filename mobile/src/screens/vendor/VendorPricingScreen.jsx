@@ -1,12 +1,16 @@
-import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
+import { Alert, Image, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import { fetchMyVendorListing, fetchMyVendorListings, patchVendorListingPrices } from '../../api/endpoints';
-import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
+import { Button, Field, Loading, Muted, Screen } from '../../components/ui';
+import { Hotel } from '../../components/home/icons';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { pricingDraftFromListing, pricingPayloadFromDraft, validatePricingDraft } from '../../utils/vendorPricing';
+import { listingImage } from '../../utils/listing';
+import { useDeviceInsets } from '../../utils/deviceInsets';
 
 const listingKey = (item) => `${item.vertical}-${item.id}`;
 
@@ -48,10 +52,15 @@ export default function VendorPricingScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
     const { user } = useAuth();
+    const insets = useDeviceInsets();
     const [rows, setRows] = useState([]);
     const [drafts, setDrafts] = useState({});
     const [saving, setSaving] = useState({});
     const [loading, setLoading] = useState(true);
+
+    useLayoutEffect(() => {
+        navigation.setOptions({ headerShown: false });
+    }, [navigation]);
 
     const load = useCallback(() => {
         if (!user?.role) {
@@ -85,6 +94,7 @@ export default function VendorPricingScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     const setRowField = (key, field, value, index) => {
         setDrafts((prev) => {
@@ -122,37 +132,94 @@ export default function VendorPricingScreen() {
     if (loading)
         return <Loading />;
 
+    const count = rows.length;
+
     return (
-        <Screen>
-            <ScrollView>
-                <Text style={styles.pageTitle}>{t('vendor.pricing')}</Text>
-                <Text style={styles.hint}>{t('vendor.pricingHint')}</Text>
-                {!rows.length ? (
-                    <Card style={styles.empty}>
+        <Screen style={styles.screen}>
+            <ScrollView contentContainerStyle={styles.page}>
+                <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                    <View style={styles.bandRow}>
+                        <Text style={styles.pageTitle}>{t('vendor.pricing')}</Text>
+                        <View style={styles.countPill}>
+                            <Text style={styles.countPillText}>{t(count === 1 ? 'vendor.pillListingOne' : 'vendor.pillListings', { count })}</Text>
+                        </View>
+                    </View>
+                </View>
+                <Text style={styles.note}>{t('vendor.pricingHint')}</Text>
+                <View style={styles.content}>
+                    {!rows.length ? (
+                    <View style={styles.empty}>
                         <Text style={styles.emptyText}>{t('vendor.noPricingListings')}</Text>
-                        <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')} />
-                    </Card>
-                ) : rows.map((item) => {
+                        <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')} style={styles.saveBtn} />
+                    </View>
+                    ) : rows.map((item) => {
                     const key = listingKey(item);
                     const draft = drafts[key] || {};
+                    const image = listingImage(item);
                     return (
-                        <Card key={key}>
-                            <Text style={styles.cardTitle}>{item.name}</Text>
-                            <Text style={styles.hint}>{t(item.labelKey)}</Text>
+                        <View key={key} style={styles.card}>
+                            <View style={styles.cardMain}>
+                                {image ? (
+                                    <Image source={{ uri: image }} style={styles.thumb} />
+                                ) : (
+                                    <View style={styles.thumbFallback}>
+                                        <Hotel size={26} color={COLORS.primary} strokeWidth={2} />
+                                    </View>
+                                )}
+                                <View style={styles.body}>
+                                    <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                                    <Text style={styles.type} numberOfLines={1}>{t(item.labelKey)}</Text>
+                                </View>
+                            </View>
                             <PricingFields vertical={item.vertical} draft={draft} t={t} onField={(field, value) => setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }))} onRow={(field, index, value) => setRowField(key, field, value, index)} />
-                            <Button title={t('vendor.savePrices')} onPress={() => onSave(item)} loading={!!saving[key]} />
-                        </Card>
+                            <Button title={t('vendor.savePrices')} onPress={() => onSave(item)} loading={!!saving[key]} style={styles.saveBtn} />
+                        </View>
                     );
                 })}
+                </View>
             </ScrollView>
         </Screen>
     );
 }
 
 const styles = StyleSheet.create({
-    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4 },
-    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 4, marginBottom: 8, lineHeight: 20 },
-    cardTitle: { fontFamily: FONTS.semibold, fontSize: 18, color: COLORS.text },
-    empty: { alignItems: 'center' },
+    screen: { padding: 0 },
+    page: { paddingBottom: 24 },
+    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingBottom: 18 },
+    bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    pageTitle: { flex: 1, fontFamily: FONTS.bold, fontSize: 26, color: '#fff', letterSpacing: -0.4 },
+    countPill: { backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+    countPillText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary },
+    note: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, lineHeight: 20, paddingHorizontal: 16, paddingTop: 12 },
+    content: { paddingHorizontal: 16, paddingTop: 4 },
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 12,
+        marginTop: 12,
+    },
+    cardMain: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+    thumb: { width: 72, height: 72, borderRadius: 12, backgroundColor: COLORS.primarySoft },
+    thumbFallback: {
+        width: 72,
+        height: 72,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    body: { flex: 1, justifyContent: 'center' },
+    name: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.text },
+    type: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 4 },
+    saveBtn: {
+        backgroundColor: COLORS.primary,
+        borderRadius: 8,
+        elevation: 0,
+        shadowOpacity: 0,
+        ...Platform.select({ web: { boxShadow: 'none' }, default: {} }),
+    },
+    empty: { alignItems: 'center', paddingVertical: 28, backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, marginTop: 12, paddingHorizontal: 16 },
     emptyText: { fontFamily: FONTS.medium, fontSize: 15, color: COLORS.muted, textAlign: 'center', marginBottom: 8 },
 });

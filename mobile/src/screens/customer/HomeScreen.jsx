@@ -4,7 +4,6 @@ import { useNavigation } from '@react-navigation/native';
 import HomeHeader from '../../components/home/HomeHeader';
 import HomeHero from '../../components/home/HomeHero';
 import { HomeCategoryStrip, HomeDeals, HomeDestinations, HomePromo, HomePropertyTabs, HomeServices, HomeWhyBook } from '../../components/home/HomeSections';
-import HomeFooter from '../../components/home/HomeFooter';
 import { Screen } from '../../components/ui';
 
 export default function HomeScreen() {
@@ -21,7 +20,6 @@ export default function HomeScreen() {
                 <HomeDestinations navigation={navigation} />
                 <HomeServices navigation={navigation} />
                 <HomeWhyBook />
-                <HomeFooter bleed={0} />
             </ScrollView>
             </HomeHeader>
         </Screen>

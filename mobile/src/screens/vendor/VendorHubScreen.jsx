@@ -3,7 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { fetchMyVendorListings, fetchVendorReviews, getMyKyc, getMySubscription, getWallet, vendorBookings } from '../../api/endpoints';
+import { useReconnect } from '../../api/useReconnect';
 import HomeHeader from '../../components/home/HomeHeader';
+import { Building2, Calendar, CalendarDays, Car, CreditCard, FileText, Home, Languages, Megaphone, ShoppingBag, Star, Tag, Tent, Trees, Wallet } from '../../components/home/icons';
 import { Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -20,6 +22,17 @@ const LISTING_LABEL = {
     DRIVER: 'vendor.navDriver',
     HORSE_OPERATOR: 'vendor.navHorses',
     PRODUCT_VENDOR: 'vendor.navProducts',
+};
+
+const LISTING_ICON = {
+    HOTEL_VENDOR: Building2,
+    HOMESTAY_VENDOR: Home,
+    TENT_OPERATOR: Tent,
+    GUIDE: Languages,
+    TAXI_OPERATOR: Car,
+    DRIVER: Car,
+    HORSE_OPERATOR: Trees,
+    PRODUCT_VENDOR: ShoppingBag,
 };
 
 const DASH_TITLE = {
@@ -44,13 +57,6 @@ function startOfDay(value) {
     if (Number.isNaN(date.getTime())) return null;
     date.setHours(0, 0, 0, 0);
     return date;
-}
-
-function greetingKey(date = new Date()) {
-    const hour = date.getHours();
-    if (hour < 12) return 'vendor.goodMorning';
-    if (hour < 17) return 'vendor.goodAfternoon';
-    return 'vendor.goodEvening';
 }
 
 function moneyOf(rows) {
@@ -108,6 +114,7 @@ export default function VendorHubScreen() {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+    useReconnect(load);
 
     if (loading) return <Loading />;
 
@@ -143,7 +150,6 @@ export default function VendorHubScreen() {
     const balance = wallet?.user?.walletBalance ?? subscription?.walletBalance ?? 0;
     const points = wallet?.user?.pointBalance ?? subscription?.pointBalance ?? 0;
     const kycStatus = String(kyc?.status || 'PENDING').toUpperCase();
-    const displayName = String(user?.name || '').trim();
     const awaitingAmount = moneyOf(awaiting);
 
     const alerts = [
@@ -154,107 +160,146 @@ export default function VendorHubScreen() {
     ].filter(Boolean);
 
     const manage = [
-        { title: t(LISTING_LABEL[role] || 'vendor.listings'), onPress: () => navigation.navigate('VendorListings') },
-        { title: t('vendor.pricing'), onPress: () => navigation.navigate('VendorPricing') },
-        { title: t('nav.bookings'), onPress: () => navigation.navigate('Bookings') },
-        AVAILABILITY_ROLES.includes(role) ? { title: t('vendor.availability'), onPress: () => navigation.navigate('VendorAvailability') } : null,
+        { title: t(LISTING_LABEL[role] || 'vendor.listings'), Icon: LISTING_ICON[role] || Building2, onPress: () => navigation.navigate('VendorListings') },
+        { title: t('vendor.pricing'), Icon: Tag, onPress: () => navigation.navigate('VendorPricing') },
+        { title: t('nav.bookings'), Icon: Calendar, onPress: () => navigation.navigate('Bookings') },
+        AVAILABILITY_ROLES.includes(role) ? { title: t('vendor.availability'), Icon: CalendarDays, onPress: () => navigation.navigate('VendorAvailability') } : null,
         STAY_SUBSCRIPTION.includes(role) || SERVICE_SUBSCRIPTION.includes(role)
-            ? { title: STAY_SUBSCRIPTION.includes(role) ? t('staySubscription.nav') : t('serviceSubscription.title'), onPress: () => navigation.navigate('VendorSubscription') }
+            ? { title: STAY_SUBSCRIPTION.includes(role) ? t('staySubscription.nav') : t('serviceSubscription.title'), Icon: CreditCard, onPress: () => navigation.navigate('VendorSubscription') }
             : null,
-        AD_ROLES.includes(role) ? { title: t('vendorAds.nav'), onPress: () => navigation.navigate('VendorAds') } : null,
-        { title: t('vendor.reviews'), onPress: () => navigation.navigate('VendorReviews') },
-        { title: t('nav.wallet'), onPress: () => navigation.navigate('Wallet') },
-        { title: t('nav.kyc'), onPress: () => navigation.navigate('VendorKyc') },
+        AD_ROLES.includes(role) ? { title: t('vendorAds.nav'), Icon: Megaphone, onPress: () => navigation.navigate('VendorAds') } : null,
+        { title: t('vendor.reviews'), Icon: Star, onPress: () => navigation.navigate('VendorReviews') },
+        { title: t('nav.wallet'), Icon: Wallet, onPress: () => navigation.navigate('Wallet') },
+        { title: t('nav.kyc'), Icon: FileText, onPress: () => navigation.navigate('VendorKyc') },
     ].filter(Boolean);
+
+    const openBookings = () => navigation.navigate('Bookings');
+    const openWallet = () => navigation.navigate('Wallet');
+    const moneyTiles = [
+        { key: 'all', label: t('vendor.allTime'), value: formatCurrency(moneyOf(paid)), onPress: openBookings },
+        { key: 'wait', label: t('vendor.awaitingPayment'), value: formatCurrency(awaitingAmount), onPress: openBookings },
+        { key: 'balance', label: t('vendor.balance'), value: formatCurrency(balance), onPress: openWallet },
+        { key: 'points', label: t('vendor.pointsShort'), value: String(points), onPress: openWallet },
+    ];
+    const bookingStats = [
+        { key: 'today', label: t('vendor.today'), value: String(todayCount), hint: `${t('vendor.upcoming')} · ${upcomingCount}` },
+        { key: 'pending', label: t('vendor.pending'), value: String(pending.length), hot: pending.length > 0 },
+        { key: 'confirmed', label: t('vendor.confirmed'), value: String(confirmed.length) },
+        { key: 'completed', label: t('vendor.completed'), value: String(completed), hint: `${t('vendor.cancelled')} · ${cancelled}` },
+    ];
 
     return (
         <Screen style={styles.screen}>
             <HomeHeader navigation={navigation}>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
-                <Text style={styles.hello}>{t(greetingKey())}{displayName ? `, ${displayName}` : ''}</Text>
-                <Text style={styles.pageTitle}>{t(DASH_TITLE[role] || 'vendor.overview')}</Text>
+                <View style={styles.band}>
+                    <Text style={styles.pageTitle}>{t(DASH_TITLE[role] || 'vendor.overview')}</Text>
+                    <Text style={styles.monthLabel}>{t('vendor.thisMonth')} · {t('vendor.collected')}</Text>
+                    <Text style={styles.monthValue}>{formatCurrency(moneyOf(paidThisMonth))}</Text>
+                </View>
 
-                {alerts.length ? (
-                    <View style={styles.alerts}>
-                        <Text style={styles.section}>{t('vendor.needsAction')}</Text>
-                        {alerts.map((alert) => (
-                            <Pressable key={alert.key} onPress={alert.onPress} style={[styles.alert, styles[`alert_${alert.tone}`]]}>
-                                <Text style={[styles.alertText, styles[`alertText_${alert.tone}`]]}>{alert.text}</Text>
-                                <Text style={[styles.chevron, styles[`alertText_${alert.tone}`]]}>›</Text>
+                <View style={styles.body}>
+                    {alerts.length ? (
+                        <View style={styles.listCard}>
+                            <Text style={styles.cardTitle}>{t('vendor.needsAction')}</Text>
+                            {alerts.map((alert, index) => (
+                                <Pressable
+                                    key={alert.key}
+                                    onPress={alert.onPress}
+                                    style={[styles.menu, index < alerts.length - 1 && styles.menuBorder]}
+                                >
+                                    <Text style={styles.menuText}>{alert.text}</Text>
+                                    <Text style={styles.chevron}>›</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    ) : null}
+
+                    <View style={styles.tileGrid}>
+                        {moneyTiles.map((tile) => (
+                            <Pressable key={tile.key} style={styles.tileWrap} onPress={tile.onPress}>
+                                <View style={styles.tile}>
+                                    <Text style={styles.tileLabel} numberOfLines={1}>{tile.label}</Text>
+                                    <Text style={styles.tileValue} numberOfLines={1}>{tile.value}</Text>
+                                </View>
                             </Pressable>
                         ))}
                     </View>
-                ) : null}
 
-                <Pressable onPress={() => navigation.navigate('Wallet')} style={styles.hero}>
-                    <Text style={styles.heroLabel}>{t('vendor.thisMonth')} · {t('vendor.collected')}</Text>
-                    <Text style={styles.heroValue}>{formatCurrency(moneyOf(paidThisMonth))}</Text>
-                    <Text style={styles.heroSub}>{t('vendor.allTime')} {formatCurrency(moneyOf(paid))}</Text>
-                    {awaitingAmount > 0 ? <Text style={styles.heroWait}>{t('vendor.awaitingPayment')} {formatCurrency(awaitingAmount)}</Text> : null}
-                    <View style={styles.heroSplit}>
-                        <View style={styles.heroCell}>
-                            <Text style={styles.heroCellLabel}>{t('vendor.balance')}</Text>
-                            <Text style={styles.heroCellValue}>{formatCurrency(balance)}</Text>
-                        </View>
-                        <View style={styles.heroDivider} />
-                        <View style={styles.heroCell}>
-                            <Text style={styles.heroCellLabel}>{t('vendor.pointsShort')}</Text>
-                            <Text style={styles.heroCellValue}>{points}</Text>
+                    <View style={styles.listCard}>
+                        <Text style={styles.cardTitle}>{t('nav.bookings')}</Text>
+                        <View style={styles.statRow}>
+                            {bookingStats.map((stat) => (
+                                <Pressable key={stat.key} style={[styles.stat, stat.hot && styles.statHot]} onPress={openBookings}>
+                                    <Text style={styles.statLabel} numberOfLines={1}>{stat.label}</Text>
+                                    <Text style={[styles.statValue, stat.hot && styles.statValueHot]}>{stat.value}</Text>
+                                    <Text style={styles.statHint} numberOfLines={2}>{stat.hint || ' '}</Text>
+                                </Pressable>
+                            ))}
                         </View>
                     </View>
-                </Pressable>
 
-                <Text style={styles.section}>{t('nav.bookings')}</Text>
-                <View style={styles.grid}>
-                    <Kpi label={t('vendor.today')} value={String(todayCount)} hint={t('vendor.upcoming')} hintValue={String(upcomingCount)} onPress={() => navigation.navigate('Bookings')} />
-                    <Kpi label={t('vendor.pending')} value={String(pending.length)} hot={pending.length > 0} onPress={() => navigation.navigate('Bookings')} />
-                    <Kpi label={t('vendor.confirmed')} value={String(confirmed.length)} onPress={() => navigation.navigate('Bookings')} />
-                    <Kpi label={t('vendor.completed')} value={String(completed)} hint={t('vendor.cancelled')} hintValue={String(cancelled)} onPress={() => navigation.navigate('Bookings')} />
-                </View>
+                    <View style={styles.listCard}>
+                        <Text style={styles.cardTitle}>{t('vendor.business')}</Text>
+                        <View style={styles.health}>
+                            <Pressable style={styles.healthCell} onPress={() => navigation.navigate('VendorListings')}>
+                                <Text style={styles.healthValue}>{liveListings}</Text>
+                                <Text style={styles.healthLabel}>{t('vendor.liveListings')}</Text>
+                            </Pressable>
+                            <Pressable style={styles.healthCell} onPress={() => navigation.navigate('VendorReviews')}>
+                                <Text style={styles.healthValue}>{rating == null ? '—' : rating.toFixed(1)}</Text>
+                                <Text style={styles.healthLabel}>{rating == null ? t('vendor.noReviewsYet') : t('vendor.reviewsCount', { count: reviewTotal })}</Text>
+                            </Pressable>
+                        </View>
+                    </View>
 
-                <Text style={styles.section}>{t('vendor.business')}</Text>
-                <View style={styles.health}>
-                    <Pressable style={styles.healthCell} onPress={() => navigation.navigate('VendorListings')}>
-                        <Text style={styles.healthValue}>{liveListings}</Text>
-                        <Text style={styles.healthLabel}>{t('vendor.liveListings')}</Text>
-                    </Pressable>
-                    <Pressable style={styles.healthCell} onPress={() => navigation.navigate('VendorReviews')}>
-                        <Text style={styles.healthValue}>{rating == null ? '—' : rating.toFixed(1)}</Text>
-                        <Text style={styles.healthLabel}>{rating == null ? t('vendor.noReviewsYet') : t('vendor.reviewsCount', { count: reviewTotal })}</Text>
-                    </Pressable>
-                </View>
+                    <View style={styles.listCard}>
+                        <Text style={styles.cardTitle}>{t('vendor.nextUp')}</Text>
+                        {!comingUp.length ? <Text style={styles.empty}>{t('vendor.noUpcoming')}</Text> : comingUp.map(({ booking, day }, index) => (
+                            <Pressable key={booking._id} onPress={openBookings} style={[styles.row, index < comingUp.length - 1 && styles.menuBorder]}>
+                                <View style={styles.dateBox}>
+                                    <Text style={styles.dateDay}>{day.getDate()}</Text>
+                                    <Text style={styles.dateMonth}>{day.toLocaleDateString('en-IN', { month: 'short' })}</Text>
+                                </View>
+                                <View style={styles.rowBody}>
+                                    <Text style={styles.rowTitle} numberOfLines={1}>{guestName(booking, t('vendor.guest'))}</Text>
+                                    <Text style={styles.rowMeta} numberOfLines={1}>{listingName(booking) || booking.type}</Text>
+                                </View>
+                                <View style={[styles.pill, booking.status === 'PENDING' ? styles.pillWarn : styles.pillOk]}>
+                                    <Text style={[styles.pillText, booking.status === 'PENDING' ? styles.pillTextWarn : styles.pillTextOk]}>
+                                        {t(booking.status === 'PENDING' ? 'vendor.pending' : 'vendor.confirmed')}
+                                    </Text>
+                                </View>
+                            </Pressable>
+                        ))}
+                    </View>
 
-                <Text style={styles.section}>{t('vendor.nextUp')}</Text>
-                <View style={styles.listCard}>
-                    {!comingUp.length ? <Text style={styles.empty}>{t('vendor.noUpcoming')}</Text> : comingUp.map(({ booking, day }) => (
-                        <Pressable key={booking._id} onPress={() => navigation.navigate('Bookings')} style={styles.row}>
-                            <View style={styles.dateBox}>
-                                <Text style={styles.dateDay}>{day.getDate()}</Text>
-                                <Text style={styles.dateMonth}>{day.toLocaleDateString('en-IN', { month: 'short' })}</Text>
-                            </View>
-                            <View style={styles.rowBody}>
-                                <Text style={styles.rowTitle} numberOfLines={1}>{guestName(booking, t('vendor.guest'))}</Text>
-                                <Text style={styles.rowMeta} numberOfLines={1}>{listingName(booking) || booking.type}</Text>
-                            </View>
-                            <View style={[styles.pill, booking.status === 'PENDING' ? styles.pillWarn : styles.pillOk]}>
-                                <Text style={[styles.pillText, booking.status === 'PENDING' ? styles.pillTextWarn : styles.pillTextOk]}>
-                                    {t(booking.status === 'PENDING' ? 'vendor.pending' : 'vendor.confirmed')}
-                                </Text>
-                            </View>
-                        </Pressable>
-                    ))}
-                </View>
-
-                <Text style={styles.section}>{t('vendor.manage')}</Text>
-                <View style={styles.grid}>
-                    {manage.map((item) => (
-                        <Pressable key={item.title} onPress={item.onPress} style={styles.manageItem}>
-                            <View style={styles.manageCard}>
-                                <Text style={styles.manageText}>{item.title}</Text>
-                                <Text style={styles.chevron}>›</Text>
-                            </View>
-                        </Pressable>
-                    ))}
+                    <View style={styles.listCard}>
+                        <Text style={styles.cardTitle}>{t('vendor.manage')}</Text>
+                        {Array.from({ length: Math.ceil(manage.length / 3) }, (_, rowIndex) => {
+                            const row = manage.slice(rowIndex * 3, rowIndex * 3 + 3);
+                            return (
+                                <View key={row[0].title} style={[styles.manageRow, rowIndex > 0 && styles.manageTileTop]}>
+                                    {row.map((item, index) => {
+                                        const Icon = item.Icon;
+                                        return (
+                                            <Pressable
+                                                key={item.title}
+                                                onPress={item.onPress}
+                                                style={[styles.manageTile, index < row.length - 1 && styles.manageTileRight]}
+                                            >
+                                                <Icon size={22} color={COLORS.primary} strokeWidth={2} />
+                                                <Text style={styles.manageLabel} numberOfLines={2}>{item.title}</Text>
+                                            </Pressable>
+                                        );
+                                    })}
+                                    {Array.from({ length: 3 - row.length }, (_, spacer) => (
+                                        <View key={`spacer-${spacer}`} style={styles.manageTile} />
+                                    ))}
+                                </View>
+                            );
+                        })}
+                    </View>
                 </View>
             </ScrollView>
             </HomeHeader>
@@ -262,59 +307,47 @@ export default function VendorHubScreen() {
     );
 }
 
-function Kpi({ label, value, hint, hintValue, hot, onPress }) {
-    return (
-        <Pressable onPress={onPress} style={styles.kpi}>
-            <View style={[styles.kpiCard, hot && styles.kpiCardHot]}>
-                <Text style={styles.kpiLabel}>{label}</Text>
-                <Text style={[styles.kpiValue, hot && styles.kpiValueHot]}>{value}</Text>
-                {hint ? <Text style={styles.kpiHint}>{hint} · {hintValue}</Text> : <Text style={styles.kpiHint}> </Text>}
-            </View>
-        </Pressable>
-    );
-}
-
 const styles = StyleSheet.create({
     screen: { padding: 0 },
     scroll: { flex: 1 },
-    page: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
-    hello: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.muted },
-    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4, marginTop: 2, marginBottom: 14 },
-    section: { fontFamily: FONTS.semibold, fontSize: 13, color: '#64748B', letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 8, marginTop: 4 },
-    alerts: { marginBottom: 12 },
-    alert: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8 },
-    alert_warn: { backgroundColor: '#FFF7ED', borderColor: '#FDBA74' },
-    alert_bad: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
-    alert_info: { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
-    alertText: { flex: 1, fontFamily: FONTS.medium, fontSize: 14, lineHeight: 20 },
-    alertText_warn: { color: '#9A3412' },
-    alertText_bad: { color: '#991B1B' },
-    alertText_info: { color: '#1E40AF' },
-    hero: { backgroundColor: '#DBEAFE', borderWidth: 1, borderColor: '#93C5FD', borderRadius: 18, padding: 18, marginBottom: 16 },
-    heroLabel: { fontFamily: FONTS.medium, fontSize: 13, color: '#1E3A8A' },
-    heroValue: { fontFamily: FONTS.bold, fontSize: 32, color: COLORS.text, marginTop: 4, letterSpacing: -0.6 },
-    heroSub: { fontFamily: FONTS.regular, fontSize: 13, color: '#1E3A8A', marginTop: 4 },
-    heroWait: { fontFamily: FONTS.semibold, fontSize: 13, color: '#B45309', marginTop: 8 },
-    heroSplit: { flexDirection: 'row', marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#93C5FD' },
-    heroCell: { flex: 1 },
-    heroDivider: { width: 1, backgroundColor: '#93C5FD', marginHorizontal: 12 },
-    heroCellLabel: { fontFamily: FONTS.regular, fontSize: 12, color: '#1E3A8A' },
-    heroCellValue: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.text, marginTop: 2 },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5, marginBottom: 8 },
-    kpi: { width: '50%', padding: 5 },
-    kpiCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14, minHeight: 92 },
-    kpiCardHot: { backgroundColor: '#FFF7ED', borderColor: '#FDBA74' },
-    kpiLabel: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.muted },
-    kpiValue: { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary, marginTop: 2 },
-    kpiValueHot: { color: COLORS.warning },
-    kpiHint: { fontFamily: FONTS.regular, fontSize: 12, color: '#64748B', marginTop: 2 },
-    health: { flexDirection: 'row', marginHorizontal: -5, marginBottom: 12 },
-    healthCell: { flex: 1, marginHorizontal: 5, backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, padding: 14 },
+    page: { paddingBottom: 16 },
+    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 18 },
+    pageTitle: { fontFamily: FONTS.bold, fontSize: 26, color: '#fff', letterSpacing: -0.4, marginTop: 4 },
+    monthLabel: { fontFamily: FONTS.medium, fontSize: 13, color: '#DBEAFE', marginTop: 14 },
+    monthValue: { fontFamily: FONTS.bold, fontSize: 32, color: '#fff', letterSpacing: -0.6, marginTop: 2 },
+    body: { paddingHorizontal: 16, paddingTop: 16 },
+    listCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 0, overflow: 'hidden', marginBottom: 16 },
+    cardTitle: {
+        fontFamily: FONTS.bold,
+        fontSize: 16,
+        color: COLORS.primary,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    menu: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+    menuBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    menuText: { flex: 1, fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.text, marginRight: 8 },
+    chevron: { fontFamily: FONTS.semibold, fontSize: 22, color: COLORS.muted },
+    tileGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4, marginBottom: 8 },
+    tileWrap: { width: '50%', padding: 4 },
+    tile: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 0, paddingHorizontal: 12, paddingVertical: 12, minHeight: 72 },
+    tileLabel: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.muted },
+    tileValue: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginTop: 4 },
+    statRow: { flexDirection: 'row', gap: 6, padding: 12 },
+    stat: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 0, paddingHorizontal: 6, paddingVertical: 10, minHeight: 84 },
+    statHot: { backgroundColor: '#FFF7ED', borderColor: '#FDBA74' },
+    statLabel: { fontFamily: FONTS.medium, fontSize: 11, color: COLORS.muted },
+    statValue: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.primary, marginTop: 2 },
+    statValueHot: { color: COLORS.warning },
+    statHint: { fontFamily: FONTS.regular, fontSize: 10, color: '#64748B', marginTop: 2 },
+    health: { flexDirection: 'row', gap: 8, padding: 12 },
+    healthCell: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 0, padding: 14 },
     healthValue: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.text },
     healthLabel: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.muted, marginTop: 4 },
-    listCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, marginBottom: 14, overflow: 'hidden' },
     empty: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, padding: 16 },
-    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12 },
     dateBox: { width: 46, alignItems: 'center', marginRight: 10 },
     dateDay: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, lineHeight: 20 },
     dateMonth: { fontFamily: FONTS.medium, fontSize: 11, color: '#64748B', textTransform: 'uppercase' },
@@ -327,8 +360,16 @@ const styles = StyleSheet.create({
     pillText: { fontFamily: FONTS.semibold, fontSize: 11 },
     pillTextWarn: { color: '#9A3412' },
     pillTextOk: { color: '#166534' },
-    manageItem: { width: '50%', padding: 5 },
-    manageCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 16, minHeight: 64 },
-    manageText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primary, flex: 1 },
-    chevron: { fontFamily: FONTS.semibold, fontSize: 20, color: COLORS.muted, marginLeft: 6 },
+    manageRow: { flexDirection: 'row' },
+    manageTile: {
+        flex: 1,
+        minHeight: 96,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 14,
+    },
+    manageTileRight: { borderRightWidth: 1, borderRightColor: COLORS.border },
+    manageTileTop: { borderTopWidth: 1, borderTopColor: COLORS.border },
+    manageLabel: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.text, textAlign: 'center', marginTop: 8 },
 });

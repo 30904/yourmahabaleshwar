@@ -13,15 +13,17 @@ const listMyStayProperties = (forcedType) => async (req, res) => {
   const filter = req.user.role === ROLES.SUPER_ADMIN ? {} : { vendor: req.user._id };
   if (requested === 'HOTEL' || requested === 'RESORT') filter.type = requested;
   const hotels = await Hotel.find(filter).sort('-createdAt').limit(200);
-  const rooms = await Room.find({ hotel: { $in: hotels.map((h) => h._id) } }).select('hotel basePrice');
+  const rooms = await Room.find({ hotel: { $in: hotels.map((h) => h._id) } }).select('hotel basePrice images');
   const minByHotel = {};
+  const imageByHotel = {};
   rooms.forEach((room) => {
     const key = String(room.hotel);
     if (minByHotel[key] == null || room.basePrice < minByHotel[key]) minByHotel[key] = room.basePrice;
+    if (!imageByHotel[key] && room.images?.[0]) imageByHotel[key] = room.images[0];
   });
   return success(
     res,
-    hotels.map((hotel) => mapHotelMine(hotel, minByHotel[String(hotel._id)]))
+    hotels.map((hotel) => mapHotelMine(hotel, minByHotel[String(hotel._id)], imageByHotel[String(hotel._id)]))
   );
 };
 

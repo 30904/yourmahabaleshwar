@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { addWishlist, createBooking, fetchReviews, getBySlug, getWishlist, removeWishlist } from '../../api/endpoints';
+import { loadPublic } from '../../api/publicCache';
 import DriverRateChart, { DRIVER_PACKAGES, driverPackagePrice } from '../../components/DriverRateChart';
 import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../components/HorseRateChart';
 import GuideRateChart, { GUIDE_CHART_PACKAGES, guideChartPrice } from '../../components/GuideRateChart';
 import TaxiRateChart, { taxiChartPrice } from '../../components/TaxiRateChart';
-import HomeFooter from '../../components/home/HomeFooter';
 import StayGuestForm from '../../components/booking/StayGuestForm';
 import { DateField, FormHeader, RadioChoices, TermsCard, TimeField } from '../../components/booking/formChrome';
+import { useConfirm } from '../../components/confirm';
 import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -68,6 +69,7 @@ function Choice({ selected, onPress, title, detail }) {
 }
 export default function ListingDetailScreen({ route, navigation }) {
     const { t } = useTranslation();
+    const confirm = useConfirm();
     const { user } = useAuth();
     const { path, slug, type } = route.params;
     const [item, setItem] = useState(null);
@@ -121,26 +123,46 @@ export default function ListingDetailScreen({ route, navigation }) {
             navigation.replace('ServiceBook', { type });
             return;
         }
-        getBySlug(path, slug)
-            .then((data) => {
+        let alive = true;
+        const job = loadPublic(`listing:${path}:${slug}`, () => getBySlug(path, slug), (data) => {
+            if (!alive) return;
             const stay = data?.hotel ? { ...data.hotel, rooms: data.rooms || data.hotel.rooms || [] } : data;
             setItem(stay);
             const firstRoom = stay?.rooms?.[0];
-            if (firstRoom?._id) setRoomId(firstRoom._id);
-        })
-            .catch(() => setItem(null))
-            .finally(() => setLoading(false));
+            if (firstRoom?._id) setRoomId((current) => current || firstRoom._id);
+            setLoading(false);
+        });
+        job.catch(() => {
+            if (alive) setItem(null);
+        }).finally(() => {
+            if (alive) setLoading(false);
+        });
+        return () => {
+            alive = false;
+            job.cancel();
+        };
     }, [path, slug, openService, navigation, type]);
     useEffect(() => {
         setShowForm(false);
         setPhotoIndex(0);
         setDetailTab('overview');
         setReviews([]);
+        setRoomId('');
     }, [slug]);
     useEffect(() => {
         if (!item?._id || !['HOTEL', 'RESORT', 'HOMESTAY', 'TENT'].includes(type)) return;
         const listingType = type === 'HOMESTAY' ? 'HOMESTAY' : type === 'TENT' ? 'TENT' : (item.type === 'RESORT' || type === 'RESORT' ? 'RESORT' : 'HOTEL');
-        fetchReviews(listingType, item._id).then(setReviews).catch(() => setReviews([]));
+        let alive = true;
+        const job = loadPublic(`reviews:${listingType}:${item._id}`, () => fetchReviews(listingType, item._id), (rows) => {
+            if (alive) setReviews(rows || []);
+        });
+        job.catch(() => {
+            if (alive) setReviews([]);
+        });
+        return () => {
+            alive = false;
+            job.cancel();
+        };
     }, [item?._id, item?.type, type]);
     useEffect(() => {
         if (!user) return;
@@ -166,8 +188,23 @@ export default function ListingDetailScreen({ route, navigation }) {
         }
         try {
             if (saved) {
-                await removeWishlist(item._id, type);
-                setSaved(false);
+                confirm({
+                    title: t('account.removeListing'),
+                    message: t('account.removeSavedAsk'),
+                    cancelText: t('common.cancel'),
+                    confirmText: t('account.removeListing'),
+                    destructive: true,
+                    onConfirm: async () => {
+                        try {
+                            await removeWishlist(item._id, type);
+                            setSaved(false);
+                        }
+                        catch (error) {
+                            Alert.alert(t('common.error'), error.response?.data?.message || error.message);
+                        }
+                    },
+                });
+                return;
             }
             else {
                 await addWishlist(item._id, type);
@@ -812,7 +849,6 @@ export default function ListingDetailScreen({ route, navigation }) {
           </View>
         ) : null}
         </View>
-        <HomeFooter bleed={0} />
       </ScrollView>
     </Screen>);
 }

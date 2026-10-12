@@ -6,7 +6,6 @@ import DriverRateChart, { DRIVER_PACKAGES, driverPackagePrice } from '../../comp
 import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../components/HorseRateChart';
 import GuideRateChart, { GUIDE_CHART_PACKAGES, GUIDE_TOURS, guideChartPrice } from '../../components/GuideRateChart';
 import TaxiRateChart, { TAXI_CARS, TAXI_COASTAL, TAXI_ROUTES, TAXI_TOURS, taxiChartPrice } from '../../components/TaxiRateChart';
-import HomeFooter from '../../components/home/HomeFooter';
 import { DateField, FormHeader, RadioChoices, SelectField, TermsCard, TimeField } from '../../components/booking/formChrome';
 import { Button, Card, Field, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
@@ -408,7 +407,6 @@ export default function ServiceBookScreen({ route, navigation }) {
                     />
                     <Button title={t('serviceBooking.submitRequest')} onPress={submit} loading={submitting} />
                 </View>
-                <HomeFooter bleed={0} />
             </ScrollView>
         </Screen>
     );

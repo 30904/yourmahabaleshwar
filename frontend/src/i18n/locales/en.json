@@ -43,6 +43,8 @@
     "signInSubtitle": "Sign in to manage your bookings",
     "email": "Email",
     "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "phone": "Phone",
     "fullName": "Full Name",
     "confirmPassword": "Confirm Password",

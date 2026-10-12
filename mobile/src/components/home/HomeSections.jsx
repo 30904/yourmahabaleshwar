@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BadgeCheck, Car, CarTaxiFront, Clock, CreditCard, Gift, Headphones, Home, Hotel, Languages, Shield, Star, Tent, Trees, Users } from './icons';
 import { useTranslation } from 'react-i18next';
 import { listCatalog } from '../../api/endpoints';
+import { loadPublic } from '../../api/publicCache';
 import { Button } from '../ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import ListingCard from '../ListingCard';
@@ -28,9 +29,9 @@ const DEALS = [
 ];
 
 const TABS = [
-    { id: 'hotels', labelKey: 'home.propertyTabs.topHotels', category: 'hotels', path: '/hotels', type: 'HOTEL', params: { type: 'HOTEL', limit: 3, featured: 'true' } },
-    { id: 'resorts', labelKey: 'home.propertyTabs.luxuryResorts', category: 'resorts', path: '/hotels', type: 'RESORT', params: { type: 'RESORT', limit: 3, featured: 'true' } },
-    { id: 'tents', labelKey: 'home.propertyTabs.uniqueStays', category: 'tents', path: '/tents', type: 'TENT', params: { limit: 3 } },
+    { id: 'hotels', labelKey: 'home.propertyTabs.topHotels', category: 'hotels', path: '/hotels', type: 'HOTEL', params: { type: 'HOTEL', limit: 8, featured: 'true' } },
+    { id: 'resorts', labelKey: 'home.propertyTabs.luxuryResorts', category: 'resorts', path: '/hotels', type: 'RESORT', params: { type: 'RESORT', limit: 8, featured: 'true' } },
+    { id: 'tents', labelKey: 'home.propertyTabs.uniqueStays', category: 'tents', path: '/tents', type: 'TENT', params: { limit: 8 } },
 ];
 
 const DESTINATIONS = [
@@ -84,15 +85,17 @@ export function HomeDeals({ navigation }) {
                 linkLabel={t('home.deals.seeAll')}
                 onPress={() => openCategory(navigation, t, 'hotels')}
             />
-            {DEALS.map((deal) => (
-                <Pressable key={deal.id} style={[styles.deal, { backgroundColor: deal.colors[0] }]} onPress={() => openCategory(navigation, t, 'hotels')}>
-                    <Text style={styles.dealSpark}>✦</Text>
-                    <Text style={styles.dealDiscount}>{t(`home.deals.${deal.id}.discount`)}</Text>
-                    <Text style={styles.dealTitle}>{t(`home.deals.${deal.id}.title`)}</Text>
-                    <Text style={styles.dealDesc}>{t(`home.deals.${deal.id}.desc`)}</Text>
-                    <Text style={styles.dealCta}>{t('home.deals.bookNow')} →</Text>
-                </Pressable>
-            ))}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+                {DEALS.map((deal) => (
+                    <Pressable key={deal.id} style={[styles.deal, { backgroundColor: deal.colors[0] }]} onPress={() => openCategory(navigation, t, 'hotels')}>
+                        <Text style={styles.dealSpark}>✦</Text>
+                        <Text style={styles.dealDiscount}>{t(`home.deals.${deal.id}.discount`)}</Text>
+                        <Text style={styles.dealTitle}>{t(`home.deals.${deal.id}.title`)}</Text>
+                        <Text style={styles.dealDesc}>{t(`home.deals.${deal.id}.desc`)}</Text>
+                        <Text style={styles.dealCta}>{t('home.deals.bookNow')} →</Text>
+                    </Pressable>
+                ))}
+            </ScrollView>
         </View>
     );
 }
@@ -106,20 +109,22 @@ export function HomePropertyTabs({ navigation }) {
 
     useEffect(() => {
         let alive = true;
+        let showed = false;
         setLoading(true);
-        setItems([]);
-        listCatalog(tab.path, tab.params)
-            .then((data) => {
-                if (alive) setItems(catalogItems(data).slice(0, 3));
-            })
-            .catch(() => {
-                if (alive) setItems([]);
-            })
-            .finally(() => {
-                if (alive) setLoading(false);
-            });
+        const job = loadPublic(`catalog:${tab.path}:${JSON.stringify(tab.params || {})}`, () => listCatalog(tab.path, tab.params), (data) => {
+            if (!alive) return;
+            showed = true;
+            setItems(catalogItems(data).slice(0, 8));
+            setLoading(false);
+        });
+        job.catch(() => {
+            if (alive && !showed) setItems([]);
+        }).finally(() => {
+            if (alive) setLoading(false);
+        });
         return () => {
             alive = false;
+            job.cancel();
         };
     }, [tab]);
 
@@ -144,16 +149,17 @@ export function HomePropertyTabs({ navigation }) {
             </View>
             {loading ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 16 }} /> : null}
             {!loading && !items.length ? <Text style={styles.empty}>{t('common.empty')}</Text> : null}
-            <View style={styles.propertyList}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
                 {items.map((item) => (
                     <ListingCard
                         key={item._id || item.slug}
                         item={item}
                         type={tab.type}
+                        style={styles.propertyCard}
                         onPress={() => navigation.navigate('ListingDetail', { path: tab.path, slug: item.slug, type: tab.type })}
                     />
                 ))}
-            </View>
+            </ScrollView>
         </View>
     );
 }
@@ -189,6 +195,7 @@ export function HomePromo({ navigation }) {
 
 export function HomeDestinations({ navigation }) {
     const { t } = useTranslation();
+    const openBlog = () => navigation.navigate('Content', { page: 'blogs' });
     return (
         <View style={[styles.section, styles.destinations]}>
             <SectionHeader
@@ -196,11 +203,12 @@ export function HomeDestinations({ navigation }) {
                 title={t('home.destinations.title')}
                 subtitle={t('home.destinations.subtitle')}
                 linkLabel={t('common.viewAll')}
-                onPress={() => openCategory(navigation, t, 'hotels')}
+                onPress={openBlog}
+                pressTitle
             />
             <View style={styles.grid}>
                 {DESTINATIONS.map((place) => (
-                    <Pressable key={place.name} style={styles.destination} onPress={() => openCategory(navigation, t, 'hotels')}>
+                    <Pressable key={place.name} style={styles.destination} onPress={openBlog}>
                         <Image source={{ uri: place.image }} style={styles.destinationImage} />
                         <View style={styles.destinationShade} />
                         <View style={styles.destinationCopy}>
@@ -305,7 +313,8 @@ const styles = StyleSheet.create({
     categoryIcon: { width: 48, height: 48, borderRadius: RADIUS.button, alignItems: 'center', justifyContent: 'center' },
     categoryName: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text },
     categoryCount: { fontFamily: FONTS.regular, fontSize: 12, color: '#64748B', marginTop: 2 },
-    deal: { borderRadius: RADIUS.card, padding: 22, marginTop: 12, minHeight: 180 },
+    hScroll: { paddingTop: 14, paddingRight: 4 },
+    deal: { width: 260, borderRadius: RADIUS.card, padding: 22, marginRight: 12, minHeight: 180 },
     dealSpark: { color: 'rgba(255,255,255,0.9)', fontSize: 18 },
     dealDiscount: { fontFamily: FONTS.extrabold, color: '#fff', fontSize: 28, marginTop: 8, letterSpacing: -0.4 },
     dealTitle: { fontFamily: FONTS.bold, color: '#fff', fontSize: 18 },
@@ -323,7 +332,7 @@ const styles = StyleSheet.create({
     chipOn: { borderColor: COLORS.action, backgroundColor: '#E8F4FC' },
     chipText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.body },
     chipTextOn: { fontFamily: FONTS.semibold, color: COLORS.action },
-    propertyList: { marginTop: 16 },
+    propertyCard: { width: 280, marginBottom: 0, marginRight: 12 },
     empty: { fontFamily: FONTS.regular, color: COLORS.muted, marginTop: 16 },
     see: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary, marginTop: 8 },
     promo: {

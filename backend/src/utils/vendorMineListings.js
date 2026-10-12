@@ -1,6 +1,7 @@
 import { resolveListingStatus } from './listingApproval.js';
+import { resolvePublicUrl } from '../services/storageService.js';
 
-/** Shared vendor "my listings" payload: { id, name, slug, prices, isActive, approvalStatus }. */
+/** Shared vendor "my listings" payload: { id, name, slug, prices, image, isActive, approvalStatus }. */
 
 const num = (value) => {
   const n = Number(value);
@@ -12,11 +13,18 @@ const minOf = (values) => {
   return nums.length ? Math.min(...nums) : null;
 };
 
-export const toMineListing = (doc, prices) => ({
+const coverOf = (doc, extra) => {
+  const rooms = Array.isArray(doc?.rooms) ? doc.rooms : [];
+  const roomPhoto = rooms.find((room) => room?.images?.[0])?.images?.[0];
+  return doc?.images?.[0] || doc?.photo || doc?.imageUrl || roomPhoto || extra || '';
+};
+
+export const toMineListing = (doc, prices, extraImage) => ({
   id: String(doc._id),
   name: doc.name,
   slug: doc.slug || null,
   prices,
+  image: resolvePublicUrl(coverOf(doc, extraImage)) || null,
   isActive: doc.isActive !== false,
   approvalStatus: resolveListingStatus(doc),
 });
@@ -63,7 +71,7 @@ export const mapProductMine = (doc) =>
     stock: num(doc.stock),
   });
 
-export const mapHotelMine = (doc, minRoomPrice) =>
+export const mapHotelMine = (doc, minRoomPrice, roomImage) =>
   toMineListing(doc, {
     from: num(minRoomPrice) ?? num(doc.priceRangeFrom) ?? num(doc.priceRangeTo),
-  });
+  }, roomImage);

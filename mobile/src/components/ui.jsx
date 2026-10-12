@@ -1,15 +1,18 @@
 import React, { useContext, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { HeaderHeightContext } from '@react-navigation/elements';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
+import { useDeviceInsets } from '../utils/deviceInsets';
+import { Eye, EyeOff } from './home/icons';
 
 export function Screen({ children, style }) {
-    const insets = useSafeAreaInsets();
+    const insets = useDeviceInsets();
     const headerHeight = useContext(HeaderHeightContext) || 0;
     const flat = StyleSheet.flatten(style) || {};
     const contentTop = flat.padding === 0 ? 0 : (typeof flat.paddingTop === 'number' ? flat.paddingTop : 16);
-    const paddingTop = (headerHeight > 0 ? 0 : insets.top) + contentTop;
+    const headerClearsStatusBar = headerHeight > insets.top + 20;
+    const paddingTop = (headerClearsStatusBar ? 0 : insets.top) + contentTop;
     return <View style={[styles.screen, style, { paddingTop }]}>{children}</View>;
 }
 
@@ -63,6 +66,7 @@ export function Field({
     value,
     onChangeText,
     secureTextEntry,
+    reveal,
     keyboardType,
     placeholder,
     maxLength,
@@ -70,29 +74,45 @@ export function Field({
     onFocus,
     multiline,
     autofillPincode,
+    soft,
 }) {
+    const { t } = useTranslation();
     const [focused, setFocused] = useState(false);
+    const [shown, setShown] = useState(false);
+    const canReveal = secureTextEntry && reveal;
     return (
         <View style={styles.field}>
             {label ? <Text style={styles.label}>{label}</Text> : null}
-            <TextInput
-                value={value}
-                onChangeText={onChangeText}
-                secureTextEntry={secureTextEntry}
-                keyboardType={keyboardType}
-                placeholder={placeholder}
-                maxLength={maxLength}
-                autoCapitalize={autoCapitalize}
-                multiline={multiline}
-                onFocus={() => {
-                    setFocused(true);
-                    if (autofillPincode && !String(value || '').trim()) onChangeText?.(MAHABALESHWAR_PINCODE);
-                    onFocus?.();
-                }}
-                onBlur={() => setFocused(false)}
-                style={[styles.input, multiline && styles.inputMulti, focused && styles.inputFocused]}
-                placeholderTextColor={COLORS.muted}
-            />
+            <View style={canReveal ? styles.inputWrap : null}>
+                <TextInput
+                    value={value}
+                    onChangeText={onChangeText}
+                    secureTextEntry={secureTextEntry && !shown}
+                    keyboardType={keyboardType}
+                    placeholder={placeholder}
+                    maxLength={maxLength}
+                    autoCapitalize={autoCapitalize}
+                    multiline={multiline}
+                    onFocus={() => {
+                        setFocused(true);
+                        if (autofillPincode && !String(value || '').trim()) onChangeText?.(MAHABALESHWAR_PINCODE);
+                        onFocus?.();
+                    }}
+                    onBlur={() => setFocused(false)}
+                    style={[styles.input, soft && styles.inputSoft, multiline && styles.inputMulti, focused && styles.inputFocused, canReveal && styles.inputReveal]}
+                    placeholderTextColor={COLORS.muted}
+                />
+                {canReveal ? (
+                    <Pressable
+                        onPress={() => setShown((open) => !open)}
+                        style={styles.eye}
+                        accessibilityRole="button"
+                        accessibilityLabel={shown ? t('auth.hidePassword') : t('auth.showPassword')}
+                    >
+                        {shown ? <EyeOff size={18} color={COLORS.muted} /> : <Eye size={18} color={COLORS.muted} />}
+                    </Pressable>
+                ) : null}
+            </View>
         </View>
     );
 }
@@ -157,6 +177,22 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: COLORS.body,
         marginBottom: 6,
+    },
+    inputWrap: { position: 'relative' },
+    inputReveal: { paddingRight: 44 },
+    eye: {
+        position: 'absolute',
+        right: 4,
+        top: 0,
+        bottom: 0,
+        width: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    inputSoft: {
+        backgroundColor: '#F1F5F9',
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
     },
     input: {
         fontFamily: FONTS.regular,

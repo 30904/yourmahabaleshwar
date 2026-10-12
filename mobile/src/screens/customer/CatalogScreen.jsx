@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { listCatalog } from '../../api/endpoints';
+import { loadPublic } from '../../api/publicCache';
 import { DriverBookingIntro } from '../../components/DriverRateChart';
 import HorseRateChart from '../../components/HorseRateChart';
 import ListingCard from '../../components/ListingCard';
 import TaxiRateChart from '../../components/TaxiRateChart';
-import HomeFooter from '../../components/home/HomeFooter';
 import ServiceHubScreen from './ServiceHubScreen';
 import { Loading, Muted, Screen, Title } from '../../components/ui';
 
@@ -20,17 +20,32 @@ export default function CatalogScreen({ route, navigation }) {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const queryKey = JSON.stringify(query || {});
+
     useEffect(() => {
         if (isOpenService) {
             setLoading(false);
-            return;
+            return undefined;
         }
+        let alive = true;
+        let showed = false;
         setLoading(true);
-        listCatalog(path, query)
-            .then((data) => setItems(Array.isArray(data) ? data : data?.items || []))
-            .catch(() => setItems([]))
-            .finally(() => setLoading(false));
-    }, [path, query, isOpenService]);
+        const job = loadPublic(`catalog:${path}:${queryKey}`, () => listCatalog(path, query), (data) => {
+            if (!alive) return;
+            showed = true;
+            setItems(Array.isArray(data) ? data : data?.items || []);
+            setLoading(false);
+        });
+        job.catch(() => {
+            if (alive && !showed) setItems([]);
+        }).finally(() => {
+            if (alive) setLoading(false);
+        });
+        return () => {
+            alive = false;
+            job.cancel();
+        };
+    }, [path, query, queryKey, isOpenService]);
 
     if (isOpenService) return <ServiceHubScreen type={type} navigation={navigation} />;
 
@@ -56,7 +71,6 @@ export default function CatalogScreen({ route, navigation }) {
                         {type === 'HORSE' ? <HorseRateChart /> : null}
                     </View>
                 )}
-                ListFooterComponent={<HomeFooter />}
                 ListEmptyComponent={<Muted>{t('common.empty')}</Muted>}
                 renderItem={({ item }) => (
                     <ListingCard item={item} type={type} onPress={() => openListing(item)} />
