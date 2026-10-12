@@ -48,7 +48,7 @@ function priceParts(item, type, t) {
     };
 }
 
-export default function ListingCard({ item, type, onPress }) {
+export default function ListingCard({ item, type, onPress, style }) {
     const { t } = useTranslation();
     const confirm = useConfirm();
     const { user } = useAuth();
@@ -109,7 +109,7 @@ export default function ListingCard({ item, type, onPress }) {
     };
 
     return (
-        <Pressable style={styles.card} onPress={open}>
+        <Pressable style={[styles.card, style]} onPress={open}>
             <View>
                 <Image source={{ uri: image }} style={styles.image} />
                 {item.isFeatured ? <Text style={styles.featured}>{t('property.featured')}</Text> : null}

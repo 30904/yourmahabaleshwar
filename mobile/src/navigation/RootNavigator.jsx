@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDeviceInsets } from '../utils/deviceInsets';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +19,7 @@ import CatalogScreen from '../screens/customer/CatalogScreen';
 import ServiceBookScreen from '../screens/customer/ServiceBookScreen';
 import ListingDetailScreen from '../screens/customer/ListingDetailScreen';
 import BookingsScreen from '../screens/customer/BookingsScreen';
+import BookingDetailScreen from '../screens/customer/BookingDetailScreen';
 import AccountScreen from '../screens/customer/AccountScreen';
 import FavoritesScreen from '../screens/customer/FavoritesScreen';
 import VendorHubScreen from '../screens/vendor/VendorHubScreen';
@@ -45,26 +46,29 @@ function AuthNavigator() {
 function MainTabs() {
     const { t } = useTranslation();
     const { isVendor, user } = useAuth();
-    const insets = useSafeAreaInsets();
+    const insets = useDeviceInsets();
     const bottomInset = Math.max(insets.bottom, 0);
-    return (<Tab.Navigator screenOptions={{
+    return (<Tab.Navigator initialRouteName={isVendor ? 'Overview' : 'HomeTab'} screenOptions={{
             headerShown: false,
             tabBarActiveTintColor: COLORS.primary,
             tabBarInactiveTintColor: '#64748B',
+            tabBarShowLabel: true,
             tabBarLabelStyle: { fontFamily: FONTS.medium, fontSize: isVendor ? 10 : 11 },
             tabBarStyle: {
                 backgroundColor: '#fff',
                 borderTopWidth: 1,
                 borderTopColor: COLORS.border,
-                height: 56 + bottomInset,
+                height: 64 + bottomInset,
                 paddingTop: 6,
                 paddingBottom: bottomInset > 0 ? bottomInset : 8,
             },
         }}>
+      {!isVendor ? (
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{
             title: t('nav.home'),
             tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={2} />,
         }}/>
+      ) : null}
       {isVendor ? (
       <Tab.Screen name="Overview" component={VendorHubScreen} options={{
             title: t('nav.overview'),
@@ -73,11 +77,13 @@ function MainTabs() {
       ) : null}
       <Tab.Screen name="Bookings" component={user ? BookingsScreen : AccountScreen} options={{
             title: t('nav.bookings'),
+            tabBarLabel: t('nav.bookings'),
             tabBarIcon: ({ color }) => <Calendar size={22} color={color} strokeWidth={2} />,
         }}/>
       {!isVendor ? (
       <Tab.Screen name="Saved" component={user ? FavoritesScreen : AccountScreen} options={{
-            title: t('nav.saved'),
+            title: t('nav.savedListings'),
+            tabBarLabel: t('nav.savedListings'),
             tabBarIcon: ({ color }) => <Heart size={22} color={color} strokeWidth={2} />,
         }}/>
       ) : null}
@@ -88,16 +94,20 @@ function MainTabs() {
         }}/>
       ) : null}
       <Tab.Screen name="Account" component={AccountScreen} options={{
-            title: t('nav.account'),
+            title: t('nav.profile'),
+            tabBarLabel: t('nav.profile'),
             tabBarIcon: ({ color }) => <User size={22} color={color} strokeWidth={2} />,
         }}/>
     </Tab.Navigator>);
 }
 export default function RootNavigator() {
-    const { loading } = useAuth();
+    const { t } = useTranslation();
+    const { loading, user, vendorSignedOut } = useAuth();
     if (loading)
         return <Loading />;
-    return (<NavigationContainer>
+    const vendorLogin = !user && vendorSignedOut;
+    return (<NavigationContainer key={vendorLogin ? 'vendor-login' : 'app'}>
+      {vendorLogin ? <AuthNavigator /> : (
       <RootStack.Navigator>
         <RootStack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }}/>
         <RootStack.Screen name="Auth" component={AuthNavigator} options={{ headerShown: false, presentation: 'modal' }}/>
@@ -106,6 +116,7 @@ export default function RootNavigator() {
         <RootStack.Screen name="Catalog" component={CatalogScreen} options={{ title: 'Explore' }}/>
         <RootStack.Screen name="ServiceBook" component={ServiceBookScreen} options={{ title: '' }}/>
         <RootStack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: 'Details' }}/>
+        <RootStack.Screen name="BookingDetail" component={BookingDetailScreen} options={{ title: t('booking.details') }}/>
         <RootStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Saved' }}/>
         <RootStack.Screen name="VendorHub" component={VendorHubScreen} options={{ title: 'Vendor' }}/>
         <RootStack.Screen name="VendorWallet" component={VendorWalletScreen} options={{ title: 'Wallet' }}/>
@@ -118,5 +129,6 @@ export default function RootNavigator() {
         <RootStack.Screen name="VendorSubscription" component={VendorSubscriptionScreen} options={{ title: 'Subscription' }}/>
         <RootStack.Screen name="VendorAds" component={VendorAdsScreen} options={{ title: 'Ads' }}/>
       </RootStack.Navigator>
+      )}
     </NavigationContainer>);
 }

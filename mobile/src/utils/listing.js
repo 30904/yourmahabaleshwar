@@ -11,7 +11,7 @@ export function mediaUrl(path) {
 
 export function listingImage(item) {
     const roomPhoto = item?.rooms?.find((room) => room?.images?.[0])?.images?.[0];
-    const raw = item?.images?.[0] || roomPhoto || item?.photo || item?.imageUrl || item?.coverImage || '';
+    const raw = item?.image || item?.images?.[0] || roomPhoto || item?.photo || item?.imageUrl || item?.coverImage || '';
     return mediaUrl(raw);
 }
 

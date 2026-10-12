@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { publicBlogs, publicFaqs, sendEnquiry } from '../../api/endpoints';
 import { loadPublic } from '../../api/publicCache';
 import { Button, Card, Field, Loading, Screen } from '../../components/ui';
+import HtmlText from '../../components/HtmlText';
 import { COLORS, FONTS } from '../../constants/theme';
 
 const PHONES = [
@@ -206,7 +207,7 @@ export default function ContentScreen({ route }) {
                                 <Card>
                                     <Text style={styles.blockTitle}>{item.title}</Text>
                                     {item.excerpt ? <Text style={styles.paragraph}>{item.excerpt}</Text> : null}
-                                    {open && item.content ? <Text style={[styles.paragraph, styles.blogBody]}>{item.content}</Text> : null}
+                                    {open && item.content ? <HtmlText html={item.content} /> : null}
                                 </Card>
                             </Pressable>
                         );
@@ -291,7 +292,6 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         marginBottom: 8,
     },
-    blogBody: { marginTop: 10 },
     empty: { alignItems: 'center', paddingVertical: 28 },
     emptyText: { fontFamily: FONTS.medium, fontSize: 15, color: COLORS.muted, textAlign: 'center' },
 });

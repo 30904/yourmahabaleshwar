@@ -1,13 +1,16 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
 import { fetchMyVendorListings } from '../../api/endpoints';
-import { Button, Card, Loading, Screen } from '../../components/ui';
+import { Button, Loading, Screen } from '../../components/ui';
+import { Hotel } from '../../components/home/icons';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
+import { listingImage } from '../../utils/listing';
+import { useDeviceInsets } from '../../utils/deviceInsets';
 import { canVendorEditListing, listingStatusOf } from '../../utils/vendorListingForm';
 
 const STATUS_FILTERS = ['APPROVED', 'PENDING', 'REJECTED'];
@@ -31,9 +34,14 @@ export default function VendorListingsScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
     const { user } = useAuth();
+    const insets = useDeviceInsets();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState(null);
+
+    useLayoutEffect(() => {
+        navigation.setOptions({ headerShown: false });
+    }, [navigation]);
 
     const load = useCallback(() => {
         if (!user?.role) {
@@ -68,54 +76,92 @@ export default function VendorListingsScreen() {
         PENDING: t('vendor.listingPending'),
         REJECTED: t('vendor.listingRejected'),
     };
+    const count = filtered.length;
 
     return (
-        <Screen>
+        <Screen style={styles.screen}>
             <FlatList
                 style={styles.list}
+                contentContainerStyle={styles.page}
                 data={filtered}
                 keyExtractor={(item) => `${item.vertical}-${item.id}`}
                 refreshing={loading}
                 onRefresh={load}
                 ListHeaderComponent={(
                     <View>
-                        <Text style={styles.pageTitle}>{t('vendor.listings')}</Text>
-                        <Text style={styles.hint}>{singleLocked ? t('vendor.singleListingHint') : t('vendor.listingsHint')}</Text>
+                        <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                            <View style={styles.bandRow}>
+                                <Text style={styles.pageTitle}>{t('vendor.listings')}</Text>
+                                <View style={styles.countPill}>
+                                    <Text style={styles.countPillText}>{t(count === 1 ? 'vendor.pillListingOne' : 'vendor.pillListings', { count })}</Text>
+                                </View>
+                            </View>
+                        </View>
+                        <Text style={styles.note}>{singleLocked ? t('vendor.singleListingHint') : t('vendor.listingsHint')}</Text>
                         <View style={styles.filters}>
                             {STATUS_FILTERS.map((status) => {
                                 const on = statusFilter === status;
-                                const tone = STATUS_TONE[status];
                                 return (
-                                    <Pressable key={status} onPress={() => setStatusFilter((current) => (current === status ? null : status))} style={[styles.filter, on && { backgroundColor: tone.fg, borderColor: tone.fg }]}>
-                                        <Text style={[styles.filterText, on && styles.filterTextOn]}>{statusLabel[status]}</Text>
+                                    <Pressable
+                                        key={status}
+                                        onPress={() => setStatusFilter((current) => (current === status ? null : status))}
+                                        style={[styles.chip, on && styles.chipOn]}
+                                    >
+                                        <Text style={[styles.chipText, on && styles.chipTextOn]}>{statusLabel[status]}</Text>
                                     </Pressable>
                                 );
                             })}
                         </View>
-                        {!singleLocked ? <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')} /> : null}
+                        {!singleLocked ? (
+                            <Button title={t('vendor.createListing')} onPress={() => navigation.navigate('VendorListingForm')} style={styles.createBtn} />
+                        ) : null}
                     </View>
                 )}
                 ListEmptyComponent={(
-                    <Card style={styles.empty}>
+                    <View style={styles.empty}>
                         <Text style={styles.emptyText}>{items.length ? t('vendor.noListingsForFilter') : t('vendor.noListings')}</Text>
-                    </Card>
+                    </View>
                 )}
                 renderItem={({ item }) => {
                     const status = listingStatusOf(item);
                     const tone = STATUS_TONE[status] || STATUS_TONE.PENDING;
+                    const price = item.prices?.from != null ? `${t('vendor.fromPrice')} ${formatCurrency(item.prices.from)}` : '—';
+                    const editable = canVendorEditListing(item);
+                    const image = listingImage(item);
                     return (
-                        <Card>
-                            <Text style={styles.name}>{item.name}</Text>
-                            <Text style={styles.meta}>{t(item.labelKey)}</Text>
-                            <Text style={styles.meta}>{item.slug || '—'}</Text>
-                            <Text style={styles.price}>
-                                {item.prices?.from != null ? `${t('vendor.fromPrice')} ${formatCurrency(item.prices.from)}` : '—'}
-                            </Text>
-                            <View style={[styles.badge, { backgroundColor: tone.bg }]}>
-                                <Text style={[styles.badgeText, { color: tone.fg }]}>{statusLabel[status]}</Text>
+                        <View style={styles.card}>
+                            <View style={styles.cardMain}>
+                                {image ? (
+                                    <Image source={{ uri: image }} style={styles.thumb} />
+                                ) : (
+                                    <View style={styles.thumbFallback}>
+                                        <Hotel size={26} color={COLORS.primary} strokeWidth={2} />
+                                    </View>
+                                )}
+                                <View style={styles.body}>
+                                    <View style={styles.titleRow}>
+                                        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                                        <View style={[styles.badge, { backgroundColor: tone.bg }]}>
+                                            <Text style={[styles.badgeText, { color: tone.fg }]}>{statusLabel[status]}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.metaRow}>
+                                        <Text style={styles.meta} numberOfLines={1}>{t(item.labelKey)}</Text>
+                                        <Text style={styles.price}>{price}</Text>
+                                    </View>
+                                    {editable ? (
+                                        <Pressable
+                                            style={styles.editBtn}
+                                            onPress={() => navigation.navigate('VendorListingForm', { vertical: item.vertical, id: item.id })}
+                                        >
+                                            <Text style={styles.editText}>{t('vendor.editListing', { kind: t(item.labelKey) })}</Text>
+                                        </Pressable>
+                                    ) : (
+                                        <Text style={styles.locked} numberOfLines={1}>{t('vendor.listingEditLocked')}</Text>
+                                    )}
+                                </View>
                             </View>
-                            {canVendorEditListing(item) ? <Button title={t('vendor.editListing', { kind: t(item.labelKey) })} variant="outline" onPress={() => navigation.navigate('VendorListingForm', { vertical: item.vertical, id: item.id })} /> : <Text style={styles.meta}>{t('vendor.listingEditLocked')}</Text>}
-                        </Card>
+                        </View>
                     );
                 }}
             />
@@ -124,18 +170,78 @@ export default function VendorListingsScreen() {
 }
 
 const styles = StyleSheet.create({
+    screen: { padding: 0 },
     list: { flex: 1 },
-    pageTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text, letterSpacing: -0.4 },
-    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 4, marginBottom: 12, lineHeight: 20 },
-    filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-    filter: { borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-    filterText: { fontFamily: FONTS.semibold, fontSize: 13, color: '#475569' },
-    filterTextOn: { color: '#fff' },
-    empty: { alignItems: 'center', paddingVertical: 28 },
+    page: { paddingBottom: 24 },
+    band: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingBottom: 18 },
+    bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    pageTitle: { flex: 1, fontFamily: FONTS.bold, fontSize: 26, color: '#fff', letterSpacing: -0.4 },
+    countPill: { backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+    countPillText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary },
+    note: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, lineHeight: 20, paddingHorizontal: 16, paddingTop: 12 },
+    filters: { flexDirection: 'row', gap: 8, marginTop: 14, marginBottom: 4, paddingHorizontal: 16 },
+    chip: {
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        backgroundColor: '#fff',
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+    },
+    chipOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+    chipText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.body },
+    chipTextOn: { fontFamily: FONTS.semibold, color: '#fff' },
+    createBtn: {
+        backgroundColor: COLORS.primary,
+        borderRadius: 0,
+        marginTop: 12,
+        marginHorizontal: 16,
+        elevation: 0,
+        shadowOpacity: 0,
+        ...Platform.select({ web: { boxShadow: 'none' }, default: {} }),
+    },
+    empty: { alignItems: 'center', paddingVertical: 28, backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, marginTop: 12, marginHorizontal: 16 },
     emptyText: { fontFamily: FONTS.medium, fontSize: 15, color: COLORS.muted, textAlign: 'center' },
-    name: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text },
-    meta: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 4 },
-    price: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary, marginTop: 8 },
-    badge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 8 },
-    badgeText: { fontFamily: FONTS.semibold, fontSize: 12 },
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 12,
+        marginTop: 12,
+        marginHorizontal: 16,
+    },
+    cardMain: { flexDirection: 'row', gap: 12 },
+    thumb: { width: 72, height: 72, borderRadius: 12, backgroundColor: COLORS.primarySoft },
+    thumbFallback: {
+        width: 72,
+        height: 72,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    body: { flex: 1 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    name: { flex: 1, fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.text },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+    meta: { flex: 1, fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted },
+    price: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text },
+    badge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+    badgeText: { fontFamily: FONTS.semibold, fontSize: 10, letterSpacing: 0.2 },
+    editBtn: {
+        alignSelf: 'flex-start',
+        marginTop: 8,
+        minHeight: 32,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    editText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
+    locked: { fontFamily: FONTS.regular, fontSize: 11, color: '#94A3B8', marginTop: 4 },
 });

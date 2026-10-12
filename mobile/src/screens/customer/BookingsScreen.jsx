@@ -1,481 +1,307 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Modal, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { isNetworkError } from '../../api/network';
 import { useReconnect } from '../../api/useReconnect';
 import { useTranslation } from 'react-i18next';
-import {
-  createPaymentOrder,
-  downloadInvoice,
-  myBookings,
-  requestRefund,
-  refundPreview,
-  vendorBookings,
-  verifyPayment,
-  updateBookingStatus,
-  vendorMarkArrived,
-  confirmServiceArrival,
-  vendorProposeEnd,
-  confirmServiceEnd,
-} from '../../api/endpoints';
-import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
+import { createPaymentOrder, myBookings, vendorBookings, verifyPayment } from '../../api/endpoints';
+import { Button, Loading, Screen } from '../../components/ui';
+import { Car, Home, Hotel, Tent, Trees, Users } from '../../components/home/icons';
 import { COLORS, FONTS } from '../../constants/theme';
+import { useDeviceInsets } from '../../utils/deviceInsets';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { bookingTitle } from '../../utils/listing';
 import { checkoutHtml, openWebCheckout } from '../../services/razorpayCheckout';
+import { STATUS_TONE, bookingGroup, bookingImage, stayDate } from './bookingModel';
 
-const TRIP_TENANTS = ['GUIDE', 'TAXI', 'DRIVER', 'HORSE'];
-const TRIP_TYPES = ['GUIDE', 'TAXI', 'HORSE'];
-const OVERTIME_PER_HOUR = 150;
+const FILTERS = [
+    { id: 'upcoming', labelKey: 'booking.upcoming' },
+    { id: 'completed', labelKey: 'booking.completed' },
+    { id: 'cancelled', labelKey: 'booking.cancelled' },
+];
 
-const isTrip = (b) =>
-  (b.serviceTenant && TRIP_TENANTS.includes(b.serviceTenant)) || TRIP_TYPES.includes(b.type);
-const hasArrived = (b) => !!(b.vendorArrivedAt || b.guideReachedConfirmed || b.arrivalConfirmed);
-const arrivalOk = (b) => !!(b.arrivalConfirmed || b.guideReachedConfirmed);
-const ended = (b) => !!(b.serviceEndedAt || b.guideEndedAt || b.status === 'COMPLETED');
-const endProposed = (b) => !!(b.endProposedAt && !ended(b));
-const activeTrip = (b) =>
-  isTrip(b) &&
-  b.assignmentStatus === 'ASSIGNED' &&
-  b.vendor &&
-  !ended(b) &&
-  b.status !== 'CANCELLED' &&
-  b.status !== 'REFUNDED';
-
-function when(value) {
-  if (!value) return '';
-  return new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function stayDate(value) {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-const STATUS_TONE = {
-  CONFIRMED: { bg: '#F0FDF4', fg: COLORS.success },
-  PENDING: { bg: '#FFFBEB', fg: COLORS.warning },
-  CANCELLED: { bg: '#FEF2F2', fg: '#B91C1C' },
-  COMPLETED: { bg: COLORS.primarySoft, fg: COLORS.primary },
-  REFUNDED: { bg: '#F1F5F9', fg: COLORS.muted },
+const TYPE_ICON = {
+    HOTEL: Hotel,
+    RESORT: Hotel,
+    HOMESTAY: Home,
+    TENT: Tent,
+    GUIDE: Users,
+    TAXI: Car,
+    DRIVER: Car,
+    HORSE: Trees,
 };
 
 function StatusBadge({ status }) {
-  const tone = STATUS_TONE[status] || STATUS_TONE.REFUNDED;
-  return (
-    <View style={[styles.badge, { backgroundColor: tone.bg }]}>
-      <Text style={[styles.badgeText, { color: tone.fg }]}>{status}</Text>
-    </View>
-  );
+    const tone = STATUS_TONE[status] || STATUS_TONE.REFUNDED;
+    return (
+        <View style={[styles.badge, { backgroundColor: tone.bg }]}>
+            <Text style={[styles.badgeText, { color: tone.fg }]}>{status}</Text>
+        </View>
+    );
 }
 
 export default function BookingsScreen() {
-  const { t } = useTranslation();
-  const { isVendor, user } = useAuth();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [checkout, setCheckout] = useState(null);
-  const [endBookingId, setEndBookingId] = useState(null);
-  const [overtimeHours, setOvertimeHours] = useState('0');
+    const { t } = useTranslation();
+    const navigation = useNavigation();
+    const insets = useDeviceInsets();
+    const { isVendor, user } = useAuth();
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [checkout, setCheckout] = useState(null);
+    const [filter, setFilter] = useState('upcoming');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = isVendor ? await vendorBookings() : await myBookings();
-      setItems(Array.isArray(data) ? data : []);
-    } catch (error) {
-      if (!isNetworkError(error)) setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [isVendor]);
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = isVendor ? await vendorBookings() : await myBookings();
+            setItems(Array.isArray(data) ? data : []);
+        } catch (error) {
+            if (!isNetworkError(error)) setItems([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [isVendor]);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load])
-  );
-  useReconnect(load);
-
-  const recordPayment = async (payment, response) => {
-    await verifyPayment({
-      paymentId: payment._id,
-      razorpayPaymentId: response.razorpay_payment_id,
-      razorpayOrderId: response.razorpay_order_id,
-      razorpaySignature: response.razorpay_signature,
-    });
-    Alert.alert(t('booking.paid'));
-    load();
-  };
-
-  const pay = async (b) => {
-    try {
-      const { order, payment, keyId } = await createPaymentOrder(b._id);
-      if (order.mock || keyId === 'mock_key' || !keyId) {
-        await verifyPayment({
-          paymentId: payment._id,
-          razorpayPaymentId: `pay_mock_${Date.now()}`,
-          razorpayOrderId: order.id,
-          razorpaySignature: `mock_sig_${Date.now()}`,
-        });
-        Alert.alert(t('booking.mockPaid'));
+    useFocusEffect(useCallback(() => {
         load();
-        return;
-      }
-      const details = { keyId, order, bookingNumber: b.bookingNumber, user };
-      if (Platform.OS === 'web') {
-        const response = await openWebCheckout(details);
-        await recordPayment(payment, response);
-        return;
-      }
-      setCheckout({ ...details, payment });
-    } catch (e) {
-      if (e?.message === 'CANCELLED') {
-        Alert.alert(t('booking.paymentCancelled'));
-        return;
-      }
-      Alert.alert(t('common.error'), e.response?.data?.message || e.message);
-    }
-  };
+    }, [load]));
+    useReconnect(load);
 
-  const onCheckoutMessage = async (event) => {
-    const current = checkout;
-    setCheckout(null);
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (!data.ok) {
-        Alert.alert(t('booking.paymentCancelled'));
-        return;
-      }
-      await recordPayment(current.payment, data.response);
-    } catch (e) {
-      Alert.alert(t('common.error'), e.response?.data?.message || e.message);
-    }
-  };
+    const recordPayment = async (payment, response) => {
+        await verifyPayment({
+            paymentId: payment._id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+        });
+        Alert.alert(t('booking.paid'));
+        load();
+    };
 
-  const openInvoice = async (b) => {
-    try {
-      await downloadInvoice(b._id);
-    } catch (e) {
-      Alert.alert(t('common.error'), e.response?.data?.message || e.message || t('booking.invoiceFailed'));
-    }
-  };
-
-  const askRefund = async (b) => {
-    try {
-      const preview = await refundPreview(b._id);
-      Alert.alert(
-        t('booking.refund'),
-        t('booking.refundPreview', { amount: formatCurrency(preview.amount), type: preview.type }),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('common.continue'),
-            onPress: async () => {
-              try {
-                await requestRefund(b._id, 'Customer cancellation');
-                Alert.alert(t('booking.refundSent'));
+    const pay = async (b) => {
+        try {
+            const { order, payment, keyId } = await createPaymentOrder(b._id);
+            if (order.mock || keyId === 'mock_key' || !keyId) {
+                await verifyPayment({
+                    paymentId: payment._id,
+                    razorpayPaymentId: `pay_mock_${Date.now()}`,
+                    razorpayOrderId: order.id,
+                    razorpaySignature: `mock_sig_${Date.now()}`,
+                });
+                Alert.alert(t('booking.mockPaid'));
                 load();
-              } catch (e) {
-                Alert.alert(t('common.error'), e.response?.data?.message || e.message);
-              }
-            },
-          },
-        ]
-      );
-    } catch (e) {
-      Alert.alert(t('common.error'), e.response?.data?.message || e.message);
-    }
-  };
+                return;
+            }
+            const details = { keyId, order, bookingNumber: b.bookingNumber, user };
+            if (Platform.OS === 'web') {
+                const response = await openWebCheckout(details);
+                await recordPayment(payment, response);
+                return;
+            }
+            setCheckout({ ...details, payment });
+        } catch (e) {
+            if (e?.message === 'CANCELLED') {
+                Alert.alert(t('booking.paymentCancelled'));
+                return;
+            }
+            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+        }
+    };
 
-  if (loading && !items.length) return <Loading />;
+    const onCheckoutMessage = async (event) => {
+        const current = checkout;
+        setCheckout(null);
+        try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (!data.ok) {
+                Alert.alert(t('booking.paymentCancelled'));
+                return;
+            }
+            await recordPayment(current.payment, data.response);
+        } catch (e) {
+            Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+        }
+    };
 
-  return (
-    <Screen style={{ paddingHorizontal: 0, paddingBottom: 0 }}>
-      <FlatList
-        style={styles.list}
-        contentContainerStyle={[styles.listContent, { paddingHorizontal: 16 }]}
-        data={items}
-        keyExtractor={(item) => item._id}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
-        ListHeaderComponent={(
-          <View style={styles.header}>
-            <Text style={styles.pageTitle}>{t('nav.bookings')}</Text>
-            <Text style={styles.pageHint}>{t('booking.manageHint')}</Text>
-          </View>
-        )}
-        ListEmptyComponent={(
-          <Card style={styles.empty}>
-            <Text style={styles.emptyText}>{t('booking.noBookings')}</Text>
-          </Card>
-        )}
-        renderItem={({ item }) => {
-          const dates = [stayDate(item.checkIn), stayDate(item.checkOut)].filter(Boolean).join(' – ');
-          const guest = item.guestRegistration?.leadGuest;
-          const guestBits = [
-            guest?.mobile,
-            item.guests?.adults != null ? `${item.guests.adults} ${t('booking.adults')}` : '',
-            item.guests?.children ? `${item.guests.children} ${t('booking.children')}` : '',
-          ].filter(Boolean);
-          return (
-          <Card>
-            <View style={styles.cardTop}>
-              <Text style={styles.bookingTitle}>{bookingTitle(item)}</Text>
-              <StatusBadge status={item.status} />
-            </View>
-            <Text style={styles.ref} numberOfLines={1}>{item.bookingNumber || item._id}</Text>
-            <Text style={styles.meta}>{[item.type, dates].filter(Boolean).join(' · ')}</Text>
-            <Text style={styles.total}>{formatCurrency(item.total)}</Text>
-            {guest?.fullName ? (
-              <View style={styles.guestBox}>
-                <Text style={styles.guestName}>{guest.fullName}</Text>
-                {guestBits.length ? <Text style={styles.guestMeta}>{guestBits.join(' · ')}</Text> : null}
-              </View>
-            ) : null}
-            {item.refundStatus && item.refundStatus !== 'NONE' ? (
-              <Muted>
-                {t('booking.refundStatus')}: {item.refundStatus}
-                {item.refundAmount ? ` · ${formatCurrency(item.refundAmount)}` : ''}
-              </Muted>
-            ) : null}
-            {isTrip(item) && hasArrived(item) && !arrivalOk(item) ? <Muted>{t('booking.statusVendorArrived')}</Muted> : null}
-            {isTrip(item) && arrivalOk(item) && !endProposed(item) && !ended(item) ? (
-              <Muted>
-                {t('booking.statusArrivalConfirmed')}
-                {(item.arrivalConfirmedAt || item.guideReachedAt) ? ` · ${when(item.arrivalConfirmedAt || item.guideReachedAt)}` : ''}
-              </Muted>
-            ) : null}
-            {isTrip(item) && endProposed(item) ? (
-              <Muted>
-                {t('booking.statusEndProposed')}
-                {item.overtimeHours > 0
-                  ? ` · ${t('booking.overtimeSummary', { hours: item.overtimeHours, amount: formatCurrency(item.overtimeAmount || 0) })}`
-                  : ` · ${t('booking.noOvertime')}`}
-              </Muted>
-            ) : null}
-            {isTrip(item) && ended(item) ? (
-              <Muted>
-                {t('booking.statusEnded')}
-                {(item.serviceEndedAt || item.guideEndedAt) ? ` · ${when(item.serviceEndedAt || item.guideEndedAt)}` : ''}
-                {item.overtimeHours > 0
-                  ? ` · ${t('booking.overtimeSummary', { hours: item.overtimeHours, amount: formatCurrency(item.overtimeAmount || 0) })}`
-                  : ''}
-              </Muted>
-            ) : null}
-            <View style={{ gap: 4 }}>
-              {!isVendor && item.paymentStatus === 'PENDING' && (
-                <Button title={t('booking.payNow')} onPress={() => pay(item)} />
-              )}
-              {isVendor && activeTrip(item) && !hasArrived(item) && (
-                <Button
-                  title={t('booking.vendorArrivedButton')}
-                  onPress={() => {
-                    Alert.alert(t('booking.vendorArrivedButton'), t('booking.vendorArrivedAsk'), [
-                      { text: t('common.cancel'), style: 'cancel' },
-                      {
-                        text: t('common.continue'),
-                        onPress: async () => {
-                          try {
-                            await vendorMarkArrived(item._id);
-                            Alert.alert(t('booking.vendorArrivedSuccess'));
-                            load();
-                          } catch (e) {
-                            Alert.alert(t('common.error'), e.response?.data?.message || t('booking.vendorArrivedFailed'));
-                          }
-                        },
-                      },
-                    ]);
-                  }}
-                />
-              )}
-              {!isVendor && activeTrip(item) && hasArrived(item) && !arrivalOk(item) && (
-                <Button
-                  title={t('booking.confirmArrivalButton')}
-                  onPress={() => {
-                    Alert.alert(t('booking.confirmArrivalButton'), t('booking.confirmArrivalAsk'), [
-                      { text: t('common.cancel'), style: 'cancel' },
-                      {
-                        text: t('common.continue'),
-                        onPress: async () => {
-                          try {
-                            await confirmServiceArrival(item._id);
-                            Alert.alert(t('booking.confirmArrivalSuccess'));
-                            load();
-                          } catch (e) {
-                            Alert.alert(t('common.error'), e.response?.data?.message || t('booking.confirmArrivalFailed'));
-                          }
-                        },
-                      },
-                    ]);
-                  }}
-                />
-              )}
-              {isVendor && activeTrip(item) && arrivalOk(item) && !endProposed(item) && endBookingId !== item._id && (
-                <Button
-                  title={t('booking.proposeEndButton')}
-                  variant="outline"
-                  onPress={() => {
-                    setEndBookingId(item._id);
-                    setOvertimeHours('0');
-                  }}
-                />
-              )}
-              {isVendor && activeTrip(item) && arrivalOk(item) && !endProposed(item) && endBookingId === item._id && (
-                <View>
-                  <Muted>{t('booking.proposeEndTitle')}</Muted>
-                  <Muted>{t('booking.proposeEndOvertimeHint', { rate: formatCurrency(OVERTIME_PER_HOUR) })}</Muted>
-                  <Field label={t('booking.overtimeHours')} value={overtimeHours} onChangeText={setOvertimeHours} keyboardType="decimal-pad"/>
-                  <Muted>{t('booking.overtimeChargePreview', { amount: formatCurrency(Math.round((Number(overtimeHours) || 0) * OVERTIME_PER_HOUR)) })}</Muted>
-                  <Button
-                    title={t('booking.proposeEndConfirm')}
-                    onPress={() => {
-                      const hours = Math.max(0, Number(overtimeHours) || 0);
-                      const amount = formatCurrency(Math.round(hours * OVERTIME_PER_HOUR));
-                      Alert.alert(
-                        t('booking.proposeEndButton'),
-                        hours > 0
-                          ? t('booking.proposeEndWithOvertime', { hours, amount })
-                          : t('booking.proposeEndAsk'),
-                        [
-                          { text: t('common.cancel'), style: 'cancel' },
-                          {
-                            text: t('common.continue'),
-                            onPress: async () => {
-                              try {
-                                await vendorProposeEnd(item._id, hours);
-                                setEndBookingId(null);
-                                setOvertimeHours('0');
-                                Alert.alert(t('booking.proposeEndSuccess'));
-                                load();
-                              } catch (e) {
-                                Alert.alert(t('common.error'), e.response?.data?.message || t('booking.proposeEndFailed'));
-                              }
-                            },
-                          },
-                        ]
-                      );
-                    }}
-                  />
-                  <Button title={t('common.cancel')} variant="outline" onPress={() => setEndBookingId(null)}/>
-                </View>
-              )}
-              {!isVendor && activeTrip(item) && endProposed(item) && (
-                <Button
-                  title={t('booking.confirmEndButton')}
-                  onPress={() => {
-                    Alert.alert(
-                      t('booking.confirmEndButton'),
-                      item.overtimeHours > 0
-                        ? t('booking.confirmEndWithOvertime', {
-                          hours: item.overtimeHours,
-                          amount: formatCurrency(item.overtimeAmount || 0),
-                        })
-                        : t('booking.confirmEndAsk'),
-                      [
-                        { text: t('common.cancel'), style: 'cancel' },
-                        {
-                          text: t('common.continue'),
-                          onPress: async () => {
-                            try {
-                              await confirmServiceEnd(item._id);
-                              Alert.alert(t('booking.confirmEndSuccess'));
-                              load();
-                            } catch (e) {
-                              Alert.alert(t('common.error'), e.response?.data?.message || t('booking.confirmEndFailed'));
-                            }
-                          },
-                        },
-                      ]
+    const visible = items.filter((item) => bookingGroup(item) === filter);
+    const count = visible.length;
+    const countKey = filter === 'completed' ? 'Completed' : filter === 'cancelled' ? 'Cancelled' : 'Upcoming';
+
+    if (loading && !items.length) return <Loading />;
+
+    return (
+        <Screen style={{ padding: 0 }}>
+            <FlatList
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                data={visible}
+                keyExtractor={(item) => item._id}
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+                ListHeaderComponent={(
+                    <View>
+                        <View style={[styles.band, { paddingTop: insets.top + 16 }]}>
+                            <View style={styles.bandRow}>
+                                <Text style={styles.pageTitle}>{t('nav.bookings')}</Text>
+                                <View style={styles.countPill}>
+                                    <Text style={styles.countPillText}>{t(`booking.pill${countKey}`, { count })}</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.countLine}>{t(count === 1 ? `booking.line${countKey}One` : `booking.line${countKey}`, { count })}</Text>
+                        </View>
+                        <View style={styles.filters}>
+                            {FILTERS.map((item) => {
+                                const on = item.id === filter;
+                                return (
+                                    <Pressable key={item.id} onPress={() => setFilter(item.id)} style={[styles.chip, on && styles.chipOn]}>
+                                        <Text style={[styles.chipText, on && styles.chipTextOn]}>{t(item.labelKey)}</Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    </View>
+                )}
+                ListEmptyComponent={(
+                    <Text style={styles.emptyText}>{items.length ? t('booking.emptyFilter') : t('booking.noBookings')}</Text>
+                )}
+                renderItem={({ item }) => {
+                    const dates = [stayDate(item.checkIn), stayDate(item.checkOut)].filter(Boolean).join(' – ');
+                    const image = bookingImage(item);
+                    const Icon = TYPE_ICON[item.type] || Hotel;
+                    return (
+                        <View style={styles.card}>
+                            <Pressable style={styles.cardMain} onPress={() => navigation.navigate('BookingDetail', { id: item._id })}>
+                                {image ? (
+                                    <Image source={{ uri: image }} style={styles.thumb} />
+                                ) : (
+                                    <View style={styles.thumbFallback}>
+                                        <Icon size={26} color={COLORS.primary} strokeWidth={2} />
+                                    </View>
+                                )}
+                                <View style={styles.body}>
+                                    <View style={styles.titleRow}>
+                                        <Text style={styles.name} numberOfLines={1}>{bookingTitle(item)}</Text>
+                                        <StatusBadge status={item.status} />
+                                    </View>
+                                    <View style={styles.dateRow}>
+                                        <Text style={styles.dates} numberOfLines={1}>{dates || item.type}</Text>
+                                        <Text style={styles.price}>{formatCurrency(item.total)}</Text>
+                                    </View>
+                                    <View style={styles.refRow}>
+                                        <Text style={[styles.ref, !isVendor && item.paymentStatus === 'PENDING' && styles.refWithPay]} numberOfLines={1}>{item.bookingNumber || item._id}</Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+                            {!isVendor && item.paymentStatus === 'PENDING' ? (
+                                <Pressable style={styles.pay} onPress={() => pay(item)}>
+                                    <Text style={styles.payText}>{t('booking.payNow')}</Text>
+                                </Pressable>
+                            ) : null}
+                        </View>
                     );
-                  }}
-                />
-              )}
-              {!isVendor && (item.paymentStatus === 'PAID' || item.invoiceUrl || item.invoiceNumber || item.status === 'COMPLETED') && (
-                <Button title={t('booking.invoice')} variant="outline" onPress={() => openInvoice(item)} />
-              )}
-              {!isVendor && ['CONFIRMED', 'PENDING'].includes(item.status) && item.paymentStatus === 'PAID' && (
-                <Button title={t('booking.refund')} variant="danger" onPress={() => askRefund(item)} />
-              )}
-              {isVendor && item.status === 'PENDING' && (
-                <>
-                  <Button
-                    title={t('booking.accept')}
-                    onPress={async () => {
-                      await updateBookingStatus(item._id, 'CONFIRMED');
-                      load();
-                    }}
-                  />
-                  <Button
-                    title={t('booking.reject')}
-                    variant="danger"
-                    onPress={async () => {
-                      await updateBookingStatus(item._id, 'CANCELLED');
-                      load();
-                    }}
-                  />
-                </>
-              )}
-            </View>
-          </Card>
-          );
-        }}
-      />
-      <Modal visible={!!checkout} animationType="slide" onRequestClose={() => setCheckout(null)}>
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
-          <Button title={t('common.cancel')} variant="outline" onPress={() => setCheckout(null)} />
-          {checkout ? (
-            <WebView
-              originWhitelist={['*']}
-              source={{ html: checkoutHtml(checkout) }}
-              onMessage={onCheckoutMessage}
-              javaScriptEnabled
+                }}
             />
-          ) : null}
-        </View>
-      </Modal>
-    </Screen>
-  );
+            <Modal visible={!!checkout} animationType="slide" onRequestClose={() => setCheckout(null)}>
+                <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                    <Button title={t('common.cancel')} variant="outline" onPress={() => setCheckout(null)} />
+                    {checkout ? (
+                        <WebView
+                            originWhitelist={['*']}
+                            source={{ html: checkoutHtml(checkout) }}
+                            onMessage={onCheckoutMessage}
+                            javaScriptEnabled
+                        />
+                    ) : null}
+                </View>
+            </Modal>
+        </Screen>
+    );
 }
 
 const styles = StyleSheet.create({
-  pageTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 24,
-    color: COLORS.text,
-    letterSpacing: -0.4,
-  },
-  header: { marginBottom: 4 },
-  pageHint: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: COLORS.muted,
-    marginTop: 4,
-  },
-  list: { flex: 1 },
-  listContent: { paddingBottom: 24 },
-  empty: { alignItems: 'center', paddingVertical: 28 },
-  emptyText: {
-    fontFamily: FONTS.medium,
-    fontSize: 15,
-    color: COLORS.muted,
-    textAlign: 'center',
-  },
-  cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
-  bookingTitle: { flex: 1, fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.text },
-  ref: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.muted, marginTop: 8 },
-  meta: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 2 },
-  badge: { flexShrink: 0, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontFamily: FONTS.semibold, fontSize: 11, letterSpacing: 0.3 },
-  total: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.text, marginTop: 10 },
-  guestBox: {
-    marginTop: 10,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  guestName: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.text },
-  guestMeta: { fontFamily: FONTS.regular, fontSize: 12, color: '#475569', marginTop: 2 },
+    band: {
+        paddingHorizontal: 16,
+        paddingBottom: 18,
+        backgroundColor: COLORS.primary,
+    },
+    bandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    pageTitle: {
+        flex: 1,
+        fontFamily: FONTS.bold,
+        fontSize: 26,
+        color: '#fff',
+        letterSpacing: -0.4,
+    },
+    countPill: {
+        backgroundColor: '#fff',
+        borderRadius: 999,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+    countPillText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary },
+    countLine: { fontFamily: FONTS.regular, fontSize: 14, color: '#DBEAFE', marginTop: 4 },
+    filters: { flexDirection: 'row', gap: 8, marginTop: 14, marginBottom: 4, paddingHorizontal: 16 },
+    chip: {
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        backgroundColor: '#fff',
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+    },
+    chipOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+    chipText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.body },
+    chipTextOn: { fontFamily: FONTS.semibold, color: '#fff' },
+    list: { flex: 1 },
+    listContent: { paddingBottom: 24 },
+    emptyText: {
+        fontFamily: FONTS.medium,
+        fontSize: 15,
+        color: COLORS.muted,
+        textAlign: 'center',
+        marginTop: 28,
+        paddingHorizontal: 16,
+    },
+    card: {
+        position: 'relative',
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 12,
+        marginTop: 12,
+        marginHorizontal: 16,
+    },
+    cardMain: { flexDirection: 'row', gap: 12 },
+    thumb: { width: 72, height: 72, borderRadius: 12, backgroundColor: COLORS.primarySoft },
+    thumbFallback: {
+        width: 72,
+        height: 72,
+        borderRadius: 12,
+        backgroundColor: COLORS.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    body: { flex: 1 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    name: { flex: 1, fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.text },
+    dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+    dates: { flex: 1, fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted },
+    price: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text },
+    refRow: { marginTop: 4 },
+    ref: { fontFamily: FONTS.medium, fontSize: 11, color: '#94A3B8' },
+    refWithPay: { marginRight: 118 },
+    badge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+    badgeText: { fontFamily: FONTS.semibold, fontSize: 10, letterSpacing: 0.2 },
+    pay: {
+        position: 'absolute',
+        right: 12,
+        bottom: 12,
+        backgroundColor: COLORS.primary,
+        borderRadius: 6,
+        paddingVertical: 3,
+        paddingHorizontal: 8,
+    },
+    payText: { fontFamily: FONTS.semibold, fontSize: 11, color: '#fff' },
 });

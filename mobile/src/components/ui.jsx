@@ -2,16 +2,17 @@ import React, { useContext, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { HeaderHeightContext } from '@react-navigation/elements';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
+import { useDeviceInsets } from '../utils/deviceInsets';
 import { Eye, EyeOff } from './home/icons';
 
 export function Screen({ children, style }) {
-    const insets = useSafeAreaInsets();
+    const insets = useDeviceInsets();
     const headerHeight = useContext(HeaderHeightContext) || 0;
     const flat = StyleSheet.flatten(style) || {};
     const contentTop = flat.padding === 0 ? 0 : (typeof flat.paddingTop === 'number' ? flat.paddingTop : 16);
-    const paddingTop = (headerHeight > 0 ? 0 : insets.top) + contentTop;
+    const headerClearsStatusBar = headerHeight > insets.top + 20;
+    const paddingTop = (headerClearsStatusBar ? 0 : insets.top) + contentTop;
     return <View style={[styles.screen, style, { paddingTop }]}>{children}</View>;
 }
 

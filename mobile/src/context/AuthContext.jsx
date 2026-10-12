@@ -5,13 +5,25 @@ import { clearToken, readToken, writeToken } from '../api/tokenStore';
 import { VENDOR_ROLES } from '../constants/theme';
 import { registerForPushNotifications, unregisterPushNotifications } from '../services/push';
 const AuthContext = createContext(null);
+const PORTAL_KEY = 'ymbPortal';
+
+async function rememberPortal(role) {
+    if (VENDOR_ROLES.includes(role))
+        await writeToken(PORTAL_KEY, 'vendor');
+    else
+        await clearToken(PORTAL_KEY);
+}
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [pendingOtp, setPendingOtp] = useState(null);
+    const [vendorSignedOut, setVendorSignedOut] = useState(false);
     const persistSession = async (payload) => {
         await writeToken('accessToken', payload.accessToken);
         await writeToken('refreshToken', payload.refreshToken);
+        await rememberPortal(payload.user?.role);
+        setVendorSignedOut(false);
         setUser(payload.user);
         setPendingOtp(null);
         registerForPushNotifications(payload.user.role).catch(() => { });
@@ -21,9 +33,14 @@ export function AuthProvider({ children }) {
         (async () => {
             try {
                 const token = await readToken('accessToken');
-                if (!token)
+                const portal = await readToken(PORTAL_KEY);
+                if (!token) {
+                    setVendorSignedOut(portal === 'vendor');
                     return;
+                }
                 const me = await fetchMe();
+                await rememberPortal(me?.role);
+                setVendorSignedOut(false);
                 setUser(me);
                 registerForPushNotifications(me.role).catch(() => { });
             }
@@ -31,6 +48,9 @@ export function AuthProvider({ children }) {
                 if (!isNetworkError(error)) {
                     await clearToken('accessToken');
                     await clearToken('refreshToken');
+                    const portal = await readToken(PORTAL_KEY);
+                    setUser(null);
+                    setVendorSignedOut(portal === 'vendor');
                 }
             }
             finally {
@@ -48,7 +68,9 @@ export function AuthProvider({ children }) {
                 if (!isNetworkError(error)) {
                     await clearToken('accessToken');
                     await clearToken('refreshToken');
+                    const portal = await readToken(PORTAL_KEY);
                     setUser(null);
+                    setVendorSignedOut(portal === 'vendor');
                 }
             }
         });
@@ -129,6 +151,7 @@ export function AuthProvider({ children }) {
         return updated;
     }, []);
     const logout = useCallback(async () => {
+        const wasVendor = VENDOR_ROLES.includes(user?.role);
         try {
             await unregisterPushNotifications();
         }
@@ -143,12 +166,21 @@ export function AuthProvider({ children }) {
         }
         await clearToken('accessToken');
         await clearToken('refreshToken');
+        if (wasVendor) {
+            await writeToken(PORTAL_KEY, 'vendor');
+            setVendorSignedOut(true);
+        }
+        else {
+            await clearToken(PORTAL_KEY);
+            setVendorSignedOut(false);
+        }
         setUser(null);
-    }, []);
+    }, [user]);
     const value = useMemo(() => ({
         user,
         loading,
         pendingOtp,
+        vendorSignedOut,
         isVendor: !!user && VENDOR_ROLES.includes(user.role),
         login,
         register,
@@ -157,7 +189,7 @@ export function AuthProvider({ children }) {
         resendOtp,
         saveProfile,
         logout,
-    }), [user, loading, pendingOtp, login, register, registerVendor, verifyOtp, resendOtp, saveProfile, logout]);
+    }), [user, loading, pendingOtp, vendorSignedOut, login, register, registerVendor, verifyOtp, resendOtp, saveProfile, logout]);
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => {

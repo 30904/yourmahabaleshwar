@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Building2, Calendar, CalendarDays, Car, CreditCard, FileText, Home, Languages, LayoutDashboard, Megaphone, Menu, Phone, ShoppingBag, Star, Tag, Tent, Trees, User, Wallet, X } from './icons';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BadgeCheck, Building2, Calendar, CalendarDays, Car, CreditCard, FileText, Headphones, Heart, Home, Languages, LayoutDashboard, Megaphone, Menu, Phone, Shield, ShoppingBag, Star, Tag, Tent, Trees, User, Wallet, X } from './icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS, FONTS } from '../../constants/theme';
 import { AVAILABILITY_ROLES } from '../../utils/vendorAvailability';
-import { openCategory } from './homeNav';
 
 const LISTING_LABEL = {
     HOTEL_VENDOR: 'vendor.navHotels',
@@ -33,26 +32,20 @@ const LISTING_ICON = {
 
 const logo = require('../../../assets/logo.png');
 
-const MENU = [
-    { key: 'hotels', labelKey: 'nav.stays' },
-    { key: 'resorts', labelKey: 'nav.resorts' },
-    { key: 'homestays', labelKey: 'nav.homestays' },
-    { key: 'tents', labelKey: 'nav.tents' },
-    { key: 'guides', labelKey: 'nav.guides' },
-    { key: 'taxi', labelKey: 'nav.taxi' },
-    { key: 'drivers', labelKey: 'nav.drivers' },
-    { key: 'horses', labelKey: 'nav.horses' },
+const SHORTCUTS = [
+    { key: 'bookings', labelKey: 'nav.myBookings', name: 'Bookings', Icon: Calendar },
+    { key: 'profile', labelKey: 'nav.profile', name: 'Account', Icon: User },
+    { key: 'saved', labelKey: 'nav.wishlist', name: 'Saved', Icon: Heart },
 ];
 
-const SHOP = [
-    { labelKey: 'nav.strawberries' },
-    { labelKey: 'nav.mapro' },
-    { labelKey: 'nav.combos' },
-];
-
-const PHONES = [
-    { label: '+91 9987 6567 92', href: 'tel:+919987656792' },
-    { label: '+91 9987 6866 92', href: 'tel:+919987686692' },
+const DRAWER_LINKS = [
+    { labelKey: 'footer.helpCentre', page: 'faq', Icon: Headphones },
+    { labelKey: 'footer.contactUs', page: 'contact', Icon: Phone },
+    { labelKey: 'footer.cancellation', page: 'cancel', Icon: FileText },
+    { labelKey: 'footer.about', page: 'about', Icon: BadgeCheck },
+    { labelKey: 'footer.blog', page: 'blogs', Icon: Megaphone },
+    { labelKey: 'footer.privacy', page: 'privacy', Icon: Shield },
+    { labelKey: 'footer.terms', page: 'terms', Icon: FileText },
 ];
 
 function MenuPanel({ children }) {
@@ -73,11 +66,10 @@ export default function HomeHeader({ navigation, children }) {
     const { t } = useTranslation();
     const { user, isVendor } = useAuth();
     const [open, setOpen] = useState(false);
-    const [enquire, setEnquire] = useState(false);
 
-    const go = (key) => {
+    const openScreen = (name, params) => {
         setOpen(false);
-        openCategory(navigation, t, key);
+        navigation.navigate(name, params);
     };
     const openVendorItem = (name) => {
         setOpen(false);
@@ -105,75 +97,92 @@ export default function HomeHeader({ navigation, children }) {
                 <Pressable style={styles.sideBtn} onPress={() => setOpen((value) => !value)} accessibilityLabel="Menu">
                     {open ? <X size={22} color="#475569" strokeWidth={2} /> : <Menu size={22} color="#475569" strokeWidth={2} />}
                 </Pressable>
-                <Pressable style={styles.logoWrap} onPress={() => navigation.navigate('HomeTab')} accessibilityLabel="Go to homepage">
-                    <Image source={logo} style={styles.logo} resizeMode="contain" />
-                </Pressable>
-                <Pressable
-                    style={styles.sideBtn}
-                    onPress={() => navigation.navigate(user ? 'Account' : 'Auth')}
-                    accessibilityLabel={user ? t('nav.account') : t('auth.signIn')}
-                >
-                    <User size={22} color="#475569" strokeWidth={2} />
-                </Pressable>
+                <View style={styles.logoSlot}>
+                    <Pressable onPress={() => navigation.navigate(isVendor ? 'Overview' : 'HomeTab')} accessibilityLabel={isVendor ? t('nav.overview') : t('nav.home')}>
+                        <Image source={logo} style={styles.logo} resizeMode="contain" />
+                    </Pressable>
+                </View>
+                {user ? (
+                    <Pressable
+                        style={styles.sideBtn}
+                        onPress={() => navigation.navigate('Account')}
+                        accessibilityLabel={t('nav.account')}
+                    >
+                        <User size={22} color="#475569" strokeWidth={2} />
+                    </Pressable>
+                ) : (
+                    <Pressable
+                        style={styles.signInBtn}
+                        onPress={() => navigation.navigate('Auth')}
+                        accessibilityLabel={t('auth.signIn')}
+                    >
+                        <Text style={styles.signInText}>{t('auth.signIn')}</Text>
+                    </Pressable>
+                )}
             </View>
             </View>
             {open ? (
                 <MenuPanel>
-                    {isVendor ? vendorMenu.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <Pressable key={item.name} style={styles.menuItem} onPress={() => openVendorItem(item.name)}>
-                                <Icon size={18} color="#64748B" strokeWidth={2} />
-                                <Text style={styles.menuText}>{item.title}</Text>
-                            </Pressable>
-                        );
-                    }) : (
+                    {isVendor ? (
                         <>
-                            {MENU.map((item) => (
-                                <Pressable key={item.key} style={styles.menuItem} onPress={() => go(item.key)}>
-                                    <Text style={styles.menuText}>{t(item.labelKey)}</Text>
-                                </Pressable>
-                            ))}
-                            <Text style={styles.shopLabel}>{t('nav.shop')}</Text>
-                            {SHOP.map((item) => (
-                                <Pressable
-                                    key={item.labelKey}
-                                    style={styles.menuItem}
-                                    onPress={() => {
-                                        setOpen(false);
-                                        setEnquire(true);
-                                    }}
-                                >
-                                    <Text style={styles.menuText}>
-                                        {t(item.labelKey)} <Text style={styles.soon}>{t('nav.comingSoon')}</Text>
-                                    </Text>
-                                </Pressable>
-                            ))}
+                            <View style={styles.shortcutRow}>
+                                {[
+                                    { title: t('nav.overview'), name: 'Overview', Icon: LayoutDashboard },
+                                    { title: t('nav.bookings'), name: 'Bookings', Icon: Calendar },
+                                    { title: t('nav.wallet'), name: 'Wallet', Icon: Wallet },
+                                ].map((item) => (
+                                    <Pressable key={item.name} style={styles.shortcut} onPress={() => openVendorItem(item.name)}>
+                                        <item.Icon size={22} color={COLORS.primary} strokeWidth={2} />
+                                        <Text style={styles.shortcutText}>{item.title}</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                            <View style={styles.linkCard}>
+                                {vendorMenu.filter((item) => !['Overview', 'Bookings', 'Wallet'].includes(item.name)).map((item, index, rows) => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <Pressable
+                                            key={item.name}
+                                            style={[styles.linkRow, index < rows.length - 1 && styles.linkRowBorder]}
+                                            onPress={() => openVendorItem(item.name)}
+                                        >
+                                            <Icon size={18} color={COLORS.primary} strokeWidth={2} />
+                                            <Text style={styles.linkText}>{item.title}</Text>
+                                            <Text style={styles.chevron}>›</Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        </>
+                    ) : (
+                        <>
+                            <View style={styles.shortcutRow}>
+                                {SHORTCUTS.map((item) => (
+                                    <Pressable key={item.key} style={styles.shortcut} onPress={() => openScreen(item.name)}>
+                                        <item.Icon size={22} color={COLORS.primary} strokeWidth={2} />
+                                        <Text style={styles.shortcutText}>{t(item.labelKey)}</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                            <View style={styles.linkCard}>
+                                {DRAWER_LINKS.map((item, index) => (
+                                    <Pressable
+                                        key={item.page}
+                                        style={[styles.linkRow, index < DRAWER_LINKS.length - 1 && styles.linkRowBorder]}
+                                        onPress={() => openScreen('Content', { page: item.page })}
+                                    >
+                                        <item.Icon size={18} color={COLORS.primary} strokeWidth={2} />
+                                        <Text style={styles.linkText}>{t(item.labelKey)}</Text>
+                                        <Text style={styles.chevron}>›</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
                         </>
                     )}
                 </MenuPanel>
             ) : (
                 <View style={styles.body}>{children}</View>
             )}
-            <Modal visible={enquire} transparent animationType="fade" onRequestClose={() => setEnquire(false)}>
-                <Pressable style={styles.backdrop} onPress={() => setEnquire(false)}>
-                    <Pressable style={styles.dialog} onPress={() => {}}>
-                        <View style={styles.dialogHead}>
-                            <Text style={styles.dialogTitle}>{t('nav.enquireAboutProducts')}</Text>
-                            <Pressable onPress={() => setEnquire(false)} accessibilityLabel={t('nav.closeEnquire')}>
-                                <X size={18} color="#94A3B8" strokeWidth={2} />
-                            </Pressable>
-                        </View>
-                        <Text style={styles.dialogHint}>{t('nav.enquireShopHint')}</Text>
-                        {PHONES.map((phone) => (
-                            <Pressable key={phone.href} style={styles.phone} onPress={() => Linking.openURL(phone.href)}>
-                                <Phone size={18} color={COLORS.primary} strokeWidth={2} />
-                                <Text style={styles.phoneText}>{phone.label}</Text>
-                            </Pressable>
-                        ))}
-                    </Pressable>
-                </Pressable>
-            </Modal>
         </View>
     );
 }
@@ -188,62 +197,86 @@ const styles = StyleSheet.create({
         zIndex: 20,
     },
     row: {
+        position: 'relative',
         minHeight: 64,
         paddingHorizontal: 16,
         paddingVertical: 8,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
     },
     sideBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
-    logoWrap: { flex: 1, alignItems: 'center' },
+    signInBtn: {
+        minHeight: 36,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    signInText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
+    logoSlot: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'box-none',
+    },
     logo: { width: 148, height: 42 },
     menuFill: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.bg,
         borderTopWidth: 1,
         borderTopColor: '#F1F5F9',
         ...(Platform.OS === 'web' ? { overflowY: 'auto' } : null),
     },
     menu: {
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 16,
         flexGrow: 1,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.bg,
     },
-    menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 2 },
-    menuText: { fontFamily: FONTS.medium, fontSize: 14, color: '#334155' },
-    shopLabel: {
-        marginTop: 12,
-        marginBottom: 4,
-        paddingHorizontal: 12,
-        fontFamily: FONTS.semibold,
-        fontSize: 12,
-        letterSpacing: 0.6,
-        textTransform: 'uppercase',
-        color: '#94A3B8',
-    },
-    soon: { color: '#EF4444' },
-    backdrop: {
+    shortcutRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+    shortcut: {
         flex: 1,
-        backgroundColor: 'rgba(15,23,42,0.45)',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
+        minHeight: 96,
+        paddingHorizontal: 6,
+        paddingVertical: 14,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
-    dialog: { width: '100%', maxWidth: 420, backgroundColor: '#fff', borderRadius: 16, padding: 24 },
-    dialogHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
-    dialogTitle: { flex: 1, fontFamily: FONTS.bold, fontSize: 18, color: '#0F172A' },
-    dialogHint: { fontFamily: FONTS.regular, fontSize: 14, color: '#475569', marginTop: 4, marginBottom: 16 },
-    phone: {
+    shortcutText: {
+        marginTop: 8,
+        fontFamily: FONTS.semibold,
+        fontSize: 12,
+        lineHeight: 16,
+        color: COLORS.primary,
+        textAlign: 'center',
+    },
+    linkCard: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        overflow: 'hidden',
+    },
+    linkRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        borderRadius: 12,
         paddingHorizontal: 16,
-        paddingVertical: 12,
-        marginBottom: 12,
+        paddingVertical: 14,
     },
-    phoneText: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.primary },
+    linkRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    linkText: { flex: 1, fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.primary },
+    chevron: { fontFamily: FONTS.semibold, fontSize: 22, color: '#94A3B8' },
 });

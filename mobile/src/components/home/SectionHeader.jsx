@@ -2,12 +2,18 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { COLORS, FONTS } from '../../constants/theme';
 
-export default function SectionHeader({ eyebrow, title, subtitle, linkLabel, onPress }) {
+export default function SectionHeader({ eyebrow, title, subtitle, linkLabel, onPress, pressTitle }) {
     return (
         <View style={styles.row}>
             <View style={styles.copy}>
                 {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-                <Text style={styles.title}>{title}</Text>
+                {pressTitle && onPress ? (
+                    <Pressable onPress={onPress} hitSlop={8}>
+                        <Text style={styles.title}>{title}</Text>
+                    </Pressable>
+                ) : (
+                    <Text style={styles.title}>{title}</Text>
+                )}
                 {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
             </View>
             {onPress && linkLabel ? (

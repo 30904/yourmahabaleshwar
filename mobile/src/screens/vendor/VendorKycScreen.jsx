@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Line, Path } from 'react-native-svg/src/index';
+import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { getDocumentRequirements, getMyKyc, submitKyc } from '../../api/endpoints';
 import { useReconnect } from '../../api/useReconnect';
+import VendorPageBand from '../../components/VendorPageBand';
 import { Button, Card, Field, Loading, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -212,6 +214,7 @@ function appendKycFile(form, field, file) {
 
 export default function VendorKycScreen() {
     const { t } = useTranslation();
+    const navigation = useNavigation();
     const { user } = useAuth();
     const vendorType = ROLE_TO_VENDOR_TYPE[user?.role] || 'HOTEL';
     const [loading, setLoading] = useState(true);
@@ -227,6 +230,10 @@ export default function VendorKycScreen() {
     const [bank, setBank] = useState(emptyBank);
     const [onlineTick, setOnlineTick] = useState(0);
     useReconnect(useCallback(() => setOnlineTick((n) => n + 1), []));
+
+    useLayoutEffect(() => {
+        navigation.setOptions({ headerShown: false });
+    }, [navigation]);
 
     useEffect(() => {
         let active = true;
@@ -306,30 +313,23 @@ export default function VendorKycScreen() {
 
     if (loading) return <Loading />;
 
-    const tone = status === 'APPROVED' ? styles.ok : status === 'REJECTED' ? styles.bad : styles.pending;
-    const toneText = status === 'APPROVED' ? styles.okText : status === 'REJECTED' ? styles.badText : styles.pendingText;
-
     return (
-        <Screen>
+        <Screen style={styles.screen}>
             <ScrollView contentContainerStyle={styles.scroll}>
-                <Card>
-                    <View style={styles.head}>
-                        <View style={styles.headCopy}>
-                            <Text style={styles.pageTitle}>{t('vendor.kycTitle')}</Text>
-                            <Text style={styles.hint}>{t('vendor.kycHint')}</Text>
-                        </View>
-                        <View style={[styles.badge, tone]}>
-                            <Text style={[styles.badgeText, toneText]}>{status}</Text>
-                        </View>
+                <VendorPageBand title={t('nav.kyc')} pill={status} line={t('vendor.kycHint')} />
+                <View style={styles.content}>
+                {rejectionReason ? (
+                    <View style={styles.danger}>
+                        <Text style={styles.dangerText}>{t('vendor.rejectionReason')}: {rejectionReason}</Text>
                     </View>
-                    {rejectionReason ? (
-                        <View style={styles.danger}>
-                            <Text style={styles.dangerText}>{t('vendor.rejectionReason')}: {rejectionReason}</Text>
-                        </View>
-                    ) : null}
+                ) : null}
+                <Card>
+                    <Text style={styles.sectionTitle}>{t('vendor.kycIdentity')}</Text>
                     <Field label={t('vendor.aadhaar')} value={aadhar} onChangeText={setAadhar} keyboardType="numeric" />
                     <Field label={t('vendor.pan')} value={pan} onChangeText={(value) => setPan(value.toUpperCase())} autoCapitalize="characters" />
                     <Field label={t('vendor.gst')} value={gstNumber} onChangeText={(value) => setGstNumber(value.toUpperCase())} autoCapitalize="characters" />
+                </Card>
+                <Card>
                     <Text style={styles.sectionTitle}>{t('vendor.bankDetails')}</Text>
                     <Field label={t('vendor.accountHolder')} value={bank.accountHolder} onChangeText={(value) => setBankField('accountHolder', value)} autoCapitalize="words" />
                     <Field label={t('vendor.accountNumber')} value={bank.accountNumber} onChangeText={(value) => setBankField('accountNumber', value)} keyboardType="numeric" />
@@ -337,6 +337,9 @@ export default function VendorKycScreen() {
                     <Field label={t('vendor.bankName')} value={bank.bankName} onChangeText={(value) => setBankField('bankName', value)} autoCapitalize="words" />
                     <Field label={t('vendor.branch')} value={bank.branch} onChangeText={(value) => setBankField('branch', value)} autoCapitalize="words" />
                     <Field label={t('vendor.upi')} value={bank.upiId} onChangeText={(value) => setBankField('upiId', value)} autoCapitalize="none" />
+                </Card>
+                <Card>
+                    <Text style={styles.sectionTitle}>{t('vendor.kycTitle')}</Text>
                     {docs.map((doc) => (
                         <KycDropzone
                             key={doc.code}
@@ -346,28 +349,25 @@ export default function VendorKycScreen() {
                             onChange={(file) => setFiles((prev) => ({ ...prev, [doc.code]: file }))}
                         />
                     ))}
-                    <Button title={t('vendor.submitKyc')} onPress={onSubmit} loading={saving} />
+                    <Button title={t('vendor.submitKyc')} onPress={onSubmit} loading={saving} style={styles.submitBtn} />
                 </Card>
+                </View>
             </ScrollView>
         </Screen>
     );
 }
 
 const styles = StyleSheet.create({
+    screen: { padding: 0 },
     scroll: { paddingBottom: 24 },
-    head: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 16 },
-    headCopy: { flexGrow: 1, flexShrink: 1, minWidth: 180 },
-    pageTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-    hint: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.muted, marginTop: 8, lineHeight: 20 },
-    sectionTitle: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.text, marginBottom: 8, marginTop: 8 },
-    badge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
-    badgeText: { fontFamily: FONTS.semibold, fontSize: 12 },
-    ok: { backgroundColor: '#ECFDF5' },
-    okText: { color: '#047857' },
-    pending: { backgroundColor: '#FFFBEB' },
-    pendingText: { color: '#92400E' },
-    bad: { backgroundColor: '#FFF1F2' },
-    badText: { color: '#BE123C' },
+    content: { paddingHorizontal: 16, paddingTop: 14 },
+    sectionTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary, marginBottom: 12 },
+    submitBtn: {
+        backgroundColor: COLORS.primary,
+        elevation: 0,
+        shadowOpacity: 0,
+        ...Platform.select({ web: { boxShadow: 'none' }, default: {} }),
+    },
     danger: { backgroundColor: '#FFF1F2', borderRadius: 12, padding: 12, marginBottom: 12 },
     dangerText: { fontFamily: FONTS.medium, fontSize: 13, color: '#9F1239', lineHeight: 18 },
     dropWrap: { marginBottom: 14 },
