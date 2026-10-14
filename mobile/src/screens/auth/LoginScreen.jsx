@@ -135,7 +135,7 @@ export default function LoginScreen({ navigation }) {
                             <>
                                 <Text style={styles.title}>{t('auth.verify')}</Text>
                                 <Muted>{t('auth.otpHint')}</Muted>
-                                <DevOtp code={devHint || pendingOtp?.devCode} />
+                                {__DEV__ ? <DevOtp code={devHint || pendingOtp?.devCode} /> : null}
                                 <Field soft label={t('auth.otp')} value={otp} onChangeText={setOtp} keyboardType="numeric" maxLength={6} />
                                 <FormError message={error} />
                                 <Button title={t('auth.verify')} onPress={onVerify} loading={loading} />

@@ -155,7 +155,7 @@ export default function VendorRegisterScreen({ navigation }) {
             ) : (
                 <>
                     <Muted>{t('auth.otpHint')}</Muted>
-                    <DevOtp code={devHint || pendingOtp?.devCode} />
+                    {__DEV__ ? <DevOtp code={devHint || pendingOtp?.devCode} /> : null}
                     <Field label={t('auth.otp')} value={otp} onChangeText={setOtp} keyboardType="numeric" maxLength={6} />
                     <FormError message={error} />
                     <Button title={t('auth.verify')} loading={loading} onPress={onVerify} />
