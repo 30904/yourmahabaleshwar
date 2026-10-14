@@ -12,7 +12,7 @@ import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { bookingTitle } from '../../utils/listing';
-import { checkoutHtml, openWebCheckout } from '../../services/razorpayCheckout';
+import { checkoutHtml, openWebCheckout, usesMockRazorpay } from '../../services/razorpayCheckout';
 import { STATUS_TONE, bookingGroup, bookingImage, stayDate } from './bookingModel';
 
 const FILTERS = [
@@ -81,7 +81,11 @@ export default function BookingsScreen() {
     const pay = async (b) => {
         try {
             const { order, payment, keyId } = await createPaymentOrder(b._id);
-            if (order.mock || keyId === 'mock_key' || !keyId) {
+            if (usesMockRazorpay({ order, keyId })) {
+                if (!__DEV__) {
+                    Alert.alert(t('common.error'), t('booking.paymentUnavailable'));
+                    return;
+                }
                 await verifyPayment({
                     paymentId: payment._id,
                     razorpayPaymentId: `pay_mock_${Date.now()}`,

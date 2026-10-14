@@ -5,7 +5,7 @@ import Homestay from '../models/Homestay.js';
 import Tent from '../models/Tent.js';
 import PlatformSettings from '../models/PlatformSettings.js';
 import User from '../models/User.js';
-import { createOrder, verifyPaymentSignature, createRefund } from '../services/razorpayService.js';
+import { createOrder, verifyPaymentSignature, createRefund, razorpayPublicKeyId } from '../services/razorpayService.js';
 import { generateInvoicePdf } from '../services/invoiceService.js';
 import { createNotification } from '../services/notificationService.js';
 import { sendWhatsAppPaymentCompleted } from '../services/whatsappService.js';
@@ -57,7 +57,12 @@ export const createPaymentOrder = async (req, res) => {
   if (String(booking.customer) !== String(req.user._id) && req.user.role !== 'SUPER_ADMIN') {
     return error(res, 'Forbidden', 403);
   }
-  const order = await createOrder(booking.total, booking.bookingNumber, { bookingId });
+  let order;
+  try {
+    order = await createOrder(booking.total, booking.bookingNumber, { bookingId });
+  } catch (err) {
+    return error(res, err.message || 'Payments are temporarily unavailable', err.statusCode || 503);
+  }
   const payment = await Payment.create({
     booking: bookingId,
     user: req.user._id,
@@ -65,11 +70,14 @@ export const createPaymentOrder = async (req, res) => {
     razorpayOrderId: order.id,
     status: 'CREATED',
   });
-  return success(res, { order, payment, keyId: process.env.RAZORPAY_KEY_ID || 'mock_key' });
+  return success(res, { order, payment, keyId: razorpayPublicKeyId() });
 };
 
 export const verifyPayment = async (req, res) => {
   const { paymentId, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+  if (process.env.NODE_ENV === 'production' && String(razorpayPaymentId || '').startsWith('pay_mock_')) {
+    return error(res, 'Payments are temporarily unavailable', 503);
+  }
   const payment = await Payment.findById(paymentId);
   if (!payment) return error(res, 'Payment not found', 404);
 

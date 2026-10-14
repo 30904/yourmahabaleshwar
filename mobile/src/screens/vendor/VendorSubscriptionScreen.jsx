@@ -19,7 +19,7 @@ import VendorPageBand from '../../components/VendorPageBand';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
-import { checkoutHtml, openWebCheckout } from '../../services/razorpayCheckout';
+import { checkoutHtml, openWebCheckout, usesMockRazorpay } from '../../services/razorpayCheckout';
 
 const STAY_ROLES = new Set(['HOTEL_VENDOR', 'HOMESTAY_VENDOR']);
 const SERVICE_ROLES = new Set(['GUIDE', 'TAXI_OPERATOR', 'DRIVER', 'TENT_OPERATOR', 'HORSE_OPERATOR']);
@@ -86,7 +86,11 @@ export default function VendorSubscriptionScreen() {
     const pay = async ({ orderResult, description, confirm }) => {
         const order = orderResult?.order;
         const keyId = orderResult?.keyId;
-        if (!order || order.mock || keyId === 'mock_key' || !keyId) {
+        if (usesMockRazorpay({ order, keyId })) {
+            if (!__DEV__) {
+                Alert.alert(t('common.error'), t('booking.paymentUnavailable'));
+                return;
+            }
             await confirm(mockIds(order));
             return;
         }

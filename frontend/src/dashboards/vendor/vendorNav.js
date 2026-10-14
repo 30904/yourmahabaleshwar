@@ -14,6 +14,7 @@ import {
   Tent,
   Tag,
   Trees,
+  User,
   Wallet,
 } from 'lucide-react';
 import { ROLES } from '../../constants/roles';
@@ -134,6 +135,7 @@ export function getVendorNav(role, t) {
     { to: '/dashboard/vendor/reviews', label: t('vendor.reviews'), icon: Star },
     { to: '/dashboard/vendor/wallet', label: t('vendor.wallet'), icon: Wallet },
     { to: '/dashboard/vendor/kyc', label: t('vendor.navKyc'), icon: FileText },
+    { to: '/dashboard/vendor/profile', label: t('customer.profile'), icon: User },
   );
   return items;
 }

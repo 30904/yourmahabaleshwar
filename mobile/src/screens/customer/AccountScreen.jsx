@@ -6,6 +6,7 @@ import i18n from '../../i18n';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../components/confirm';
 import { Button, Card, Field, Muted, Screen } from '../../components/ui';
+import { deleteAccount } from '../../api/endpoints';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 
 function roleLabel(role) {
@@ -52,6 +53,7 @@ export default function AccountScreen() {
     const [phone, setPhone] = useState(user?.phone || '');
     const [saving, setSaving] = useState(false);
     const [signingOut, setSigningOut] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         setName(user?.name || '');
@@ -93,6 +95,27 @@ export default function AccountScreen() {
                 }
                 finally {
                     setSigningOut(false);
+                }
+            },
+        });
+    };
+
+    const removeAccount = () => {
+        confirm({
+            title: t('account.deleteAccount'),
+            message: t('account.deleteAccountAsk'),
+            cancelText: t('common.cancel'),
+            confirmText: t('account.deleteAccount'),
+            destructive: true,
+            onConfirm: async () => {
+                setDeleting(true);
+                try {
+                    await deleteAccount();
+                    await logout();
+                } catch (e) {
+                    Alert.alert(t('common.error'), e.response?.data?.message || e.message);
+                } finally {
+                    setDeleting(false);
                 }
             },
         });
@@ -198,13 +221,21 @@ export default function AccountScreen() {
                         />
                     ))}
                     {user ? (
-                        <MenuRow
-                            title={signingOut ? t('account.signingOut') : t('auth.logout')}
-                            onPress={signOut}
-                            danger
-                            last
-                            disabled={signingOut}
-                        />
+                        <>
+                            <MenuRow
+                                title={signingOut ? t('account.signingOut') : t('auth.logout')}
+                                onPress={signOut}
+                                danger
+                                disabled={signingOut || deleting}
+                            />
+                            <MenuRow
+                                title={deleting ? t('account.deletingAccount') : t('account.deleteAccount')}
+                                onPress={removeAccount}
+                                danger
+                                last
+                                disabled={deleting || signingOut}
+                            />
+                        </>
                     ) : null}
                 </View>
 

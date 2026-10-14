@@ -9,7 +9,7 @@ import {
   serviceTenantForRole,
 } from '../constants/serviceMonetization.js';
 import { createNotification } from './notificationService.js';
-import { createOrder, verifyPaymentSignature } from './razorpayService.js';
+import { createOrder, verifyPaymentSignature, razorpayPublicKeyId } from './razorpayService.js';
 import { issueSubscriptionInvoice } from './subscriptionInvoiceService.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -174,7 +174,7 @@ export async function createPointsRechargeOrder(vendorId, amountInRupees, tenant
     points,
     rupeesPerPoint: rate,
     order,
-    keyId: process.env.RAZORPAY_KEY_ID || 'mock_key',
+    keyId: razorpayPublicKeyId(),
   };
 }
 
@@ -261,7 +261,7 @@ export async function createUnlimitedMonthlyOrder(vendorId, tenantType) {
     purpose: 'SERVICE_UNLIMITED_MONTHLY',
   });
 
-  return { tenantType: tenant, amount, order, keyId: process.env.RAZORPAY_KEY_ID || 'mock_key' };
+  return { tenantType: tenant, amount, order, keyId: razorpayPublicKeyId() };
 }
 
 export async function activateUnlimitedMonthly(vendorId, tenantType, { paymentRef, amountPaid } = {}) {

@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: { type: String },
     isActive: { type: Boolean, default: true },
+    deletedAt: { type: Date },
     isEmailVerified: { type: Boolean, default: false },
     isPhoneVerified: { type: Boolean, default: false },
     refreshToken: { type: String, select: false },

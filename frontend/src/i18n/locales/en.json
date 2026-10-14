@@ -2387,7 +2387,11 @@
   "customer": {
     "overview": "Customer Overview",
     "profile": "Profile",
-    "myBookings": "My Bookings"
+    "myBookings": "My Bookings",
+    "deleteAccount": "Delete account",
+    "deletingAccount": "Deleting account...",
+    "deleteAccountAsk": "Your account will be closed and you will not be able to sign in. Your bookings and records stay with the admin.",
+    "deleteAccountFailed": "Could not delete the account"
   },
   "shop": {
     "strawberryTitle": "Fresh Strawberries",

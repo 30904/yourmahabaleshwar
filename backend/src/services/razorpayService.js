@@ -19,6 +19,11 @@ export const getRazorpay = () => {
 export const createOrder = async (amount, receipt, notes = {}) => {
   const razorpay = getRazorpay();
   if (!razorpay) {
+    if (process.env.NODE_ENV === 'production') {
+      const err = new Error('Payments are temporarily unavailable');
+      err.statusCode = 503;
+      throw err;
+    }
     return { id: `order_mock_${Date.now()}`, amount: amount * 100, currency: 'INR', mock: true };
   }
   return razorpay.orders.create({
@@ -29,10 +34,20 @@ export const createOrder = async (amount, receipt, notes = {}) => {
   });
 };
 
+export const razorpayPublicKeyId = () => {
+  if (process.env.RAZORPAY_KEY_ID) return process.env.RAZORPAY_KEY_ID;
+  if (process.env.NODE_ENV === 'production') {
+    const err = new Error('Payments are temporarily unavailable');
+    err.statusCode = 503;
+    throw err;
+  }
+  return 'mock_key';
+};
+
 export const verifyPaymentSignature = ({ orderId, paymentId, signature }) => {
   const secret = process.env.RAZORPAY_KEY_SECRET;
   if (!secret) {
-    // Dev/mock mode — accept signatures starting with mock_ or any when keys absent
+    if (process.env.NODE_ENV === 'production') return false;
     return Boolean(signature);
   }
   const body = `${orderId}|${paymentId}`;

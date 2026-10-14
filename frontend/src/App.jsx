@@ -22,6 +22,7 @@ import HorsesPage from './pages/public/HorsesPage';
 // import CombosPage from './pages/public/CombosPage';
 // import ComboDetailPage from './pages/public/ComboDetailPage';
 import StaticPage from './pages/public/StaticPage';
+import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import VendorRegisterPage from './pages/auth/VendorRegisterPage';
@@ -141,9 +142,7 @@ export default function App() {
             <p>Mahabaleshwar is a scenic hill station in Maharashtra, famous for strawberries, viewpoints, and pleasant weather year-round.</p>
           </StaticPage>
         } />
-        <Route path="privacy-policy" element={
-          <StaticPage title="Privacy Policy"><p>We respect your privacy and protect personal data per applicable laws.</p></StaticPage>
-        } />
+        <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="terms" element={
           <StaticPage title="Terms & Conditions"><p>By using this platform you agree to our booking and payment terms.</p></StaticPage>
         } />
@@ -185,6 +184,7 @@ export default function App() {
         <Route path="subscription" element={<VendorMySubscription />} />
         <Route path="advertisements" element={<VendorAdvertisements />} />
         <Route path="kyc" element={<VendorKYC />} />
+        <Route path="profile" element={<CustomerProfile />} />
       </Route>
 
       <Route path="dashboard/admin" element={

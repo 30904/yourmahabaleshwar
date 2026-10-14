@@ -2373,7 +2373,11 @@
   "customer": {
     "overview": "ग्राहक आढावा",
     "profile": "प्रोफाइल",
-    "myBookings": "माझी बुकिंग्ज"
+    "myBookings": "माझी बुकिंग्ज",
+    "deleteAccount": "खाते हटवा",
+    "deletingAccount": "खाते हटवत आहे...",
+    "deleteAccountAsk": "तुमचे खाते बंद होईल आणि तुम्ही साइन इन करू शकणार नाही. बुकिंग आणि नोंदी अॅडमिनकडे राहतील.",
+    "deleteAccountFailed": "खाते हटवता आले नाही"
   },
   "shop": {
     "strawberryTitle": "ताज्या स्ट्रॉबेरी",

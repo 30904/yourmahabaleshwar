@@ -11,7 +11,7 @@ import { Megaphone } from '../../components/home/icons';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
-import { checkoutHtml, openWebCheckout } from '../../services/razorpayCheckout';
+import { checkoutHtml, openWebCheckout, usesMockRazorpay } from '../../services/razorpayCheckout';
 
 const AD_ROLES = new Set(['HOTEL_VENDOR', 'HOMESTAY_VENDOR', 'TENT_OPERATOR']);
 
@@ -161,7 +161,11 @@ export default function VendorAdsScreen() {
                 setListingKey('');
                 load();
             };
-            if (!order || order.mock || keyId === 'mock_key' || !keyId) {
+            if (usesMockRazorpay({ order, keyId })) {
+                if (!__DEV__) {
+                    Alert.alert(t('common.error'), t('booking.paymentUnavailable'));
+                    return;
+                }
                 await confirm({
                     razorpayPaymentId: `pay_mock_${Date.now()}`,
                     razorpayOrderId: order?.id,

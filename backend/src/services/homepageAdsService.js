@@ -4,7 +4,7 @@ import Hotel from '../models/Hotel.js';
 import Homestay from '../models/Homestay.js';
 import Tent from '../models/Tent.js';
 import { APPROVAL_STATUS, resolveListingStatus } from '../utils/listingApproval.js';
-import { createOrder, verifyPaymentSignature } from './razorpayService.js';
+import { createOrder, verifyPaymentSignature, razorpayPublicKeyId } from './razorpayService.js';
 import { createNotification } from './notificationService.js';
 
 export const HOMEPAGE_HERO_PLACEMENT = 'HOMEPAGE_HERO';
@@ -154,7 +154,7 @@ export async function createHomepageAdOrder(vendorId, { packageId, listingType, 
     amount,
     slotsRemaining: MAX_HOMEPAGE_HERO_SLOTS - activeCount,
     order,
-    keyId: process.env.RAZORPAY_KEY_ID || 'mock_key',
+    keyId: razorpayPublicKeyId(),
   };
 }
 

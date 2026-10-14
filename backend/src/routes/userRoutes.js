@@ -12,7 +12,8 @@ import {
 } from '../services/notificationService.js';
 import { success, error } from '../utils/apiResponse.js';
 import { protect, authorize } from '../middleware/auth.js';
-import { ROLES } from '../constants/roles.js';
+import { ROLES, VENDOR_ROLES } from '../constants/roles.js';
+import DeviceToken from '../models/DeviceToken.js';
 import { Router } from 'express';
 
 const resolveWishlistItems = async (wishlist = []) => {
@@ -58,6 +59,19 @@ router.patch('/me', async (req, res) => {
   }
   const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
   return success(res, user);
+});
+
+router.delete('/me', async (req, res) => {
+  const canSelfDelete = req.user.role === ROLES.CUSTOMER || VENDOR_ROLES.includes(req.user.role);
+  if (!canSelfDelete) return error(res, 'This account cannot be deleted here', 403);
+  await DeviceToken.deleteMany({ user: req.user._id });
+  await User.findByIdAndUpdate(req.user._id, {
+    isActive: false,
+    refreshToken: null,
+    wishlist: [],
+    deletedAt: new Date(),
+  });
+  return success(res, null, 'Account deleted');
 });
 
 router.get('/wishlist', async (req, res) => {

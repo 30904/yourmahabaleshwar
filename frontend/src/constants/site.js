@@ -5,7 +5,7 @@ export const SITE_URL = (
 
 export const SITE_NAME = 'YOURMAHABALESHWAR.COM';
 export const SUPPORT_EMAIL = 'support@yourmahabaleshwar.com';
-export const CONTACT_EMAIL = 'hello@yourmahabaleshwar.com';
+export const CONTACT_EMAIL = 'smenterprise9215@gmail.com';
 
 /** Public contact numbers shown on Contact Us / About Us */
 export const SUPPORT_PHONES = [

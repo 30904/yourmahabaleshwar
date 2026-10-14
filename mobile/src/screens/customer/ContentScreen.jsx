@@ -6,12 +6,13 @@ import { loadPublic } from '../../api/publicCache';
 import { Button, Card, Field, Loading, Screen } from '../../components/ui';
 import HtmlText from '../../components/HtmlText';
 import { COLORS, FONTS } from '../../constants/theme';
+import { privacyPolicyFor } from '../../content/privacyPolicy';
 
 const PHONES = [
     { label: '+91 9987 6567 92', href: 'tel:+919987656792' },
     { label: '+91 9987 6866 92', href: 'tel:+919987686692' },
 ];
-const EMAIL = 'hello@yourmahabaleshwar.com';
+const EMAIL = 'smenterprise9215@gmail.com';
 
 const FALLBACK_FAQS = [
     { question: 'How do I cancel my booking?', answer: 'Go to My Bookings in your account. Free cancellation applies on properties marked with the green badge.', category: 'BOOKING' },
@@ -111,9 +112,9 @@ export default function ContentScreen({ route }) {
 
     const question = (item) => (i18n.language === 'mr' && item.questionMr ? item.questionMr : item.question);
     const answer = (item) => (i18n.language === 'mr' && item.answerMr ? item.answerMr : item.answer);
+    const policy = page === 'privacy' ? privacyPolicyFor(i18n.language) : null;
     const body = {
         place: t('content.placeBody'),
-        privacy: t('content.privacyBody'),
         terms: t('content.termsBody'),
         cancel: t('content.cancelBody'),
     }[page];
@@ -123,7 +124,13 @@ export default function ContentScreen({ route }) {
             <ScrollView contentContainerStyle={styles.page}>
                 <Hero
                     title={t(`content.${page}`)}
-                    lead={page === 'about' ? t('content.aboutLead') : page === 'contact' ? t('content.contactLead') : page === 'faq' ? t('content.faqLead') : null}
+                    lead={
+                        page === 'privacy' ? policy?.updated
+                            : page === 'about' ? t('content.aboutLead')
+                                : page === 'contact' ? t('content.contactLead')
+                                    : page === 'faq' ? t('content.faqLead')
+                                        : null
+                    }
                     onBack={() => setPage(null)}
                     backLabel={t('content.back')}
                 />
@@ -216,6 +223,14 @@ export default function ContentScreen({ route }) {
                             <Text style={styles.emptyText}>{t('common.empty')}</Text>
                         </Card>
                     ))}
+                    {policy ? policy.sections.map((section) => (
+                        <Card key={section.heading} style={styles.policyCard}>
+                            <Text style={styles.sectionTitle}>{section.heading}</Text>
+                            {section.paragraphs.map((paragraph, index) => (
+                                <Text key={paragraph.slice(0, 40)} style={[styles.paragraph, index > 0 && styles.policyGap]}>{paragraph}</Text>
+                            ))}
+                        </Card>
+                    )) : null}
                     {body ? (
                         <Card>
                             <Text style={styles.paragraph}>{body}</Text>
@@ -258,6 +273,8 @@ const styles = StyleSheet.create({
     lead: { fontFamily: FONTS.regular, fontSize: 15, color: '#DBEAFE', marginTop: 8, lineHeight: 22 },
     body: { padding: 16 },
     sectionTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.text, marginBottom: 10 },
+    policyCard: { marginBottom: 12 },
+    policyGap: { marginTop: 8 },
     avatar: {
         width: 72,
         height: 72,

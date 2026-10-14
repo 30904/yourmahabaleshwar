@@ -4,7 +4,7 @@ import PlatformSettings from '../models/PlatformSettings.js';
 import StayListingSubscription from '../models/StayListingSubscription.js';
 import { APPROVAL_STATUS, resolveListingStatus } from '../utils/listingApproval.js';
 import { createNotification } from './notificationService.js';
-import { createOrder, verifyPaymentSignature } from './razorpayService.js';
+import { createOrder, verifyPaymentSignature, razorpayPublicKeyId } from './razorpayService.js';
 import { issueSubscriptionInvoice } from './subscriptionInvoiceService.js';
 
 export const STAY_LISTING_TYPES = new Set(['HOTEL', 'RESORT', 'HOMESTAY']);
@@ -267,7 +267,7 @@ export async function createRenewalOrder(listingType, listingId, vendorId) {
     amount,
     yearNumber,
     order,
-    keyId: process.env.RAZORPAY_KEY_ID || 'mock_key',
+    keyId: razorpayPublicKeyId(),
     listingName: listing.name,
   };
 }

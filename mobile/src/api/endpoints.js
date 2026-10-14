@@ -13,6 +13,7 @@ export const getWishlist = () => api.get('/users/wishlist').then((r) => r.data.d
 export const addWishlist = (itemId, itemType) => api.post('/users/wishlist', { itemId, itemType }).then((r) => r.data.data);
 export const removeWishlist = (itemId, itemType) => api.delete(`/users/wishlist/${itemId}`, { params: { itemType } }).then((r) => r.data.data);
 export const logoutApi = () => api.post('/auth/logout').then((r) => r.data);
+export const deleteAccount = () => api.delete('/users/me').then((r) => r.data);
 export const listCatalog = (path, params) => api.get(path, { params }).then((r) => r.data.data);
 export const globalSearch = (q) => api.get('/search', { params: { q, limit: 20 } }).then((r) => r.data.data);
 export const publicFaqs = () => api.get('/admin/public/faqs').then((r) => r.data.data);

@@ -20,7 +20,7 @@ import {
 import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
-import { checkoutHtml, openWebCheckout } from '../../services/razorpayCheckout';
+import { checkoutHtml, openWebCheckout, usesMockRazorpay } from '../../services/razorpayCheckout';
 import { formatCurrency } from '../../utils/format';
 import { bookingTitle } from '../../utils/listing';
 import {
@@ -87,7 +87,11 @@ export default function BookingDetailScreen({ route }) {
     const pay = async (b) => {
         try {
             const { order, payment, keyId } = await createPaymentOrder(b._id);
-            if (order.mock || keyId === 'mock_key' || !keyId) {
+            if (usesMockRazorpay({ order, keyId })) {
+                if (!__DEV__) {
+                    Alert.alert(t('common.error'), t('booking.paymentUnavailable'));
+                    return;
+                }
                 await verifyPayment({
                     paymentId: payment._id,
                     razorpayPaymentId: `pay_mock_${Date.now()}`,

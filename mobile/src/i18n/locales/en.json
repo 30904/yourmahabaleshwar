@@ -712,6 +712,9 @@
     "removeListing": "Remove",
     "signOutAsk": "Are you sure you want to sign out?",
     "signingOut": "Signing out...",
+    "deleteAccount": "Delete account",
+    "deletingAccount": "Deleting account...",
+    "deleteAccountAsk": "Your account will be closed and you will not be able to sign in. Your bookings and records stay with the admin.",
     "removeSavedAsk": "Remove this listing from saved?",
     "signInToSave": "Sign in to save this listing"
   },
@@ -808,6 +811,7 @@
     "idPassport": "Passport",
     "status": "Status",
     "mockPaid": "Payment recorded (mock)",
+    "paymentUnavailable": "Payment is unavailable right now. Please try again later.",
     "paid": "Payment received",
     "paymentCancelled": "Payment cancelled"
   },
@@ -1237,7 +1241,14 @@
   "homestayGuestBooking": {
     "formTitle": "Homestay/Villa Booking Form",
     "formSubtitle": "S.M. Enterprises — guest details for {{name}}",
-    "acceptTerms": "I have read and agree to the Homestay/Villa Terms and Conditions of S.M. Enterprises."
+    "acceptTerms": "I have read and agree to the Homestay/Villa Terms and Conditions of S.M. Enterprises.",
+    "termsSummary": [
+      "All guests must present a valid government-issued photo ID at registration / check-in.",
+      "Illegal or unethical activities are strictly prohibited within the homestay/villa premises.",
+      "Guests are responsible for their valuables; management is not liable for loss or theft.",
+      "Any damage to the property will be charged to the guest.",
+      "Check-out time must be followed; late check-out may incur additional charges."
+    ]
   },
   "tentGuestBooking": {
     "formTitle": "Tent Stay Booking Form",

@@ -1,5 +1,9 @@
 import { Platform } from 'react-native';
 
+export function usesMockRazorpay({ order, keyId }) {
+    return !order || order.mock || !keyId || keyId === 'mock_key';
+}
+
 function checkoutOptions({ keyId, order, bookingNumber, user, description }) {
     return {
         key: keyId,

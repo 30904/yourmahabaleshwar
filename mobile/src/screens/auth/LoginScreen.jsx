@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CommonActions } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,7 @@ import { COLORS, FONTS, VENDOR_ROLES } from '../../constants/theme';
 import i18n from '../../i18n';
 
 const logo = require('../../../assets/logo.png');
-const HERO = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80';
+const hero = require('../../../assets/login-hero.jpg');
 
 export default function LoginScreen({ navigation }) {
     const { t, i18n: i18nApi } = useTranslation();
@@ -107,16 +107,20 @@ export default function LoginScreen({ navigation }) {
     return (
         <Screen style={styles.screen}>
             <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'web' ? undefined : 'padding'}>
-                <View style={[styles.hero, { marginTop: -insets.top, height: 148 + insets.top }]}>
-                    <Image source={{ uri: HERO }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                    <LinearGradient
-                        colors={['rgba(0,26,64,0.2)', 'rgba(0,53,128,0.78)']}
-                        style={StyleSheet.absoluteFill}
-                    />
-                </View>
+                <Image
+                    source={hero}
+                    resizeMode="cover"
+                    style={[styles.backdrop, { top: -insets.top, height: 196 + insets.top }]}
+                />
+                <LinearGradient
+                    colors={['rgba(0,26,64,0.05)', 'rgba(0,53,128,0.22)']}
+                    style={[styles.backdrop, { top: -insets.top, height: 196 + insets.top }]}
+                    pointerEvents="none"
+                />
+                <View style={{ height: 112 }} />
                 <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
                     <Image source={logo} style={styles.logo} resizeMode="contain" />
-                    <View style={styles.middle}>
+                    <ScrollView style={styles.middle} contentContainerStyle={styles.middleContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                         {step === 'form' ? (
                             <>
                                 <Text style={styles.title}>{t('auth.signIn')}</Text>
@@ -138,7 +142,7 @@ export default function LoginScreen({ navigation }) {
                                 <AuthLink title={t('auth.resendOtp')} onPress={onResend} />
                             </>
                         )}
-                    </View>
+                    </ScrollView>
                     {keyboardOpen ? null : (
                     <View style={styles.footer}>
                         {step === 'form' ? (
@@ -171,14 +175,18 @@ const styles = StyleSheet.create({
         padding: 0,
         backgroundColor: COLORS.card,
     },
-    fill: { flex: 1 },
-    hero: {
-        backgroundColor: COLORS.primary,
-        overflow: 'hidden',
+    fill: { flex: 1, position: 'relative' },
+    backdrop: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        width: '100%',
     },
     sheet: {
         flex: 1,
-        marginTop: -28,
+        zIndex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
         backgroundColor: COLORS.card,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
@@ -192,7 +200,8 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginBottom: 16,
     },
-    middle: { flex: 1 },
+    middle: { flex: 1, minHeight: 0 },
+    middleContent: { flexGrow: 1, paddingBottom: 8 },
     title: {
         fontFamily: FONTS.bold,
         fontSize: 24,
