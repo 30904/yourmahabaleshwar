@@ -8,7 +8,6 @@ import { createHotelBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
-import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
 import { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId }) {
@@ -58,16 +57,6 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   }));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
-  const setTraveller = (index, key, value) => {
-    setForm((prev) => {
-      const next = [...(prev.coTravellers || [])];
-      next[index] = { ...next[index], [key]: value };
-      return { ...prev, coTravellers: next };
-    });
-  };
-
-  useCoTravellerSync(form.adults, form.children, setForm);
 
   useEffect(() => {
     if (initialRoomId) setField('roomId', initialRoomId);
@@ -190,7 +179,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
             nationality: form.nationality || 'INDIAN',
             documentUrl: form.idProofDocumentUrl || undefined,
           },
-          coTravellers: (form.coTravellers || []).filter((c) => String(c.fullName || '').trim()),
+          coTravellers: [],
           roomLabel: room?.name,
           totalNights: nights,
           tariff: room?.basePrice || 0,
@@ -220,7 +209,6 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       acceptTermsLabel={t('hotelGuestBooking.acceptTerms')}
       form={form}
       setField={setField}
-      setTraveller={setTraveller}
       roomList={roomList}
       room={room}
       nights={nights}

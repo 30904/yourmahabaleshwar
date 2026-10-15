@@ -15,7 +15,6 @@ import { createTentBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import { StayLegalModal } from './StayGuestBookingFormCore';
-import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
 import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 const OPEN_DEFAULT_PRICE_PER_NIGHT = 2000;
@@ -81,14 +80,6 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     }));
   }, [item?.checkInTime, item?.checkOutTime, openMode]);
 
-  const setTraveller = (index, key, value) => {
-    setForm((prev) => {
-      const next = [...(prev.coTravellers || [])];
-      next[index] = { ...next[index], [key]: value };
-      return { ...prev, coTravellers: next };
-    });
-  };
-
   const pricePerNight = openMode ? OPEN_DEFAULT_PRICE_PER_NIGHT : item?.pricePerNight || 0;
   const tentLabel = openMode ? t('tentGuestBooking.standardCamp') : item?.name || t('tentGuestBooking.standardCamp');
   const checkInTimeMin = openMode ? '14:00' : item?.checkInTime || '14:00';
@@ -121,8 +112,6 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     const sections = t('tentGuestBooking.fullTermsSections', { returnObjects: true });
     return Array.isArray(sections) ? sections : [];
   }, [t, i18n.language]);
-
-  useCoTravellerSync(form.adults, form.children, setForm);
 
   useEffect(() => {
     if (openMode || !item?._id || !form.checkIn) {
@@ -208,7 +197,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
             nationality: form.nationality || 'INDIAN',
             documentUrl: form.idProofDocumentUrl || undefined,
           },
-          coTravellers: (form.coTravellers || []).filter((c) => String(c.fullName || '').trim()),
+          coTravellers: [],
           tentLabel,
           totalNights: nights,
           tariff: pricePerNight,
@@ -431,34 +420,6 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
               value={form.specialRequests}
               onChange={(e) => setField('specialRequests', e.target.value)}
             />
-          </div>
-          <div className="space-y-3">
-            {(form.coTravellers || []).map((c, index) => (
-              <div key={index} className="grid gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-4">
-                <Input
-                  className="sm:col-span-2"
-                  label={t('stayGuestBooking.guestFullName', { n: index + 1 })}
-                  value={c.fullName}
-                  onChange={(e) => setTraveller(index, 'fullName', e.target.value)}
-                />
-                <Input label={t('stayGuestBooking.age')} type="number" min="0" value={c.age} onChange={(e) => setTraveller(index, 'age', e.target.value)} />
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('stayGuestBooking.gender')}</label>
-                  <select className="input-field" value={c.gender} onChange={(e) => setTraveller(index, 'gender', e.target.value)}>
-                    <option value="">{t('stayGuestBooking.selectGender')}</option>
-                    <option value="M">{t('stayGuestBooking.genderShortMale')}</option>
-                    <option value="F">{t('stayGuestBooking.genderShortFemale')}</option>
-                    <option value="OTHER">{t('stayGuestBooking.genderOther')}</option>
-                  </select>
-                </div>
-                <Input
-                  className="sm:col-span-2"
-                  label={t('stayGuestBooking.relationship')}
-                  value={c.relationship}
-                  onChange={(e) => setTraveller(index, 'relationship', e.target.value)}
-                />
-              </div>
-            ))}
           </div>
         </Card>
 

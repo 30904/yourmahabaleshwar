@@ -8,7 +8,6 @@ import { createHomestayBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
-import { useCoTravellerSync } from '../../hooks/useCoTravellerSync';
 import { useConfigurableForm } from '../forms/ConfigurableFormSections';
 
 export default function HomestayGuestBookingForm({ item, initialRoomId }) {
@@ -56,16 +55,6 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   }));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
-  const setTraveller = (index, key, value) => {
-    setForm((prev) => {
-      const next = [...(prev.coTravellers || [])];
-      next[index] = { ...next[index], [key]: value };
-      return { ...prev, coTravellers: next };
-    });
-  };
-
-  useCoTravellerSync(form.adults, form.children, setForm);
 
   const roomList = item?.rooms || [];
   const room = useMemo(
@@ -189,7 +178,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
             nationality: form.nationality || 'INDIAN',
             documentUrl: form.idProofDocumentUrl || undefined,
           },
-          coTravellers: (form.coTravellers || []).filter((c) => String(c.fullName || '').trim()),
+          coTravellers: [],
           roomLabel: room?.name,
           totalNights: nights,
           tariff: room?.basePrice || 0,
@@ -219,7 +208,6 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
       acceptTermsLabel={t('homestayGuestBooking.acceptTerms')}
       form={form}
       setField={setField}
-      setTraveller={setTraveller}
       roomList={roomList}
       room={room}
       nights={nights}

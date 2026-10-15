@@ -227,17 +227,6 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
             ? 'tentGuestBooking.acceptTerms'
             : 'hotelGuestBooking.acceptTerms';
 
-    const travellerCount = Math.max(0, (Number(form.adults) || 1) + (Number(form.children) || 0) - 1);
-    const travellers = useMemo(() => {
-        const current = form.coTravellers || [];
-        return Array.from({ length: travellerCount }, (_, index) => current[index] || { fullName: '', age: '', gender: '', relationship: '' });
-    }, [form.coTravellers, travellerCount]);
-
-    const setTraveller = (index, key, value) => {
-        const next = travellers.map((entry, itemIndex) => (itemIndex === index ? { ...entry, [key]: value } : entry));
-        setField('coTravellers', next);
-    };
-
     const submit = () => {
         if (!form.checkIn || !form.checkOut || !ready) {
             setError(t('stayGuestBooking.validation.datesRequired'));
@@ -302,7 +291,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
                 nationality: form.nationality || 'INDIAN',
                 documentUrl: form.idProofDocumentUrl || undefined,
             },
-            coTravellers: travellers.filter((entry) => String(entry.fullName || '').trim()),
+            coTravellers: [],
             totalNights: nights,
             tariff,
             advanceAmount: form.advanceAmount !== '' ? Number(form.advanceAmount) : total,
@@ -405,14 +394,6 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
                 <Text style={styles.section}>{isTent ? t('tentGuestBooking.sectionGuests') : t('stayGuestBooking.sectionCoTravellers')}</Text>
                 <Field label={t('stayGuestBooking.adults')} value={form.adults} onChangeText={(value) => setField('adults', value)} keyboardType="numeric" />
                 <Field label={t('stayGuestBooking.children')} value={form.children} onChangeText={(value) => setField('children', value)} keyboardType="numeric" />
-                {travellers.map((entry, index) => (
-                    <View key={index} style={styles.guestCard}>
-                        <Field label={t('stayGuestBooking.guestFullName', { n: index + 1 })} value={entry.fullName} onChangeText={(value) => setTraveller(index, 'fullName', value)} autoCapitalize="words" />
-                        <Field label={t('stayGuestBooking.age')} value={entry.age} onChangeText={(value) => setTraveller(index, 'age', value)} keyboardType="numeric" />
-                        <WebSelect label={t('stayGuestBooking.gender')} value={entry.gender} onChange={(value) => setTraveller(index, 'gender', value)} options={[['', t('stayGuestBooking.selectGender')], ['M', t('stayGuestBooking.genderShortMale')], ['F', t('stayGuestBooking.genderShortFemale')], ['OTHER', t('stayGuestBooking.genderOther')]]} />
-                        <Field label={t('stayGuestBooking.relationship')} value={entry.relationship} onChangeText={(value) => setTraveller(index, 'relationship', value)} />
-                    </View>
-                ))}
                 {isTent ? <Field label={t('tentGuestBooking.specialRequests')} value={form.specialRequests} onChangeText={(value) => setField('specialRequests', value)} /> : null}
             </Card>
 
@@ -584,7 +565,6 @@ const styles = StyleSheet.create({
     roomOn: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
     roomTitle: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.text },
     roomPrice: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.muted, marginTop: 2 },
-    guestCard: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: 12, marginBottom: 10 },
     summary: { backgroundColor: '#F8FAFC', borderRadius: 8, padding: 12, marginBottom: 8 },
     summaryLine: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.body, marginBottom: 4 },
     totalBox: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#F8FAFC', borderRadius: 8, padding: 12, marginTop: 8 },

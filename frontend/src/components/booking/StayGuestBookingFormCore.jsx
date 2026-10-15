@@ -55,7 +55,6 @@ export default function StayGuestBookingFormCore({
   acceptTermsLabel,
   form,
   setField,
-  setTraveller,
   roomList,
   room,
   nights,
@@ -257,34 +256,6 @@ export default function StayGuestBookingFormCore({
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label={t('stayGuestBooking.adults')} type="number" min="1" value={form.adults} onChange={(e) => setField('adults', e.target.value)} />
             <Input label={t('stayGuestBooking.children')} type="number" min="0" value={form.children} onChange={(e) => setField('children', e.target.value)} />
-          </div>
-          <div className="space-y-3">
-            {(form.coTravellers || []).map((c, index) => (
-              <div key={index} className="grid gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-4">
-                <Input
-                  className="sm:col-span-2"
-                  label={t('stayGuestBooking.guestFullName', { n: index + 1 })}
-                  value={c.fullName}
-                  onChange={(e) => setTraveller(index, 'fullName', e.target.value)}
-                />
-                <Input label={t('stayGuestBooking.age')} type="number" min="0" value={c.age} onChange={(e) => setTraveller(index, 'age', e.target.value)} />
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">{t('stayGuestBooking.gender')}</label>
-                  <select className="input-field" value={c.gender} onChange={(e) => setTraveller(index, 'gender', e.target.value)}>
-                    <option value="">{t('stayGuestBooking.selectGender')}</option>
-                    <option value="M">{t('stayGuestBooking.genderShortMale')}</option>
-                    <option value="F">{t('stayGuestBooking.genderShortFemale')}</option>
-                    <option value="OTHER">{t('stayGuestBooking.genderOther')}</option>
-                  </select>
-                </div>
-                <Input
-                  className="sm:col-span-2"
-                  label={t('stayGuestBooking.relationship')}
-                  value={c.relationship}
-                  onChange={(e) => setTraveller(index, 'relationship', e.target.value)}
-                />
-              </div>
-            ))}
           </div>
         </Card>
 
