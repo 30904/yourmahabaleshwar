@@ -727,6 +727,10 @@
   "booking": {
     "bookNow": "Book now",
     "payNow": "Pay now",
+    "editBooking": "Edit booking",
+    "saveChanges": "Save changes",
+    "updated": "Booking updated",
+    "editUnavailable": "This booking can no longer be edited",
     "invoice": "Download invoice",
     "invoiceFailed": "Invoice download failed",
     "refund": "Cancel & refund",

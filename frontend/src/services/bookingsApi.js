@@ -40,6 +40,11 @@ export const confirmServiceEnd = async (id) => {
   return res.data.data;
 };
 
+export const updateCustomerBooking = (id, payload) => api.patch(`/bookings/${id}`, payload);
+
+export const saveGuestBooking = (editingBooking, createFn, payload) =>
+  editingBooking?._id ? updateCustomerBooking(editingBooking._id, payload) : createFn(payload);
+
 export const createHotelBooking = (payload) => api.post('/bookings/hotel', payload);
 export const createTentBooking = (payload) => api.post('/bookings/tent', payload);
 export const createGuideBooking = (payload) => api.post('/bookings/guide', payload);

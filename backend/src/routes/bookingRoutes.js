@@ -38,6 +38,7 @@ router.patch('/:id/guide-reached', booking.confirmServiceArrival);
 router.patch('/:id/end-guide', booking.confirmServiceEnd);
 router.get('/vendor/monetization-gate', authorize(...VENDOR_ROLES), booking.getVendorMonetizationGate);
 router.get('/:id/invoice', booking.downloadInvoice);
+router.patch('/:id', booking.updateCustomerBooking);
 router.patch('/:id/status', authorize(ROLES.SUPER_ADMIN, ...VENDOR_ROLES), booking.updateBookingStatus);
 
 export default router;

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { addWishlist, createBooking, fetchReviews, getBySlug, getWishlist, removeWishlist } from '../../api/endpoints';
+import { addWishlist, createBooking, fetchReviews, getBySlug, getWishlist, removeWishlist, updateBooking } from '../../api/endpoints';
 import { loadPublic } from '../../api/publicCache';
 import DriverRateChart, { DRIVER_PACKAGES, driverPackagePrice } from '../../components/DriverRateChart';
 import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../components/HorseRateChart';
@@ -70,7 +70,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     const { t } = useTranslation();
     const confirm = useConfirm();
     const { user } = useAuth();
-    const { path, slug, type } = route.params;
+    const { path, slug, type, editBooking } = route.params;
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [booking, setBooking] = useState(false);
@@ -119,7 +119,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     const openService = type === 'GUIDE' || type === 'TAXI' || type === 'DRIVER' || type === 'HORSE';
     useEffect(() => {
         if (openService) {
-            navigation.replace('ServiceBook', { type });
+            navigation.replace('ServiceBook', { type, editBooking });
             return;
         }
         let alive = true;
@@ -127,8 +127,10 @@ export default function ListingDetailScreen({ route, navigation }) {
             if (!alive) return;
             const stay = data?.hotel ? { ...data.hotel, rooms: data.rooms || data.hotel.rooms || [] } : data;
             setItem(stay);
+            const editRoom = editBooking?.room?._id || editBooking?.room || editBooking?.homestayRoomId;
             const firstRoom = stay?.rooms?.[0];
-            if (firstRoom?._id) setRoomId((current) => current || firstRoom._id);
+            if (editRoom) setRoomId(editRoom);
+            else if (firstRoom?._id) setRoomId((current) => current || firstRoom._id);
             setLoading(false);
         });
         job.catch(() => {
@@ -142,12 +144,15 @@ export default function ListingDetailScreen({ route, navigation }) {
         };
     }, [path, slug, openService, navigation, type]);
     useEffect(() => {
-        setShowForm(false);
         setPhotoIndex(0);
         setDetailTab('overview');
         setReviews([]);
-        setRoomId('');
-    }, [slug]);
+        if (editBooking) setShowForm(true);
+        else {
+            setShowForm(false);
+            setRoomId('');
+        }
+    }, [slug, editBooking]);
     useEffect(() => {
         if (!item?._id || !['HOTEL', 'RESORT', 'HOMESTAY', 'TENT'].includes(type)) return;
         const listingType = type === 'HOMESTAY' ? 'HOMESTAY' : type === 'TENT' ? 'TENT' : (item.type === 'RESORT' || type === 'RESORT' ? 'RESORT' : 'HOTEL');
@@ -217,8 +222,14 @@ export default function ListingDetailScreen({ route, navigation }) {
     const submitStay = async (body) => {
         setBooking(true);
         try {
-            const created = await createBooking(type, body);
-            Alert.alert(t('stayGuestBooking.bookingCreated'), created.bookingNumber || '');
+            if (editBooking?._id) {
+                await updateBooking(editBooking._id, body);
+                Alert.alert(t('booking.updated'));
+            }
+            else {
+                const created = await createBooking(type, body);
+                Alert.alert(t('stayGuestBooking.bookingCreated'), created.bookingNumber || '');
+            }
             navigation.navigate('MainTabs', { screen: 'Bookings' });
         }
         catch (e) {
@@ -779,7 +790,7 @@ export default function ListingDetailScreen({ route, navigation }) {
         {showForm ? (
           <View nativeID="guest-booking-form" onLayout={onFormLayout}>
           {stay ? (
-            <StayGuestForm type={type} item={item} user={user} roomId={roomId} onRoomChange={setRoomId} onConfirm={submitStay} submitting={booking} />
+            <StayGuestForm type={type} item={item} user={user} roomId={roomId} onRoomChange={setRoomId} onConfirm={submitStay} submitting={booking} booking={editBooking} />
           ) : (<>
           <FormHeader title={serviceTitle} subtitle={serviceSubtitle} dateLabel={serviceDateLabel} />
           {type === 'GUIDE' ? (<>

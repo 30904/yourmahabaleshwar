@@ -7,6 +7,7 @@ import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { formatCurrency } from '../../utils/format';
 import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 import { formatTime12, listingPrice } from '../../utils/listing';
+import { dateInputValue } from '../../utils/bookingEdit';
 
 const ID_TYPES = [
     ['AADHAAR', 'idAadhaar'],
@@ -152,39 +153,44 @@ function ChoiceRow({ label, options, value, onChange }) {
     );
 }
 
-export default function StayGuestForm({ type, item, user, onConfirm, submitting, roomId, onRoomChange }) {
+export default function StayGuestForm({ type, item, user, onConfirm, submitting, roomId, onRoomChange, booking }) {
     const { t, i18n } = useTranslation();
     const rooms = item.rooms || [];
     const isTent = type === 'TENT';
+    const reg = booking?.guestRegistration || {};
+    const lead = reg.leadGuest || {};
+    const paymentMode = booking
+        ? (!isTent && reg.paymentMode === 'CASH' ? 'ONLINE' : (reg.paymentMode || 'ONLINE'))
+        : 'ONLINE';
     const [form, setForm] = useState({
-        checkIn: '',
-        checkOut: '',
-        checkInTime: item.checkInTime || '14:00',
-        checkOutTime: item.checkOutTime || '11:00',
-        roomId: roomId || rooms[0]?._id || '',
-        tentQuantity: '1',
-        adults: '2',
-        children: '0',
-        leadFullName: user?.name || '',
-        leadAge: '',
-        leadGender: '',
-        leadMobile: user?.phone || '',
-        leadEmail: user?.email || '',
-        leadAddress: '',
-        leadCityState: '',
-        leadPincode: '',
-        comingFrom: '',
-        goingTo: '',
-        purpose: 'TOURISM',
-        idType: 'AADHAAR',
-        idNumber: '',
-        idProofDocumentUrl: '',
-        nationality: 'INDIAN',
+        checkIn: booking ? dateInputValue(booking.checkIn) : '',
+        checkOut: booking ? dateInputValue(booking.checkOut) : '',
+        checkInTime: reg.checkInTime || item.checkInTime || '14:00',
+        checkOutTime: reg.checkOutTime || item.checkOutTime || '11:00',
+        roomId: booking?.room?._id || booking?.room || booking?.homestayRoomId || roomId || rooms[0]?._id || '',
+        tentQuantity: String(booking?.tentQuantity || 1),
+        adults: booking ? String(booking.guests?.adults || 1) : '2',
+        children: booking ? String(booking.guests?.children || 0) : '0',
+        leadFullName: lead.fullName || user?.name || '',
+        leadAge: lead.age != null && lead.age !== '' ? String(lead.age) : '',
+        leadGender: lead.gender || '',
+        leadMobile: lead.mobile || user?.phone || '',
+        leadEmail: lead.email || user?.email || '',
+        leadAddress: lead.address || '',
+        leadCityState: lead.cityState || '',
+        leadPincode: lead.pincode || '',
+        comingFrom: lead.comingFrom || '',
+        goingTo: lead.goingTo || '',
+        purpose: lead.purpose || 'TOURISM',
+        idType: reg.idProof?.type || 'AADHAAR',
+        idNumber: reg.idProof?.number || '',
+        idProofDocumentUrl: reg.idProof?.documentUrl || '',
+        nationality: reg.idProof?.nationality || 'INDIAN',
         coTravellers: [],
-        paymentMode: 'ONLINE',
-        advanceAmount: '',
-        acceptTerms: false,
-        specialRequests: '',
+        paymentMode,
+        advanceAmount: reg.advanceAmount != null && reg.advanceAmount !== '' ? String(reg.advanceAmount) : '',
+        acceptTerms: Boolean(booking),
+        specialRequests: reg.notes || '',
     });
     const [error, setError] = useState('');
     const [legalOpen, setLegalOpen] = useState(false);
@@ -445,7 +451,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
                 </Pressable>
             </Card>
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Button title={submitting ? t('common.loading') : t('stayGuestBooking.confirmBooking')} onPress={submit} loading={submitting} />
+            <Button title={submitting ? t('common.loading') : booking ? t('booking.saveChanges') : t('stayGuestBooking.confirmBooking')} onPress={submit} loading={submitting} />
             <Modal visible={legalOpen} transparent animationType="fade" onRequestClose={() => setLegalOpen(false)}>
                 <Pressable style={styles.modalBackdrop} onPress={() => setLegalOpen(false)}>
                     <Pressable style={styles.modalCard} onPress={() => {}}>

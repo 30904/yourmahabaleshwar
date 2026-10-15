@@ -56,6 +56,90 @@ const conflictError = (message, statusCode = 400) => {
   return err;
 };
 
+const PRESERVED_ON_EDIT = [
+  'bookingNumber',
+  'customer',
+  'status',
+  'paymentStatus',
+  'payment',
+  'invoiceNumber',
+  'invoiceUrl',
+  'refundStatus',
+  'refundAmount',
+  'refundReason',
+  'vendor',
+  'assignmentStatus',
+  'assignedAt',
+  'assignedBy',
+  'serviceTenant',
+  'vendorArrivedAt',
+  'vendorArrivedBy',
+  'arrivalConfirmed',
+  'arrivalConfirmedAt',
+  'arrivalConfirmedBy',
+  'endProposedAt',
+  'endProposedBy',
+  'serviceEndedAt',
+  'serviceEndedBy',
+  'guideReachedConfirmed',
+  'guideReachedAt',
+  'guideReachedBy',
+  'guideEndedAt',
+  'guideEndedBy',
+  'packageSubtotal',
+  'overtimeHours',
+  'overtimeAmount',
+  'overtimeRatePerHour',
+  'cancelledAt',
+  'cancellationReason',
+  'bookingSource',
+  'notes',
+];
+
+const bookingIsCustomerEditable = (booking) => {
+  if (!booking) return false;
+  if (![BOOKING_STATUS.PENDING, BOOKING_STATUS.CONFIRMED].includes(booking.status)) return false;
+  if (hasVendorArrived(booking) || isArrivalConfirmed(booking) || isEndProposed(booking) || isServiceEnded(booking)) {
+    return false;
+  }
+  return true;
+};
+
+const respondSaved = (req, res, booking, createdMessage) => {
+  if (req.editingBooking) return success(res, booking, 'Booking updated');
+  return success(res, booking, createdMessage, 201);
+};
+
+async function persistBooking(req, doc) {
+  if (!req.editingBooking) return Booking.create(doc);
+  const editing = req.editingBooking;
+  if (editing.paymentStatus === 'PAID' && Number(doc.total) !== Number(editing.total)) {
+    throw conflictError(
+      'This booking is already paid, so the fare cannot change. You can still update details that keep the same fare.'
+    );
+  }
+  const next = { ...doc };
+  for (const key of PRESERVED_ON_EDIT) delete next[key];
+  for (const key of Object.keys(next)) {
+    if (next[key] === undefined) delete next[key];
+  }
+  const keptDocument = editing.guestRegistration?.idProof?.documentUrl;
+  if (next.guestRegistration && keptDocument && !next.guestRegistration?.idProof?.documentUrl) {
+    next.guestRegistration = {
+      ...next.guestRegistration,
+      idProof: {
+        ...(next.guestRegistration.idProof || {}),
+        documentUrl: keptDocument,
+        documentName: editing.guestRegistration.idProof.documentName,
+      },
+    };
+  }
+  Object.assign(editing, next);
+  editing.markModified('guestRegistration');
+  await editing.save();
+  return editing;
+}
+
 const pickCustomFields = (guestRegistration) =>
   guestRegistration?.customFields &&
   typeof guestRegistration.customFields === 'object' &&
@@ -158,9 +242,10 @@ export const createHotelBooking = async (req, res) => {
         checkIn,
         checkOut,
         capacity: room.totalRooms || 1,
+        excludeBookingId: req.editingBooking?._id,
       });
       if (conflict) throw conflictError('All rooms are already booked for the selected dates');
-      return Booking.create({
+      return persistBooking(req, {
         customer: req.user._id,
         vendor: hotel.vendor,
         type: bookingType,
@@ -179,7 +264,7 @@ export const createHotelBooking = async (req, res) => {
     return error(res, err.message || 'Booking failed', err.statusCode || 500);
   }
 
-  if (hotel.vendor) {
+  if (!req.editingBooking && hotel.vendor) {
     await createNotification({
       userId: hotel.vendor,
       title: 'New booking request',
@@ -189,7 +274,7 @@ export const createHotelBooking = async (req, res) => {
     });
   }
 
-  return success(res, booking, 'Booking created', 201);
+  return respondSaved(req, res, booking, 'Booking created');
 };
 
 export const createTentBooking = async (req, res) => {
@@ -290,9 +375,10 @@ export const createTentBooking = async (req, res) => {
         checkOut,
         capacity: tent.totalTents || 10,
         quantity: qty,
+        excludeBookingId: req.editingBooking?._id,
       });
       if (conflict) throw conflictError('All tents are already booked for the selected dates');
-      return Booking.create({
+      return persistBooking(req, {
         customer: req.user._id,
         vendor: tent.operator,
         type: BOOKING_TYPES.TENT,
@@ -311,7 +397,7 @@ export const createTentBooking = async (req, res) => {
     return error(res, err.message || 'Booking failed', err.statusCode || 500);
   }
 
-  if (tent.operator) {
+  if (!req.editingBooking && tent.operator) {
     await createNotification({
       userId: tent.operator,
       title: 'New booking request',
@@ -321,7 +407,7 @@ export const createTentBooking = async (req, res) => {
     });
   }
 
-  return success(res, booking, 'Tent booking created', 201);
+  return respondSaved(req, res, booking, 'Tent booking created');
 };
 
 export const createGuideBooking = async (req, res) => {
@@ -409,9 +495,10 @@ export const createGuideBooking = async (req, res) => {
         listingId: guideId,
         checkIn,
         capacity: 1,
+        excludeBookingId: req.editingBooking?._id,
       });
       if (conflict) throw conflictError('Guide not available on selected date');
-      return Booking.create({
+      return persistBooking(req, {
         customer: req.user._id,
         vendor: guide.user,
         type: BOOKING_TYPES.GUIDE,
@@ -425,7 +512,7 @@ export const createGuideBooking = async (req, res) => {
         commission: Math.round(pricing.subtotal * ((guide.commissionRate || 12) / 100)),
       });
     });
-    return success(res, booking, 'Guide booking created', 201);
+    return respondSaved(req, res, booking, 'Guide booking created');
   } catch (err) {
     if (respondBookingLockError(res, err, error)) return;
     return error(res, err.message || 'Booking failed', err.statusCode || 500);
@@ -524,9 +611,10 @@ export const createTaxiBooking = async (req, res) => {
         listingId: driverId,
         checkIn,
         capacity: 1,
+        excludeBookingId: req.editingBooking?._id,
       });
       if (conflict) throw conflictError('Driver not available on selected date');
-      return Booking.create({
+      return persistBooking(req, {
         customer: req.user._id,
         vendor: driver.user,
         type: BOOKING_TYPES.TAXI,
@@ -540,7 +628,7 @@ export const createTaxiBooking = async (req, res) => {
         commission: Math.round(pricing.subtotal * ((driver.commissionRate || 8) / 100)),
       });
     });
-    return success(res, booking, 'Taxi booking created', 201);
+    return respondSaved(req, res, booking, 'Taxi booking created');
   } catch (err) {
     if (respondBookingLockError(res, err, error)) return;
     return error(res, err.message || 'Booking failed', err.statusCode || 500);
@@ -634,9 +722,10 @@ export const createHomestayBooking = async (req, res) => {
           checkOut,
           capacity: room.totalRooms || 1,
           extraFilter: { homestayRoomId: String(roomId) },
+          excludeBookingId: req.editingBooking?._id,
         });
         if (conflict) throw conflictError('All rooms are already booked for the selected dates');
-        return Booking.create({
+        return persistBooking(req, {
           customer: req.user._id,
           vendor: homestay.vendor,
           type: BOOKING_TYPES.HOMESTAY,
@@ -651,7 +740,7 @@ export const createHomestayBooking = async (req, res) => {
         });
       }
     );
-    return success(res, booking, 'Homestay/Villa booking created', 201);
+    return respondSaved(req, res, booking, 'Homestay/Villa booking created');
   } catch (err) {
     if (respondBookingLockError(res, err, error)) return;
     return error(res, err.message || 'Booking failed', err.statusCode || 500);
@@ -743,9 +832,10 @@ export const createHorseBooking = async (req, res) => {
         listingId: horseId,
         checkIn,
         capacity: horse.availability?.slotsPerDay || 8,
+        excludeBookingId: req.editingBooking?._id,
       });
       if (conflict) throw conflictError('No slots available on selected date');
-      return Booking.create({
+      return persistBooking(req, {
         customer: req.user._id,
         vendor: horse.operator,
         type: BOOKING_TYPES.HORSE,
@@ -758,11 +848,34 @@ export const createHorseBooking = async (req, res) => {
         commission: Math.round(pricing.subtotal * ((horse.commissionRate || 10) / 100)),
       });
     });
-    return success(res, booking, 'Horse booking created', 201);
+    return respondSaved(req, res, booking, 'Horse booking created');
   } catch (err) {
     if (respondBookingLockError(res, err, error)) return;
     return error(res, err.message || 'Booking failed', err.statusCode || 500);
   }
+};
+
+export const updateCustomerBooking = async (req, res) => {
+  const existing = await Booking.findById(req.params.id);
+  if (!existing || String(existing.customer) !== String(req.user._id)) {
+    return error(res, 'Booking not found', 404);
+  }
+  if (!bookingIsCustomerEditable(existing)) {
+    return error(res, 'This booking can no longer be edited', 400);
+  }
+  req.editingBooking = existing;
+  const tenant = existing.serviceTenant;
+  if (existing.type === BOOKING_TYPES.HOTEL || existing.type === BOOKING_TYPES.RESORT) {
+    return createHotelBooking(req, res);
+  }
+  if (existing.type === BOOKING_TYPES.HOMESTAY) return createHomestayBooking(req, res);
+  if (existing.type === BOOKING_TYPES.TENT) return createTentBooking(req, res);
+  if (existing.type === BOOKING_TYPES.GUIDE) return createGuideBooking(req, res);
+  if (existing.type === BOOKING_TYPES.HORSE) return createHorseBooking(req, res);
+  if (existing.type === BOOKING_TYPES.TAXI || tenant === 'DRIVER' || tenant === 'TAXI') {
+    return createTaxiBooking(req, res);
+  }
+  return error(res, 'This booking cannot be edited', 400);
 };
 
 export const getMyBookings = async (req, res) => {
@@ -996,26 +1109,33 @@ async function createOpenServiceBooking(req, res, serviceTenant) {
       : {}),
   };
 
-  const booking = await Booking.create({
-    customer: req.user._id,
-    vendor: null,
-    serviceTenant: tenant,
-    assignmentStatus: 'UNASSIGNED',
-    type: bookingType,
-    checkIn,
-    checkOut: extra.checkOut,
-    guestRegistration: registration,
-    guests: { adults: Number(guestRegistration?.adults || 1) || 1, children: 0 },
-    ...extra,
-    ...pricing,
-    commission: Math.round(pricing.subtotal * 0.1),
-    notes: 'Awaiting vendor acceptance',
-  });
+  let booking;
+  try {
+    booking = await persistBooking(req, {
+      customer: req.user._id,
+      vendor: null,
+      serviceTenant: tenant,
+      assignmentStatus: 'UNASSIGNED',
+      type: bookingType,
+      checkIn,
+      checkOut: extra.checkOut,
+      guestRegistration: registration,
+      guests: { adults: Number(guestRegistration?.adults || 1) || 1, children: 0 },
+      ...extra,
+      ...pricing,
+      commission: Math.round(pricing.subtotal * 0.1),
+      notes: 'Awaiting vendor acceptance',
+    });
+  } catch (err) {
+    return error(res, err.message || 'Booking failed', err.statusCode || 400);
+  }
 
-  await booking.populate('customer', 'name phone email');
-  emitOpenBookingCreated(booking);
+  if (!req.editingBooking) {
+    await booking.populate('customer', 'name phone email');
+    emitOpenBookingCreated(booking);
+  }
 
-  return success(res, booking, 'Booking request submitted — vendors will be notified', 201);
+  return respondSaved(req, res, booking, 'Booking request submitted — vendors will be notified');
 }
 
 export const assignVendorToBooking = async (req, res) => {

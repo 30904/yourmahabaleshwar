@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { createBooking } from '../../api/endpoints';
+import { createBooking, updateBooking } from '../../api/endpoints';
 import DriverRateChart, { DRIVER_PACKAGES, driverPackagePrice } from '../../components/DriverRateChart';
 import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../components/HorseRateChart';
 import GuideRateChart, { GUIDE_CHART_PACKAGES, GUIDE_TOURS, guideChartPrice } from '../../components/GuideRateChart';
@@ -12,6 +12,7 @@ import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
 import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
+import { dateInputValue } from '../../utils/bookingEdit';
 
 const SERVICE_NS = {
     GUIDE: 'guideGuestBooking',
@@ -51,6 +52,7 @@ export default function ServiceBookScreen({ route, navigation }) {
     const { t } = useTranslation();
     const { user } = useAuth();
     const type = route.params?.type || 'GUIDE';
+    const editing = route.params?.editBooking || null;
     const ns = SERVICE_NS[type] || SERVICE_NS.GUIDE;
     const [checkIn, setCheckIn] = useState('');
     const [startTime, setStartTime] = useState('09:00');
@@ -81,6 +83,47 @@ export default function ServiceBookScreen({ route, navigation }) {
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [acceptSafety, setAcceptSafety] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (!editing) return;
+        const reg = editing.guestRegistration || {};
+        const lead = reg.leadGuest || {};
+        const tour = reg.tourDetails || {};
+        const taxi = reg.taxiDetails || {};
+        const horse = reg.horseDetails || {};
+        const notes = tour.specialRequests || taxi.specialRequests || horse.specialRequests || '';
+        const emergencyLine = String(notes).split('\n').find((row) => row.startsWith('Emergency:'));
+        const [emergencyNameValue, emergencyMobileValue] = emergencyLine
+            ? emergencyLine.slice('Emergency:'.length).trim().split(' · ')
+            : ['', ''];
+        if (editing.checkIn) setCheckIn(dateInputValue(editing.checkIn));
+        setStartTime(tour.startTime || taxi.startTime || horse.startTime || reg.checkInTime || '09:00');
+        if (tour.packageType) setGuidePackage(tour.packageType);
+        if (tour.tourLocationId) setTourId(tour.tourLocationId);
+        if (tour.bikeAddon != null || editing.bikeAddon != null) setBikeAddon((tour.bikeAddon || editing.bikeAddon) ? 'yes' : 'no');
+        if (taxi.carType) setTaxiCar(taxi.carType);
+        if (taxi.routeId) setTaxiRoute(taxi.routeId);
+        if (taxi.packageId) setDriverPackage(taxi.packageId);
+        if (horse.routeId || editing.horseRouteId) setHorsePackage(horse.routeId || editing.horseRouteId);
+        const people = tour.touristCount || taxi.passengerCount || horse.riderCount || editing.guests?.adults;
+        if (people) setCount(String(people));
+        setLeadName(lead.fullName || '');
+        setLeadAge(lead.age != null ? String(lead.age) : '');
+        setLeadGender(lead.gender || '');
+        setLeadMobile(lead.mobile || '');
+        setEmail(lead.email || '');
+        setAddress(lead.address || '');
+        setCityState(lead.cityState || '');
+        setPincode(lead.pincode || '');
+        setEmergencyName((emergencyNameValue || '').trim());
+        setEmergencyMobile((emergencyMobileValue || '').trim());
+        setPickupLocation(taxi.pickupLocation || tour.pickupLocation || '');
+        setDropLocation(taxi.dropLocation || '');
+        if (taxi.routeTripType) setRouteTripType(taxi.routeTripType);
+        setNotes(String(notes).split('\n').filter((line) => line && !line.startsWith('Emergency:') && !(taxi.carTypeLabel && line.includes(taxi.carTypeLabel))).join('\n'));
+        setAcceptTerms(true);
+        setAcceptSafety(true);
+    }, [editing]);
 
     const wantsBike = bikeAddon === 'yes';
     const guidePkg = GUIDE_CHART_PACKAGES.find((item) => item.id === guidePackage) || GUIDE_CHART_PACKAGES[0];
@@ -223,8 +266,14 @@ export default function ServiceBookScreen({ route, navigation }) {
         }
         setSubmitting(true);
         try {
-            await createBooking(type, body);
-            Alert.alert(t('serviceBooking.requestSubmitted'));
+            if (editing?._id) {
+                await updateBooking(editing._id, body);
+                Alert.alert(t('booking.updated'));
+            }
+            else {
+                await createBooking(type, body);
+                Alert.alert(t('serviceBooking.requestSubmitted'));
+            }
             navigation.navigate('MainTabs', { screen: 'Bookings' });
         }
         catch (error) {
@@ -243,7 +292,7 @@ export default function ServiceBookScreen({ route, navigation }) {
         <Screen style={styles.screen}>
             <ScrollView contentContainerStyle={styles.page}>
                 <View style={styles.inner}>
-                    <FormHeader title={t(titleKey)} subtitle={t('serviceBooking.openFormSubtitle')} dateLabel={t(`${ns}.formDate`)} />
+                    <FormHeader title={editing ? t('booking.editBooking') : t(titleKey)} subtitle={t('serviceBooking.openFormSubtitle')} dateLabel={t(`${ns}.formDate`)} />
                     <Section title={t(`${ns}.section1`)}>
                         <RateChartToggle>
                             {type === 'GUIDE' ? <GuideRateChart embedded /> : null}
@@ -398,7 +447,7 @@ export default function ServiceBookScreen({ route, navigation }) {
                             </Pressable>
                         ) : null}
                     />
-                    <Button title={t('serviceBooking.submitRequest')} onPress={submit} loading={submitting} />
+                    <Button title={editing ? t('booking.saveChanges') : t('serviceBooking.submitRequest')} onPress={submit} loading={submitting} />
                 </View>
             </ScrollView>
         </Screen>

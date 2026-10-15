@@ -81,6 +81,10 @@
   "booking": {
     "confirm": "बुकिंग निश्चित करा",
     "payNow": "आता पेमेंट करा",
+    "editBooking": "बुकिंग संपादित करा",
+    "saveChanges": "बदल जतन करा",
+    "updated": "बुकिंग अपडेट झाली",
+    "editUnavailable": "ही बुकिंग आता संपादित करता येणार नाही",
     "downloadInvoice": "इनव्हॉइस डाउनलोड करा",
     "requestRefund": "रद्द करा आणि परतावा",
     "refundStatus": "परतावा स्थिती",

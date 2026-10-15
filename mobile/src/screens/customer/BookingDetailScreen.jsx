@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, Image, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
     confirmServiceArrival,
@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { checkoutHtml, openWebCheckout, usesMockRazorpay } from '../../services/razorpayCheckout';
 import { formatCurrency } from '../../utils/format';
 import { bookingTitle } from '../../utils/listing';
+import { canCustomerEditBooking } from '../../utils/bookingEdit';
 import {
     OVERTIME_PER_HOUR,
     STATUS_TONE,
@@ -48,6 +49,7 @@ function StatusBadge({ status }) {
 
 export default function BookingDetailScreen({ route }) {
     const { t } = useTranslation();
+    const navigation = useNavigation();
     const { isVendor, user } = useAuth();
     const id = route.params?.id;
     const [item, setItem] = useState(null);
@@ -72,6 +74,27 @@ export default function BookingDetailScreen({ route }) {
     useFocusEffect(useCallback(() => {
         load();
     }, [load]));
+
+    const openEdit = (b) => {
+        const serviceType = b.serviceTenant && ['GUIDE', 'TAXI', 'DRIVER', 'HORSE'].includes(b.serviceTenant)
+            ? b.serviceTenant
+            : (['GUIDE', 'TAXI', 'HORSE'].includes(b.type) ? b.type : null);
+        if (serviceType && !b.guide && !b.horse && !(b.serviceTenant === 'TAXI' && b.driver) && !(b.serviceTenant === 'DRIVER' && b.driver)) {
+            navigation.navigate('ServiceBook', { type: serviceType, editBooking: b });
+            return;
+        }
+        if (serviceType) {
+            navigation.navigate('ServiceBook', { type: serviceType, editBooking: b });
+            return;
+        }
+        const listing = b.hotel || b.homestay || b.tent;
+        const path = b.homestay ? '/homestays' : b.tent ? '/tents' : '/hotels';
+        if (!listing?.slug) {
+            Alert.alert(t('common.error'), t('booking.editUnavailable'));
+            return;
+        }
+        navigation.navigate('ListingDetail', { path, slug: listing.slug, type: b.type, editBooking: b });
+    };
 
     const recordPayment = async (payment, response) => {
         await verifyPayment({
@@ -238,6 +261,9 @@ export default function BookingDetailScreen({ route }) {
                 ) : null}
 
                 <View style={styles.actions}>
+                    {!isVendor && canCustomerEditBooking(item) ? (
+                        <Button title={t('booking.editBooking')} variant="outline" onPress={() => openEdit(item)} />
+                    ) : null}
                     {!isVendor && item.paymentStatus === 'PENDING' ? (
                         <Button title={t('booking.payNow')} onPress={() => pay(item)} style={styles.pay} />
                     ) : null}

@@ -38,6 +38,7 @@ export const createBooking = (type, body) => {
     };
     return api.post(map[type] || '/bookings/hotel', body).then((r) => r.data.data);
 };
+export const updateBooking = (id, body) => api.patch(`/bookings/${id}`, body).then((r) => r.data.data);
 export const myBookings = () => api.get('/bookings/my').then((r) => r.data.data);
 export const vendorBookings = () => api.get('/bookings/vendor').then((r) => r.data.data);
 export const updateBookingStatus = (id, status) => api.patch(`/bookings/${id}/status`, { status }).then((r) => r.data.data);

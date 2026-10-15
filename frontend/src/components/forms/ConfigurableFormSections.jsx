@@ -3,7 +3,7 @@ import Input from '../ui/Input';
 import Card from '../ui/Card';
 import { fetchPublicFormSchema } from '../../services/formSchemaApi';
 
-export function useConfigurableForm(formKind, tenant) {
+export function useConfigurableForm(formKind, tenant, initialValues) {
   const [schema, setSchema] = useState(null);
   const [values, setValues] = useState({});
   const [loading, setLoading] = useState(Boolean(formKind && tenant));
@@ -24,7 +24,12 @@ export function useConfigurableForm(formKind, tenant) {
         const next = {};
         (doc?.sections || []).forEach((section) => {
           (section.fields || []).forEach((field) => {
-            next[field.id] = field.type === 'checkbox' ? false : '';
+            const saved = initialValues?.[field.id];
+            next[field.id] = saved != null && saved !== ''
+              ? saved
+              : field.type === 'checkbox'
+                ? false
+                : '';
           });
         });
         setValues(next);
@@ -41,7 +46,7 @@ export function useConfigurableForm(formKind, tenant) {
     return () => {
       cancelled = true;
     };
-  }, [formKind, tenant]);
+  }, [formKind, tenant, initialValues]);
 
   const setField = (id, value) => setValues((prev) => ({ ...prev, [id]: value }));
 

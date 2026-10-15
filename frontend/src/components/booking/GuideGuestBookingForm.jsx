@@ -11,11 +11,12 @@ import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
-import { createGuideBooking } from '../../services/bookingsApi';
+import { createGuideBooking, saveGuestBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
+import { prefillBookingForm } from '../../utils/bookingEdit';
 import {
   DEFAULT_GUIDE_PACKAGE_ID,
   GUIDE_BIKE_ADDON,
@@ -100,7 +101,7 @@ function BikeAddonConfirmModal({ open, message, confirmLabel, cancelLabel, onCon
   );
 }
 
-export default function GuideGuestBookingForm({ item, openMode = false }) {
+export default function GuideGuestBookingForm({ item, openMode = false, editingBooking = null }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -113,7 +114,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
     setField: setCustomField,
     validate: validateCustom,
     customPayload,
-  } = useConfigurableForm('customer', 'GUIDE');
+  } = useConfigurableForm('customer', 'GUIDE', editingBooking?.guestRegistration?.customFields);
   const [bikeConfirmChoice, setBikeConfirmChoice] = useState(null);
 
   const termsSummary = useMemo(() => {
@@ -126,7 +127,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
     return Array.isArray(sections) ? sections : [];
   }, [t, i18n.language]);
 
-  const [form, setForm] = useState(() => ({
+  const [form, setForm] = useState(() => prefillBookingForm({
     tourDate: '',
     startTime: '09:00',
     guidePackage: openMode ? DEFAULT_GUIDE_PACKAGE_ID : '6HR',
@@ -149,7 +150,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
-  }));
+  }, editingBooking, 'guide'));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -240,7 +241,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
         .filter(Boolean)
         .join('\n');
 
-      const res = await createGuideBooking({
+      const res = await saveGuestBooking(editingBooking, createGuideBooking, {
         open: openMode,
         guideId: openMode ? undefined : item._id,
         guidePackage: form.guidePackage,
@@ -284,6 +285,11 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
         },
       });
       const booking = res.data.data;
+      if (editingBooking) {
+        toast.success(t('booking.updated'));
+        navigate('/dashboard/customer/bookings');
+        return;
+      }
       toast.success(openMode ? 'Request submitted — we will assign a guide and confirm shortly.' : 'Booking created — proceed to pay');
       if (!openMode) {
         try {
@@ -307,7 +313,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
         <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
           {!openMode && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{t('guideGuestBooking.formTitle')}</h2>
+              <h2 className="text-xl font-bold text-slate-900">{editingBooking ? t('booking.editBooking') : t('guideGuestBooking.formTitle')}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {t('guideGuestBooking.formSubtitle', { name: item?.name })}
               </p>
@@ -661,7 +667,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
         </Card>
 
         <Button type="submit" className="w-full sm:w-auto" disabled={dateBlocked || submitting}>
-          {submitting ? t('common.loading') : t('guideGuestBooking.confirmBooking')}
+          {submitting ? t('common.loading') : editingBooking ? t('booking.saveChanges') : t('guideGuestBooking.confirmBooking')}
         </Button>
       </form>
 

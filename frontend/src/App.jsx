@@ -43,6 +43,7 @@ import TentBookingPage from './pages/TentBookingPage';
 
 import CustomerOverview from './dashboards/customer/CustomerOverview';
 import CustomerBookings from './dashboards/customer/CustomerBookings';
+import EditBookingPage from './dashboards/customer/EditBookingPage';
 import CustomerProfile from './dashboards/customer/CustomerProfile';
 import CustomerFavorites from './dashboards/customer/CustomerFavorites';
 
@@ -164,6 +165,7 @@ export default function App() {
         </ProtectedRoute>
       }>
         <Route index element={<CustomerOverview />} />
+        <Route path="bookings/:id/edit" element={<EditBookingPage />} />
         <Route path="bookings" element={<CustomerBookings />} />
         <Route path="favorites" element={<CustomerFavorites />} />
         <Route path="profile" element={<CustomerProfile />} />

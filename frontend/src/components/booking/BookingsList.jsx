@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
@@ -23,6 +23,7 @@ import { payForBooking, requestRefund, getRefundPreview } from '../../services/p
 import { createReview } from '../../services/listingsApi';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import { useAuth } from '../../context/AuthContext';
+import { canCustomerEditBooking } from '../../utils/bookingEdit';
 
 const statusColor = {
   CONFIRMED: 'success',
@@ -34,6 +35,7 @@ const statusColor = {
 
 export default function BookingsList({ mode = 'customer', allowStatusUpdate = false, refreshKey = 0 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -358,6 +360,11 @@ export default function BookingsList({ mode = 'customer', allowStatusUpdate = fa
               <p className="font-bold text-primary">{formatCurrency(b.total)}</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {mode === 'customer' && canCustomerEditBooking(b) && (
+                <Button className="px-3 py-1.5 text-sm" variant="outline" onClick={() => navigate(`/dashboard/customer/bookings/${b._id}/edit`)}>
+                  {t('booking.editBooking')}
+                </Button>
+              )}
               {mode === 'customer' && b.paymentStatus === 'PENDING' && (
                 <Button className="px-3 py-1.5 text-sm" onClick={() => handlePay(b)}>{t('booking.payNow')}</Button>
               )}

@@ -81,6 +81,10 @@
   "booking": {
     "confirm": "Confirm Booking",
     "payNow": "Pay now",
+    "editBooking": "Edit booking",
+    "saveChanges": "Save changes",
+    "updated": "Booking updated",
+    "editUnavailable": "This booking can no longer be edited",
     "downloadInvoice": "Download invoice",
     "requestRefund": "Cancel & refund",
     "refundStatus": "Refund status",

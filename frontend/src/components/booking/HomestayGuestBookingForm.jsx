@@ -4,13 +4,14 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { isTenDigitMobile } from '../../utils/mobileNumber';
 import { clampTime24 } from '../../utils/time12h';
-import { createHomestayBooking } from '../../services/bookingsApi';
+import { createHomestayBooking, saveGuestBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useConfigurableForm } from '../forms/ConfigurableFormSections';
+import { prefillBookingForm } from '../../utils/bookingEdit';
 
-export default function HomestayGuestBookingForm({ item, initialRoomId }) {
+export default function HomestayGuestBookingForm({ item, initialRoomId, editingBooking = null }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -20,12 +21,12 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
     setField: setCustomField,
     validate: validateCustom,
     customPayload,
-  } = useConfigurableForm('customer', 'HOMESTAY');
+  } = useConfigurableForm('customer', 'HOMESTAY', editingBooking?.guestRegistration?.customFields);
   const [unavailable, setUnavailable] = useState([]);
   const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
-  const [form, setForm] = useState(() => ({
+  const [form, setForm] = useState(() => prefillBookingForm({
     checkIn: '',
     checkOut: '',
     checkInTime: item?.checkInTime || '14:00',
@@ -52,7 +53,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
-  }));
+  }, editingBooking, 'stay'));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -63,16 +64,18 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
   );
 
   useEffect(() => {
+    if (editingBooking) return;
     if (initialRoomId) setField('roomId', initialRoomId);
-  }, [initialRoomId]);
+  }, [initialRoomId, editingBooking]);
 
   useEffect(() => {
+    if (editingBooking) return;
     setForm((prev) => ({
       ...prev,
       checkInTime: item?.checkInTime || '14:00',
       checkOutTime: item?.checkOutTime || '11:00',
     }));
-  }, [item?.checkInTime, item?.checkOutTime]);
+  }, [item?.checkInTime, item?.checkOutTime, editingBooking]);
 
   const nights = useMemo(() => {
     if (!form.checkIn || !form.checkOut) return 1;
@@ -146,7 +149,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
     }
     setSubmitting(true);
     try {
-      await createHomestayBooking({
+      const payload = {
         homestayId: item._id,
         roomId: form.roomId || item.rooms?.[0]?._id,
         checkIn: form.checkIn,
@@ -187,8 +190,9 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
           acceptedTermsAt: new Date().toISOString(),
           customFields: customPayload,
         },
-      });
-      toast.success(t('stayGuestBooking.bookingCreated'));
+      };
+      await saveGuestBooking(editingBooking, createHomestayBooking, payload);
+      toast.success(editingBooking ? t('booking.updated') : t('stayGuestBooking.bookingCreated'));
       navigate('/dashboard/customer/bookings');
     } catch (error) {
       toast.error(error.response?.data?.message || t('stayGuestBooking.bookingFailed'));
@@ -199,7 +203,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
 
   return (
     <StayGuestBookingFormCore
-      formTitle={t('homestayGuestBooking.formTitle')}
+      formTitle={editingBooking ? t('booking.editBooking') : t('homestayGuestBooking.formTitle')}
       formSubtitle={t('homestayGuestBooking.formSubtitle', { name: item?.name })}
       termsSummary={termsSummary}
       fullTermsTitle={t('homestayRegistration.fullTermsTitle')}
@@ -225,6 +229,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
       customSections={customSections}
       customValues={customValues}
       onCustomChange={setCustomField}
+      submitLabel={editingBooking ? t('booking.saveChanges') : undefined}
     />
   );
 }

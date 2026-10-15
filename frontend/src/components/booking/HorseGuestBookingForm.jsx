@@ -11,11 +11,12 @@ import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
-import { createHorseBooking } from '../../services/bookingsApi';
+import { createHorseBooking, saveGuestBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import { useAuth } from '../../context/AuthContext';
 import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
+import { prefillBookingForm } from '../../utils/bookingEdit';
 import {
   DEFAULT_HORSE_PACKAGE_ID,
   HORSE_CLIENT_PACKAGES,
@@ -63,7 +64,7 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
   );
 }
 
-export default function HorseGuestBookingForm({ item, openMode = false }) {
+export default function HorseGuestBookingForm({ item, openMode = false, editingBooking = null }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     setField: setCustomField,
     validate: validateCustom,
     customPayload,
-  } = useConfigurableForm('customer', 'HORSE');
+  } = useConfigurableForm('customer', 'HORSE', editingBooking?.guestRegistration?.customFields);
 
   const openModeRoutes = useMemo(() => openHorseRoutesForI18n(t), [t, i18n.language]);
 
@@ -93,7 +94,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     return Array.isArray(sections) ? sections : [];
   }, [t, i18n.language]);
 
-  const [form, setForm] = useState(() => ({
+  const [form, setForm] = useState(() => prefillBookingForm({
     rideDate: '',
     startTime: '09:00',
     routeId: defaultRouteId,
@@ -114,7 +115,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     advanceAmount: '',
     acceptSafety: false,
     acceptTerms: false,
-  }));
+  }, editingBooking, 'horse'));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -181,7 +182,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
         .filter(Boolean)
         .join('\n');
 
-      const res = await createHorseBooking({
+      const res = await saveGuestBooking(editingBooking, createHorseBooking, {
         open: openMode,
         horseId: openMode ? undefined : item._id,
         routeId: form.routeId,
@@ -223,6 +224,11 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
         },
       });
       const booking = res.data.data;
+      if (editingBooking) {
+        toast.success(t('booking.updated'));
+        navigate('/dashboard/customer/bookings');
+        return;
+      }
       toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('horseGuestBooking.bookingCreated'));
       if (!openMode) {
         try {
@@ -254,7 +260,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
         <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
           {!openMode && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{t('horseGuestBooking.formTitle')}</h2>
+              <h2 className="text-xl font-bold text-slate-900">{editingBooking ? t('booking.editBooking') : t('horseGuestBooking.formTitle')}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {t('horseGuestBooking.formSubtitle', { name: item?.name })}
               </p>
@@ -496,7 +502,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
         </Card>
 
         <Button type="submit" className="w-full sm:w-auto" disabled={dateBlocked || submitting}>
-          {submitting ? t('common.loading') : openMode ? t('serviceBooking.submitRequest') : t('horseGuestBooking.confirmBooking')}
+          {submitting ? t('common.loading') : editingBooking ? t('booking.saveChanges') : openMode ? t('serviceBooking.submitRequest') : t('horseGuestBooking.confirmBooking')}
         </Button>
       </form>
 

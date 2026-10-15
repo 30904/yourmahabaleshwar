@@ -178,6 +178,7 @@ export const hasBookingConflict = async ({
   capacity = 1,
   quantity = 1,
   extraFilter = {},
+  excludeBookingId,
 }) => {
   const ci = startOfDay(checkIn);
   const co = checkOut ? startOfDay(checkOut) : endOfDay(checkIn);
@@ -188,6 +189,7 @@ export const hasBookingConflict = async ({
     status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.CONFIRMED] },
     ...extraFilter,
   };
+  if (excludeBookingId) filter._id = { $ne: excludeBookingId };
 
   if (checkOut) {
     filter.checkIn = { $lt: co };

@@ -12,11 +12,12 @@ import FormLanguageToggle from '../common/FormLanguageToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 import { clampTime24, formatTime12 } from '../../utils/time12h';
-import { createTentBooking } from '../../services/bookingsApi';
+import { createTentBooking, saveGuestBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import { StayLegalModal } from './StayGuestBookingFormCore';
 import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
+import { prefillBookingForm } from '../../utils/bookingEdit';
 
 const OPEN_DEFAULT_PRICE_PER_NIGHT = 2000;
 
@@ -24,7 +25,7 @@ function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-slate-900">{children}</h3>;
 }
 
-export default function TentGuestBookingForm({ item, openMode = false }) {
+export default function TentGuestBookingForm({ item, openMode = false, editingBooking = null }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -34,13 +35,13 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     setField: setCustomField,
     validate: validateCustom,
     customPayload,
-  } = useConfigurableForm('customer', 'TENT');
+  } = useConfigurableForm('customer', 'TENT', editingBooking?.guestRegistration?.customFields);
   const [unavailable, setUnavailable] = useState([]);
   const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
 
-  const [form, setForm] = useState(() => ({
+  const [form, setForm] = useState(() => prefillBookingForm({
     checkIn: '',
     checkOut: '',
     checkInTime: item?.checkInTime || '14:00',
@@ -68,7 +69,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
-  }));
+  }, editingBooking, 'tent'));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -163,7 +164,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     }
     setSubmitting(true);
     try {
-      await createTentBooking({
+      const payload = {
         open: openMode,
         tentId: openMode ? undefined : item._id,
         checkIn: form.checkIn,
@@ -205,8 +206,15 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
           acceptedTermsAt: new Date().toISOString(),
           customFields: customPayload,
         },
-      });
-      toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('tentGuestBooking.bookingCreated'));
+      };
+      await saveGuestBooking(editingBooking, createTentBooking, payload);
+      toast.success(
+        editingBooking
+          ? t('booking.updated')
+          : openMode
+            ? t('serviceBooking.requestSubmitted')
+            : t('tentGuestBooking.bookingCreated')
+      );
       navigate('/dashboard/customer/bookings');
     } catch (error) {
       toast.error(error.response?.data?.message || t('tentGuestBooking.bookingFailed'));
@@ -240,7 +248,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
         <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
           {!openMode && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{t('tentGuestBooking.formTitle')}</h2>
+              <h2 className="text-xl font-bold text-slate-900">{editingBooking ? t('booking.editBooking') : t('tentGuestBooking.formTitle')}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {t('tentGuestBooking.formSubtitle', { name: item?.name })}
               </p>
@@ -504,9 +512,11 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
         <Button type="submit" className="w-full sm:w-auto" disabled={dateBlocked || submitting}>
           {submitting
             ? t('common.loading')
-            : openMode
-              ? t('serviceBooking.submitRequest')
-              : t('tentGuestBooking.confirmBooking')}
+            : editingBooking
+              ? t('booking.saveChanges')
+              : openMode
+                ? t('serviceBooking.submitRequest')
+                : t('tentGuestBooking.confirmBooking')}
         </Button>
       </form>
 

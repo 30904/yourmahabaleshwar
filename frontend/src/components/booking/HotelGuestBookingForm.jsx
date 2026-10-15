@@ -4,13 +4,14 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { isTenDigitMobile } from '../../utils/mobileNumber';
 import { clampTime24 } from '../../utils/time12h';
-import { createHotelBooking } from '../../services/bookingsApi';
+import { createHotelBooking, saveGuestBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { useAuth } from '../../context/AuthContext';
 import StayGuestBookingFormCore from './StayGuestBookingFormCore';
 import { useConfigurableForm } from '../forms/ConfigurableFormSections';
+import { prefillBookingForm } from '../../utils/bookingEdit';
 
-export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId }) {
+export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId, editingBooking = null }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,12 +23,12 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     setField: setCustomField,
     validate: validateCustom,
     customPayload,
-  } = useConfigurableForm('customer', isResort ? 'RESORT' : 'HOTEL');
+  } = useConfigurableForm('customer', isResort ? 'RESORT' : 'HOTEL', editingBooking?.guestRegistration?.customFields);
   const [unavailable, setUnavailable] = useState([]);
   const [inventory, setInventory] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
-  const [form, setForm] = useState(() => ({
+  const [form, setForm] = useState(() => prefillBookingForm({
     checkIn: '',
     checkOut: '',
     checkInTime: hotel?.checkInTime || '14:00',
@@ -54,7 +55,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
-  }));
+  }, editingBooking, 'stay'));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -63,12 +64,13 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
   }, [initialRoomId]);
 
   useEffect(() => {
+    if (editingBooking) return;
     setForm((prev) => ({
       ...prev,
       checkInTime: hotel?.checkInTime || '14:00',
       checkOutTime: hotel?.checkOutTime || '11:00',
     }));
-  }, [hotel?.checkInTime, hotel?.checkOutTime]);
+  }, [hotel?.checkInTime, hotel?.checkOutTime, editingBooking]);
 
   const room = useMemo(
     () => roomList.find((r) => String(r._id) === String(form.roomId)) || roomList[0],
@@ -147,7 +149,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     }
     setSubmitting(true);
     try {
-      await createHotelBooking({
+      const payload = {
         hotelId: hotel._id,
         roomId: form.roomId || roomList[0]?._id,
         checkIn: form.checkIn,
@@ -188,8 +190,9 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
           acceptedTermsAt: new Date().toISOString(),
           customFields: customPayload,
         },
-      });
-      toast.success(t('stayGuestBooking.bookingCreated'));
+      };
+      await saveGuestBooking(editingBooking, createHotelBooking, payload);
+      toast.success(editingBooking ? t('booking.updated') : t('stayGuestBooking.bookingCreated'));
       navigate('/dashboard/customer/bookings');
     } catch (error) {
       toast.error(error.response?.data?.message || t('stayGuestBooking.bookingFailed'));
@@ -200,7 +203,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
 
   return (
     <StayGuestBookingFormCore
-      formTitle={t(isResort ? 'hotelGuestBooking.formTitleResort' : 'hotelGuestBooking.formTitleHotel')}
+      formTitle={editingBooking ? t('booking.editBooking') : t(isResort ? 'hotelGuestBooking.formTitleResort' : 'hotelGuestBooking.formTitleHotel')}
       formSubtitle={t('hotelGuestBooking.formSubtitle', { name: hotel?.name })}
       termsSummary={termsSummary}
       fullTermsTitle={t('hotelRegistration.fullTermsTitle')}
@@ -229,6 +232,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       customSections={customSections}
       customValues={customValues}
       onCustomChange={setCustomField}
+      submitLabel={editingBooking ? t('booking.saveChanges') : undefined}
     />
   );
 }

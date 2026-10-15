@@ -11,10 +11,11 @@ import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
 import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
-import { createTaxiBooking } from '../../services/bookingsApi';
+import { createTaxiBooking, saveGuestBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
 import ConfigurableFormSections, { useConfigurableForm } from '../forms/ConfigurableFormSections';
+import { prefillBookingForm } from '../../utils/bookingEdit';
 import { useAuth } from '../../context/AuthContext';
 import {
   DEFAULT_TAXI_ROUTE_ID,
@@ -77,7 +78,7 @@ function LegalModal({ open, title, sections, closeLabel, onClose }) {
   );
 }
 
-export default function TaxiGuestBookingForm({ item, openMode = false, serviceTenant = 'TAXI' }) {
+export default function TaxiGuestBookingForm({ item, openMode = false, serviceTenant = 'TAXI', editingBooking = null }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -90,7 +91,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     setField: setCustomField,
     validate: validateCustom,
     customPayload,
-  } = useConfigurableForm('customer', serviceTenant === 'DRIVER' ? 'DRIVER' : 'TAXI');
+  } = useConfigurableForm('customer', serviceTenant === 'DRIVER' ? 'DRIVER' : 'TAXI', editingBooking?.guestRegistration?.customFields);
 
   const termsSummary = useMemo(() => {
     const lines = t('taxiGuestBooking.termsSummary', { returnObjects: true });
@@ -102,7 +103,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     return Array.isArray(sections) ? sections : [];
   }, [t, i18n.language]);
 
-  const [form, setForm] = useState(() => ({
+  const [form, setForm] = useState(() => prefillBookingForm({
     tripDate: '',
     pickupTime: '09:00',
     taxiType: 'PER_TRIP',
@@ -126,7 +127,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     paymentMode: 'ONLINE',
     advanceAmount: '',
     acceptTerms: false,
-  }));
+  }, editingBooking, 'taxi'));
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -198,7 +199,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
         .filter(Boolean)
         .join('\n');
 
-      const res = await createTaxiBooking({
+      const res = await saveGuestBooking(editingBooking, createTaxiBooking, {
         open: openMode,
         serviceTenant,
         driverId: openMode ? undefined : item._id,
@@ -247,6 +248,11 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
         },
       });
       const booking = res.data.data;
+      if (editingBooking) {
+        toast.success(t('booking.updated'));
+        navigate('/dashboard/customer/bookings');
+        return;
+      }
       toast.success(openMode ? t('serviceBooking.requestSubmitted') : t('taxiGuestBooking.bookingCreated'));
       if (!openMode) {
         try {
@@ -270,7 +276,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
         <div className={`flex flex-wrap items-end gap-3 ${openMode ? 'service-booking-form-toolbar' : 'justify-between'}`}>
           {!openMode && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{t('taxiGuestBooking.formTitle')}</h2>
+              <h2 className="text-xl font-bold text-slate-900">{editingBooking ? t('booking.editBooking') : t('taxiGuestBooking.formTitle')}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {t('taxiGuestBooking.formSubtitle', { name: item?.name })}
               </p>
@@ -648,7 +654,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
         </Card>
 
         <Button type="submit" className="w-full sm:w-auto" disabled={dateBlocked || submitting}>
-          {submitting ? t('common.loading') : t('taxiGuestBooking.confirmBooking')}
+          {submitting ? t('common.loading') : editingBooking ? t('booking.saveChanges') : t('taxiGuestBooking.confirmBooking')}
         </Button>
       </form>
 

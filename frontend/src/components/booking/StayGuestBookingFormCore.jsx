@@ -77,6 +77,7 @@ export default function StayGuestBookingFormCore({
   customSections = [],
   customValues = {},
   onCustomChange,
+  submitLabel,
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -337,7 +338,7 @@ export default function StayGuestBookingFormCore({
         </Card>
 
         <Button type="submit" className="w-full sm:w-auto" disabled={dateBlocked || submitting || !roomList.length}>
-          {submitting ? t('common.loading') : t('stayGuestBooking.confirmBooking')}
+          {submitting ? t('common.loading') : submitLabel || t('stayGuestBooking.confirmBooking')}
         </Button>
       </form>
 
