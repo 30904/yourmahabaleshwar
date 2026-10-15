@@ -68,7 +68,7 @@ export default function ServiceBookScreen({ route, navigation }) {
     const [leadMobile, setLeadMobile] = useState(user?.phone || '');
     const [email, setEmail] = useState(user?.email || '');
     const [address, setAddress] = useState('');
-    const [cityState, setCityState] = useState('Mahabaleshwar, Maharashtra');
+    const [cityState, setCityState] = useState('');
     const [pincode, setPincode] = useState('');
     const [emergencyName, setEmergencyName] = useState('');
     const [emergencyMobile, setEmergencyMobile] = useState('');
@@ -351,7 +351,7 @@ export default function ServiceBookScreen({ route, navigation }) {
                         <Field label={t(`${ns}.cityState`)} value={cityState} onChangeText={setCityState} />
                         <Field label={t(`${ns}.pinCode`)} value={pincode} onChangeText={setPincode} keyboardType="numeric" maxLength={6} autofillPincode />
                         <Field label={t(`${ns}.emergencyName`)} value={emergencyName} onChangeText={setEmergencyName} />
-                        <Field label={t(`${ns}.emergencyMobile`)} value={emergencyMobile} onChangeText={setEmergencyMobile} keyboardType="phone-pad" />
+                        <Field label={t(`${ns}.emergencyMobile`)} value={emergencyMobile} onChangeText={(value) => setEmergencyMobile(digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10} />
                     </Section>
                     {type === 'TAXI' || type === 'DRIVER' ? (
                         <Section title={t(`${ns}.section3`)}>

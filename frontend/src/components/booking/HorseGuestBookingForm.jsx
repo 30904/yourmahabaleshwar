@@ -104,7 +104,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     leadMobile: user?.phone || '',
     leadEmail: user?.email || '',
     leadAddress: '',
-    leadCityState: 'Mahabaleshwar, Maharashtra',
+    leadCityState: '',
     leadPincode: '',
     emergencyName: '',
     emergencyMobile: '',
@@ -378,7 +378,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
             <Input label={t('horseGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
             <PincodeInput label={t('horseGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('horseGuestBooking.emergencyName')} value={form.emergencyName} onChange={(e) => setField('emergencyName', e.target.value)} />
-            <Input label={t('horseGuestBooking.emergencyMobile')} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', e.target.value)} />
+            <Input label={t('horseGuestBooking.emergencyMobile')} inputMode="numeric" maxLength={10} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', digitsOnlyMobile(e.target.value))} />
           </div>
         </Card>
 

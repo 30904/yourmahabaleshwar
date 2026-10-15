@@ -54,7 +54,7 @@ function ContactFields({ contact, setContact, t, ns, showDrop, timeLabel, showAg
       <Field label={t(`${ns}.cityState`)} value={contact.cityState} onChangeText={set('cityState')}/>
       <Field label={t(`${ns}.pinCode`)} value={contact.pincode} onChangeText={set('pincode')} keyboardType="numeric" maxLength={6} autofillPincode/>
       <Field label={t(`${ns}.emergencyName`)} value={contact.emergencyName} onChangeText={set('emergencyName')}/>
-      <Field label={t(`${ns}.emergencyMobile`)} value={contact.emergencyMobile} onChangeText={set('emergencyMobile')} keyboardType="phone-pad"/>
+      <Field label={t(`${ns}.emergencyMobile`)} value={contact.emergencyMobile} onChangeText={(value) => set('emergencyMobile')(digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10}/>
       <TimeField label={timeLabel} value={contact.startTime} onChange={set('startTime')}/>
       {showDrop ? <Field label={t(`${ns}.dropLocation`)} value={contact.dropLocation} onChangeText={set('dropLocation')}/> : null}
       <Field label={t(`${ns}.specialRequests`)} value={contact.specialRequests} onChangeText={set('specialRequests')}/>
@@ -107,7 +107,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     const [contact, setContact] = useState({
         email: '',
         address: '',
-        cityState: 'Mahabaleshwar, Maharashtra',
+        cityState: '',
         pincode: '',
         emergencyName: '',
         emergencyMobile: '',

@@ -94,7 +94,7 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
     leadMobile: user?.phone || '',
     leadEmail: user?.email || '',
     leadAddress: '',
-    leadCityState: 'Mahabaleshwar, Maharashtra',
+    leadCityState: '',
     leadPincode: '',
     emergencyName: '',
     emergencyMobile: '',
@@ -395,7 +395,7 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
             <Input label={t('driverGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
             <PincodeInput label={t('driverGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('driverGuestBooking.emergencyName')} value={form.emergencyName} onChange={(e) => setField('emergencyName', e.target.value)} />
-            <Input label={t('driverGuestBooking.emergencyMobile')} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', e.target.value)} />
+            <Input label={t('driverGuestBooking.emergencyMobile')} inputMode="numeric" maxLength={10} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', digitsOnlyMobile(e.target.value))} />
           </div>
         </Card>
 

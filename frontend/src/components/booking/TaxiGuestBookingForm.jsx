@@ -115,7 +115,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     leadMobile: user?.phone || '',
     leadEmail: user?.email || '',
     leadAddress: '',
-    leadCityState: 'Mahabaleshwar, Maharashtra',
+    leadCityState: '',
     leadPincode: '',
     emergencyName: '',
     emergencyMobile: '',
@@ -542,7 +542,7 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
             <Input label={t('taxiGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
             <PincodeInput label={t('taxiGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
             <Input label={t('taxiGuestBooking.emergencyName')} value={form.emergencyName} onChange={(e) => setField('emergencyName', e.target.value)} />
-            <Input label={t('taxiGuestBooking.emergencyMobile')} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', e.target.value)} />
+            <Input label={t('taxiGuestBooking.emergencyMobile')} inputMode="numeric" maxLength={10} value={form.emergencyMobile} onChange={(e) => setField('emergencyMobile', digitsOnlyMobile(e.target.value))} />
           </div>
         </Card>
 

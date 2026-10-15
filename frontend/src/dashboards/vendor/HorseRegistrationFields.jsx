@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import { digitsOnlyMobile } from '../../utils/mobileNumber';
 import PincodeInput from '../../components/ui/PincodeInput';
 import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
@@ -144,8 +145,10 @@ export default function HorseRegistrationFields({
           />
           <Input
             label={t('horseRegistration.emergencyMobile')}
+            inputMode="numeric"
+            maxLength={10}
             value={form.emergencyMobile}
-            onChange={(e) => setField('emergencyMobile', e.target.value)}
+            onChange={(e) => setField('emergencyMobile', digitsOnlyMobile(e.target.value))}
           />
         </div>
       </Card>

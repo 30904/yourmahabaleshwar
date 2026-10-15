@@ -5,6 +5,7 @@ import { DateField, LanguageToggle, SelectField, TimeField } from '../../compone
 import { Button, Card, Field } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { AMENITY_OPTIONS, defaultRoute } from '../../utils/vendorListingForm';
+import { digitsOnlyMobile } from '../../utils/mobileNumber';
 
 const LANGS = [
     { value: 'Marathi', labelKey: 'langMarathi' },
@@ -262,7 +263,7 @@ export default function ListingFormView({
                         <Field label={t('guideRegistration.whatsapp')} value={text('whatsapp')} onChangeText={(value) => setField('whatsapp', value)} keyboardType="phone-pad" />
                         <Field label={t('guideRegistration.email')} value={text('email')} onChangeText={(value) => setField('email', value)} keyboardType="email-address" autoCapitalize="none" />
                         <Field label={t('guideRegistration.emergencyContactName')} value={text('emergencyContactName')} onChangeText={(value) => setField('emergencyContactName', value)} autoCapitalize="words" />
-                        <Field label={t('guideRegistration.emergencyContactMobile')} value={text('emergencyContactMobile')} onChangeText={(value) => setField('emergencyContactMobile', value)} keyboardType="phone-pad" />
+                        <Field label={t('guideRegistration.emergencyContactMobile')} value={text('emergencyContactMobile')} onChangeText={(value) => setField('emergencyContactMobile', digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10} />
                     </Section>
                     <Section title={t('guideRegistration.section3')}>
                         <SelectField label={t('guideRegistration.ownTwoWheeler')} value={form.ownsTwoWheeler || ''} onChange={(value) => setField('ownsTwoWheeler', value)} options={[{ value: '', label: t('guideRegistration.select') }, { value: 'yes', label: t('guideRegistration.yes') }, { value: 'no', label: t('guideRegistration.no') }]} />
@@ -319,7 +320,7 @@ export default function ListingFormView({
                             <Field label={t(`${service}.whatsapp`)} value={text('whatsapp')} onChangeText={(value) => setField('whatsapp', value)} keyboardType="phone-pad" />
                             <Field label={t(`${service}.email`)} value={text('email')} onChangeText={(value) => setField('email', value)} keyboardType="email-address" autoCapitalize="none" />
                             <Field label={t(`${service}.emergencyContactName`)} value={text('emergencyContactName')} onChangeText={(value) => setField('emergencyContactName', value)} autoCapitalize="words" />
-                            <Field label={t(`${service}.emergencyContactMobile`)} value={text('emergencyContactMobile')} onChangeText={(value) => setField('emergencyContactMobile', value)} keyboardType="phone-pad" />
+                            <Field label={t(`${service}.emergencyContactMobile`)} value={text('emergencyContactMobile')} onChangeText={(value) => setField('emergencyContactMobile', digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10} />
                         </Section>
                         <Section title={t(`${service}.section3`)}>
                             {vertical === 'TAXI' ? <Text style={styles.note}>{t('taxiRegistration.primaryVehicleHint')}</Text> : null}
@@ -376,7 +377,7 @@ export default function ListingFormView({
                         <Field label={t('horseRegistration.whatsapp')} value={text('whatsapp')} onChangeText={(value) => setField('whatsapp', value)} keyboardType="phone-pad" />
                         <Field label={t('horseRegistration.email')} value={text('email')} onChangeText={(value) => setField('email', value)} keyboardType="email-address" autoCapitalize="none" />
                         <Field label={t('horseRegistration.emergencyName')} value={text('emergencyName')} onChangeText={(value) => setField('emergencyName', value)} autoCapitalize="words" />
-                        <Field label={t('horseRegistration.emergencyMobile')} value={text('emergencyMobile')} onChangeText={(value) => setField('emergencyMobile', value)} keyboardType="phone-pad" />
+                        <Field label={t('horseRegistration.emergencyMobile')} value={text('emergencyMobile')} onChangeText={(value) => setField('emergencyMobile', digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10} />
                     </Section>
                     <Section title={t('horseRegistration.section3')}>
                         <Field label={t('horseRegistration.businessName')} value={text('name')} onChangeText={(value) => setField('name', value)} autoCapitalize="words" />

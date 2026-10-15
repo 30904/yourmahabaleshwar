@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Input from '../../components/ui/Input';
+import { digitsOnlyMobile } from '../../utils/mobileNumber';
 import PincodeInput from '../../components/ui/PincodeInput';
 import ListingImageField from './ListingImageField';
 import Card from '../../components/ui/Card';
@@ -142,8 +143,10 @@ export default function GuideRegistrationFields({ form, setField, toggleLanguage
           />
           <Input
             label={t('guideRegistration.emergencyMobile')}
+            inputMode="numeric"
+            maxLength={10}
             value={form.emergencyContactMobile}
-            onChange={(e) => setField('emergencyContactMobile', e.target.value)}
+            onChange={(e) => setField('emergencyContactMobile', digitsOnlyMobile(e.target.value))}
           />
         </div>
       </Card>
