@@ -169,7 +169,6 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
     if (!String(form.leadFullName || '').trim()) return t('taxiGuestBooking.validation.fullName');
     if (!isTenDigitMobile(form.leadMobile)) return t('taxiGuestBooking.validation.mobile');
     if (!String(form.leadEmail || '').trim()) return t('taxiGuestBooking.validation.email');
-    if (!String(form.pickupLocation || '').trim()) return t('taxiGuestBooking.validation.pickup');
     if (needsDropLocation && !String(form.dropLocation || '').trim()) {
       return t('taxiGuestBooking.validation.drop');
     }
@@ -567,12 +566,6 @@ export default function TaxiGuestBookingForm({ item, openMode = false, serviceTe
               <option value="DROP">{t('taxiGuestBooking.routeTripTypes.drop')}</option>
             </select>
           </div>
-          <Input
-            label={t('taxiGuestBooking.pickupLocation')}
-            value={form.pickupLocation}
-            onChange={(e) => setField('pickupLocation', e.target.value)}
-            required
-          />
           {needsDropLocation && (
             <Input
               label={t('taxiGuestBooking.dropLocation')}

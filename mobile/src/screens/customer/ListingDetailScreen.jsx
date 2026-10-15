@@ -293,10 +293,6 @@ export default function ListingDetailScreen({ route, navigation }) {
                 Alert.alert(t('common.error'), t('guideGuestBooking.validation.email'));
                 return;
             }
-            if ((type === 'TAXI' || type === 'DRIVER') && !pickupLocation.trim()) {
-                Alert.alert(t('common.error'), t('booking.needPickup'));
-                return;
-            }
             if (type === 'HORSE' && !acceptSafety) {
                 Alert.alert(t('common.error'), t('horse.needSafety'));
                 return;
@@ -804,7 +800,6 @@ export default function ListingDetailScreen({ route, navigation }) {
           </>) : type === 'TAXI' || type === 'DRIVER' ? (<>
             <FormSection title={t(serviceNs + '.section1')}>
               <DateField label={t(`${serviceNs}.tripDate`)} value={checkIn} onChange={setCheckIn}/>
-              <Field label={t(`${serviceNs}.pickupLocation`)} value={pickupLocation} onChangeText={setPickupLocation}/>
               <Field label={t(`${serviceNs}.passengerCount`)} value={adults} onChangeText={setAdults} keyboardType="numeric"/>
             </FormSection>
             <FormSection title={t(`${serviceNs}.section2`)}>

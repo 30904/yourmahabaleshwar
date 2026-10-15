@@ -142,7 +142,6 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
     if (!String(form.leadFullName || '').trim()) return t('driverGuestBooking.validation.fullName');
     if (!isTenDigitMobile(form.leadMobile)) return t('driverGuestBooking.validation.mobile');
     if (!String(form.leadEmail || '').trim()) return t('driverGuestBooking.validation.email');
-    if (!String(form.pickupLocation || '').trim()) return t('driverGuestBooking.validation.pickup');
     if (needsDropLocation && !String(form.dropLocation || '').trim()) {
       return t('driverGuestBooking.validation.drop');
     }
@@ -420,12 +419,6 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
               <option value="DROP">{t('driverGuestBooking.routeTripTypes.drop')}</option>
             </select>
           </div>
-          <Input
-            label={t('driverGuestBooking.pickupLocation')}
-            value={form.pickupLocation}
-            onChange={(e) => setField('pickupLocation', e.target.value)}
-            required
-          />
           {needsDropLocation && (
             <Input
               label={t('driverGuestBooking.dropLocation')}

@@ -121,10 +121,6 @@ export default function ServiceBookScreen({ route, navigation }) {
             return;
         }
         const needsDrop = (type === 'TAXI' || type === 'DRIVER') && (routeTripType === 'ONE_WAY' || routeTripType === 'DROP');
-        if ((type === 'TAXI' || type === 'DRIVER') && !pickupLocation.trim()) {
-            Alert.alert(t('common.error'), t(`${ns}.validation.pickupLocation`, { defaultValue: t(`${ns}.pickupLocation`) }));
-            return;
-        }
         if (needsDrop && !dropLocation.trim()) {
             Alert.alert(t('common.error'), t(`${ns}.validation.dropLocation`, { defaultValue: t(`${ns}.dropLocation`) }));
             return;
@@ -368,7 +364,6 @@ export default function ServiceBookScreen({ route, navigation }) {
                                     { value: 'DROP', label: t(`${ns}.routeTripTypes.drop`) },
                                 ]}
                             />
-                            <Field label={t(`${ns}.pickupLocation`)} value={pickupLocation} onChangeText={setPickupLocation} />
                             {needsDrop ? <Field label={t(`${ns}.dropLocation`)} value={dropLocation} onChangeText={setDropLocation} /> : null}
                             <Field label={t(`${ns}.specialRequests`)} value={notes} onChangeText={setNotes} multiline />
                             {type === 'DRIVER' ? <Text style={styles.companyNote}>{t(`${ns}.companyRateContactNote`)}</Text> : null}
