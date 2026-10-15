@@ -129,6 +129,7 @@ export default function ServiceHubScreen({ type, navigation }) {
                     <Text style={styles.title}>{t(config.titleKey)}</Text>
                     <Text style={styles.desc}>{t(config.descKey)}</Text>
                     <Text style={styles.note}>{t('serviceBooking.noVendorPick')}</Text>
+                    <Text style={styles.verified}>{t('serviceBooking.policeVerifiedNote')}</Text>
                     <View style={styles.actions}>
                         <Button title={t('serviceBooking.bookNow')} onPress={openForm} style={styles.bookBtn} />
                         <Button title={t(config.enquireLabelKey)} variant="outline" onPress={() => setEnquireOpen(true)} style={styles.bookBtn} />
@@ -178,6 +179,7 @@ const styles = StyleSheet.create({
     title: { fontFamily: FONTS.bold, fontSize: 28, color: COLORS.text, letterSpacing: -0.4, textAlign: 'center' },
     desc: { marginTop: 12, fontFamily: FONTS.regular, fontSize: 16, lineHeight: 24, color: '#475569', textAlign: 'center' },
     note: { marginTop: 10, fontFamily: FONTS.regular, fontSize: 14, lineHeight: 22, color: '#64748B', textAlign: 'center' },
+    verified: { marginTop: 10, fontFamily: FONTS.medium, fontSize: 14, lineHeight: 22, color: COLORS.text, textAlign: 'center' },
     actions: { alignItems: 'center', marginTop: 4 },
     bookBtn: { alignSelf: 'center', minWidth: 220, paddingHorizontal: 28 },
     gallery: { marginTop: 24, paddingHorizontal: 16 },

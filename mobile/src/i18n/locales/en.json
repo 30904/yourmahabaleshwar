@@ -660,6 +660,7 @@
     "driverTitle": "Book a driver",
     "horseTitle": "Book a horse ride",
     "noVendorPick": "You do not choose a specific partner — submit your request and our team will assign the best available vendor.",
+    "policeVerifiedNote": "They are verified by the police and are trained professionals.",
     "howItWorks": "How it works",
     "stepLabel": "Step {{n}}",
     "step1": "Fill in your trip details using the booking form",

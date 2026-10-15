@@ -155,6 +155,9 @@ export default function ServiceBookHubPage({ tenant }) {
             <h1 className="text-3xl font-bold text-slate-900">{t(config.titleKey)}</h1>
             <p className="mt-3 text-slate-600">{t(config.descKey)}</p>
             <p className="mt-2 text-sm text-slate-500">{t('serviceBooking.noVendorPick')}</p>
+            {HUB_IMAGE_TENANTS.has(tenant) ? (
+              <p className="mt-2 text-sm font-medium text-slate-700">{t('serviceBooking.policeVerifiedNote')}</p>
+            ) : null}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link to={config.bookPath}>
                 <Button className="px-8 py-3 text-base">{t('serviceBooking.bookNow')}</Button>
@@ -169,7 +172,7 @@ export default function ServiceBookHubPage({ tenant }) {
             images={hubImages}
             layout={layout}
             splitTitle={t(config.titleKey)}
-            splitDescription={`${t(config.descKey)} ${t('serviceBooking.noVendorPick')}`}
+            splitDescription={`${t(config.descKey)} ${t('serviceBooking.noVendorPick')} ${HUB_IMAGE_TENANTS.has(tenant) ? t('serviceBooking.policeVerifiedNote') : ''}`}
             bookPath={config.bookPath}
             bookLabel={t('serviceBooking.bookNow')}
             secondaryAction={enquireButton}
