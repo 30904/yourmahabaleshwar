@@ -170,7 +170,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
         leadMobile: user?.phone || '',
         leadEmail: user?.email || '',
         leadAddress: '',
-        leadCityState: 'Mahabaleshwar, Maharashtra',
+        leadCityState: '',
         leadPincode: '',
         comingFrom: '',
         goingTo: '',
@@ -380,7 +380,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
                 <Field label={t('stayGuestBooking.email')} value={form.leadEmail} onChangeText={(value) => setField('leadEmail', value)} keyboardType="email-address" />
                 <Field label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChangeText={(value) => setField('leadAddress', value)} />
                 <Field label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChangeText={(value) => setField('leadCityState', value)} />
-                <Field label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChangeText={(value) => setField('leadPincode', value)} keyboardType="numeric" maxLength={6} autofillPincode />
+                <Field label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChangeText={(value) => setField('leadPincode', value)} keyboardType="numeric" maxLength={6} />
                 <Field label={t('stayGuestBooking.comingFrom')} value={form.comingFrom} onChangeText={(value) => setField('comingFrom', value)} />
                 <Field label={t('stayGuestBooking.goingTo')} value={form.goingTo} onChangeText={(value) => setField('goingTo', value)} />
                 <ChoiceRow label={t('stayGuestBooking.purposeOfVisit')} value={form.purpose} onChange={(value) => setField('purpose', value)} options={PURPOSES.map(([id, key]) => [id, t(`stayGuestBooking.${key}`)])} />

@@ -5,9 +5,9 @@ import { MAHABALESHWAR_PINCODE } from '../../constants/site';
  * Pin code input that autofills Mahabaleshwar (412806) on focus when empty.
  * User can still edit afterward.
  */
-export default function PincodeInput({ value = '', onChange, onFocus, ...props }) {
+export default function PincodeInput({ value = '', onChange, onFocus, autofill = true, ...props }) {
   const handleFocus = (e) => {
-    if (!String(value ?? '').trim()) {
+    if (autofill && !String(value ?? '').trim()) {
       onChange?.({
         ...e,
         target: { ...e.target, value: MAHABALESHWAR_PINCODE },

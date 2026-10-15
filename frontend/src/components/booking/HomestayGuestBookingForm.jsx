@@ -40,7 +40,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
     leadMobile: user?.phone || '',
     leadEmail: user?.email || '',
     leadAddress: '',
-    leadCityState: 'Mahabaleshwar, Maharashtra',
+    leadCityState: '',
     leadPincode: '',
     comingFrom: '',
     goingTo: '',

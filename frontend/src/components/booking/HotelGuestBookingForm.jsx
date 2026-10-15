@@ -42,7 +42,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     leadMobile: user?.phone || '',
     leadEmail: user?.email || '',
     leadAddress: '',
-    leadCityState: 'Mahabaleshwar, Maharashtra',
+    leadCityState: '',
     leadPincode: '',
     comingFrom: '',
     goingTo: '',
