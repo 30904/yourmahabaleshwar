@@ -56,6 +56,24 @@ const platformSettingsSchema = new mongoose.Schema(
         HORSE: 'collage',
       }),
     },
+    homepageDealsSeeded: { type: Boolean, default: false },
+    homepageDeals: {
+      type: [
+        {
+          discount: { type: String, required: true, trim: true },
+          title: { type: String, required: true, trim: true },
+          description: { type: String, default: '' },
+          discountMr: { type: String, default: '' },
+          titleMr: { type: String, default: '' },
+          descriptionMr: { type: String, default: '' },
+          link: { type: String, default: '/hotels' },
+          tone: { type: String, enum: ['blue', 'green', 'orange'], default: 'blue' },
+          order: { type: Number, default: 0 },
+          isActive: { type: Boolean, default: true },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

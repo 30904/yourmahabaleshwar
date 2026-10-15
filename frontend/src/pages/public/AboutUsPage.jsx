@@ -73,7 +73,7 @@ export default function AboutUsPage() {
               SM
             </div>
             <p className="mt-4 text-lg font-bold text-slate-900">Sakharam Laxman Mane</p>
-            <p className="mt-1 text-sm text-slate-500">Founder · SM Enterprise</p>
+            <p className="mt-1 text-sm text-slate-500">Founder · SM Enterprises</p>
           </div>
 
           <div className="space-y-4 text-slate-600">

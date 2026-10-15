@@ -11,6 +11,7 @@ import * as phase4 from '../controllers/phase4Controller.js';
 import * as staySub from '../controllers/stayListingSubscriptionController.js';
 import * as serviceMon from '../controllers/serviceMonetizationController.js';
 import * as formSchema from '../controllers/formSchemaController.js';
+import * as homepageDeals from '../controllers/homepageDealController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAdminActions } from '../middleware/audit.js';
 import { uploadBannerImageMemory, uploadBlogCoverMemory, uploadExcel } from '../middleware/upload.js';
@@ -29,6 +30,7 @@ router.get('/public/destinations', domain.listDestinations);
 router.get('/public/document-requirements', domain.getDocumentRequirements);
 router.get('/public/service-hub-images', enterprise.getPublicServiceHubImages);
 router.get('/public/form-schemas', formSchema.getFormSchema);
+router.get('/public/homepage-deals', homepageDeals.getPublicHomepageDeals);
 
 router.use(protect);
 router.use(auditAdminActions);
@@ -83,6 +85,10 @@ router.put('/blogs/:id', authorize(...staffAndAdmin), uploadBlogCoverMemory, adm
 router.delete('/blogs/:id', authorize(...adminOnly), admin.deleteBlog);
 router.get('/faqs', authorize(...staffAndAdmin), admin.getCmsFaqs);
 router.post('/faqs', authorize(...staffAndAdmin), admin.createFaq);
+router.get('/homepage-deals', authorize(...staffAndAdmin), homepageDeals.getHomepageDeals);
+router.post('/homepage-deals', authorize(...staffAndAdmin), homepageDeals.createHomepageDeal);
+router.patch('/homepage-deals/:id', authorize(...staffAndAdmin), homepageDeals.updateHomepageDeal);
+router.delete('/homepage-deals/:id', authorize(...staffAndAdmin), homepageDeals.deleteHomepageDeal);
 
 // Phase 1B
 router.post('/phase1b/seed-defaults', authorize(...adminOnly), phase1b.seedPhase1bDefaults);

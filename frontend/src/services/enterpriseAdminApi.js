@@ -112,6 +112,10 @@ export const fetchFinanceSummary = () =>
 export const fetchKycList = () => api.get('/admin/kyc').then((r) => r.data.data);
 export const updateKyc = (id, body) => api.patch(`/admin/kyc/${id}`, body).then((r) => r.data.data);
 export const fetchCmsBanners = () => api.get('/admin/banners').then((r) => r.data.data);
+export const fetchHomepageDeals = () => api.get('/admin/homepage-deals').then((r) => r.data.data);
+export const createHomepageDeal = (payload) => api.post('/admin/homepage-deals', payload).then((r) => r.data.data);
+export const updateHomepageDeal = (id, payload) => api.patch(`/admin/homepage-deals/${id}`, payload).then((r) => r.data.data);
+export const deleteHomepageDeal = (id) => api.delete(`/admin/homepage-deals/${id}`).then((r) => r.data.data);
 export const createBanner = (fields, imageFile) => {
   const form = new FormData();
   form.append('title', fields.title);

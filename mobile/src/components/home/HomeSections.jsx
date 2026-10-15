@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View
 import { LinearGradient } from 'expo-linear-gradient';
 import { BadgeCheck, Car, CarTaxiFront, Clock, CreditCard, Gift, Headphones, Home, Hotel, Languages, Shield, Star, Tent, Trees, Users } from './icons';
 import { useTranslation } from 'react-i18next';
-import { listCatalog } from '../../api/endpoints';
+import { listCatalog, publicHomepageDeals } from '../../api/endpoints';
 import { loadPublic } from '../../api/publicCache';
 import { Button } from '../ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
@@ -22,11 +22,22 @@ const STRIP = [
     { key: 'horses', labelKey: 'home.categories.horses', countKey: 'home.categories.horsesCount', Icon: Trees, tint: '#FFF7ED', ink: '#C2410C' },
 ];
 
-const DEALS = [
-    { id: 'monsoon', colors: ['#1D4ED8', '#1E3A8A'] },
-    { id: 'weekend', colors: ['#059669', '#0F766E'] },
-    { id: 'earlyBird', colors: ['#D97706', '#C2410C'] },
+const FALLBACK_DEALS = [
+    { id: 'monsoon', tone: 'blue', link: '/hotels' },
+    { id: 'weekend', tone: 'green', link: '/hotels' },
+    { id: 'earlyBird', tone: 'orange', link: '/hotels' },
 ];
+const DEAL_COLORS = { blue: '#1D4ED8', green: '#059669', orange: '#D97706' };
+const DEAL_CATEGORIES = {
+    '/hotels': 'hotels',
+    '/resorts': 'resorts',
+    '/homestays': 'homestays',
+    '/tents': 'tents',
+    '/guides': 'guides',
+    '/taxi': 'taxi',
+    '/drivers': 'drivers',
+    '/horses': 'horses',
+};
 
 const TABS = [
     { id: 'hotels', labelKey: 'home.propertyTabs.topHotels', category: 'hotels', path: '/hotels', type: 'HOTEL', params: { type: 'HOTEL', limit: 8, featured: 'true' } },
@@ -75,7 +86,42 @@ export function HomeCategoryStrip({ navigation }) {
 }
 
 export function HomeDeals({ navigation }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const [deals, setDeals] = useState(null);
+
+    useEffect(() => {
+        let alive = true;
+        const job = loadPublic('homepage-deals', publicHomepageDeals, (rows) => {
+            if (alive) setDeals(Array.isArray(rows) ? rows : []);
+        });
+        job.catch(() => {
+            if (alive) setDeals(null);
+        });
+        return () => {
+            alive = false;
+            job.cancel();
+        };
+    }, []);
+
+    const marathi = String(i18n.language || '').startsWith('mr');
+    const cards = deals
+        ? deals.map((deal) => ({
+            key: deal._id,
+            color: DEAL_COLORS[deal.tone] || DEAL_COLORS.blue,
+            link: deal.link || '/hotels',
+            discount: marathi && deal.discountMr ? deal.discountMr : deal.discount,
+            title: marathi && deal.titleMr ? deal.titleMr : deal.title,
+            description: marathi && deal.descriptionMr ? deal.descriptionMr : deal.description,
+        }))
+        : FALLBACK_DEALS.map((deal) => ({
+            key: deal.id,
+            color: DEAL_COLORS[deal.tone],
+            link: deal.link,
+            discount: t(`home.deals.${deal.id}.discount`),
+            title: t(`home.deals.${deal.id}.title`),
+            description: t(`home.deals.${deal.id}.desc`),
+        }));
+
     return (
         <View style={styles.section}>
             <SectionHeader
@@ -86,12 +132,16 @@ export function HomeDeals({ navigation }) {
                 onPress={() => openCategory(navigation, t, 'hotels')}
             />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
-                {DEALS.map((deal) => (
-                    <Pressable key={deal.id} style={[styles.deal, { backgroundColor: deal.colors[0] }]} onPress={() => openCategory(navigation, t, 'hotels')}>
+                {cards.map((deal) => (
+                    <Pressable
+                        key={deal.key}
+                        style={[styles.deal, { backgroundColor: deal.color }]}
+                        onPress={() => openCategory(navigation, t, DEAL_CATEGORIES[deal.link] || 'hotels')}
+                    >
                         <Text style={styles.dealSpark}>✦</Text>
-                        <Text style={styles.dealDiscount}>{t(`home.deals.${deal.id}.discount`)}</Text>
-                        <Text style={styles.dealTitle}>{t(`home.deals.${deal.id}.title`)}</Text>
-                        <Text style={styles.dealDesc}>{t(`home.deals.${deal.id}.desc`)}</Text>
+                        <Text style={styles.dealDiscount}>{deal.discount}</Text>
+                        <Text style={styles.dealTitle}>{deal.title}</Text>
+                        <Text style={styles.dealDesc}>{deal.description}</Text>
                         <Text style={styles.dealCta}>{t('home.deals.bookNow')} →</Text>
                     </Pressable>
                 ))}

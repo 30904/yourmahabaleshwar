@@ -25,6 +25,7 @@ import CanvasserCreatePage from '../pages/system/CanvasserCreatePage';
 import CanvasserManagementPage from '../pages/system/CanvasserManagementPage';
 import AdminSuperRoute from '../components/AdminSuperRoute';
 import CmsHubPage from '../pages/cms/CmsHubPage';
+import HomepageDealsPage from '../pages/cms/HomepageDealsPage';
 import BlogsPage from '../pages/cms/BlogsPage';
 import ServiceHubImagesPage from '../pages/cms/ServiceHubImagesPage';
 import SettingsPage from '../pages/settings/SettingsPage';
@@ -94,6 +95,7 @@ const adminRouteConfig = [
   { path: 'shop', element: <ProductsCombosAdminPage /> },
   { path: 'cms', element: <CmsHubPage /> },
   { path: 'cms/banners', element: <CmsHubPage tab="banners" /> },
+  { path: 'cms/deals', element: <HomepageDealsPage /> },
   { path: 'cms/blogs', element: <BlogsPage /> },
   { path: 'cms/faqs', element: <CmsHubPage tab="faqs" /> },
   { path: 'cms/service-images', element: <ServiceHubImagesPage /> },

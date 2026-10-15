@@ -115,6 +115,11 @@ export const fetchPublicBanners = async () => {
   return res.data.data || [];
 };
 
+export const fetchPublicHomepageDeals = async () => {
+  const res = await api.get('/admin/public/homepage-deals');
+  return res.data.data || [];
+};
+
 export const fetchPublicServiceHubImages = async () => {
   const res = await api.get('/admin/public/service-hub-images');
   return (

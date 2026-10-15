@@ -170,6 +170,7 @@ export const adminNavGroups = [
     items: [
       { to: '/admin/cms', label: 'CMS Hub', icon: Image },
       { to: '/admin/cms/banners', label: 'Banners', icon: Image },
+      { to: '/admin/cms/deals', label: 'Deals & offers', icon: Ticket },
       { to: '/admin/cms/blogs', label: 'Blogs', icon: FileText },
       { to: '/admin/cms/faqs', label: 'FAQs', icon: HelpCircle },
       { to: '/admin/cms/service-images', label: 'Service page images', icon: Image },

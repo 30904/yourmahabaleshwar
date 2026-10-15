@@ -18,18 +18,25 @@ export default function RowActions({ items = [], align = 'right', label = 'Actio
     const btn = btnRef.current;
     if (!btn) return;
     const rect = btn.getBoundingClientRect();
-    const width = 180;
+    const width = menuRef.current?.offsetWidth || 180;
+    const height = menuRef.current?.offsetHeight || 0;
     const left =
       align === 'left'
-        ? rect.left
+        ? Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))
         : Math.min(window.innerWidth - width - 8, Math.max(8, rect.right - width));
-    const top = Math.min(window.innerHeight - 8, rect.bottom + 6);
+    const gap = 6;
+    const spaceBelow = window.innerHeight - rect.bottom - gap;
+    const openAbove = height > 0 && spaceBelow < height;
+    const top = openAbove
+      ? Math.max(8, rect.top - height - gap)
+      : rect.bottom + gap;
     setCoords({ top, left });
   };
 
   useEffect(() => {
     if (!open) return undefined;
     placeMenu();
+    const frame = requestAnimationFrame(placeMenu);
     const onDoc = (e) => {
       if (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return;
       setOpen(false);
@@ -44,6 +51,7 @@ export default function RowActions({ items = [], align = 'right', label = 'Actio
     window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', onScroll);
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener('click', onDoc);
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('scroll', onScroll, true);
