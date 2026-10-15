@@ -9,8 +9,8 @@ import { COLORS, FONTS } from '../../constants/theme';
 import { privacyPolicyFor } from '../../content/privacyPolicy';
 
 const PHONES = [
-    { label: '+91 9987 6567 92', href: 'tel:+919987656792' },
-    { label: '+91 9987 6866 92', href: 'tel:+919987686692' },
+    { label: '+91 9987 6567 92', href: 'https://wa.me/919987656792' },
+    { label: '+91 9987 6866 92', href: 'https://wa.me/919987686692' },
 ];
 const EMAIL = 'smenterprise9215@gmail.com';
 

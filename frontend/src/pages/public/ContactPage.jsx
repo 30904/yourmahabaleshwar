@@ -48,7 +48,9 @@ export default function ContactPage() {
                     {c.lines.map((line) => (
                       <a
                         key={line.href}
-                        href={line.href}
+                        href={`https://wa.me/${line.href.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="block text-sm text-primary hover:underline"
                       >
                         {line.label}
