@@ -76,9 +76,6 @@ export const createHotelBooking = async (req, res) => {
   if (guestRegistration) {
     if (!String(lead.fullName || '').trim()) return error(res, 'Lead guest full name is required', 400);
     if (!String(lead.mobile || '').trim()) return error(res, 'Lead guest mobile is required', 400);
-    if (!String(guestRegistration?.idProof?.type || '').trim() || !String(guestRegistration?.idProof?.number || '').trim()) {
-      return error(res, 'ID proof type and number are required', 400);
-    }
     if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
       return error(res, 'Please accept the Terms and Conditions', 400);
     }
@@ -565,9 +562,6 @@ export const createHomestayBooking = async (req, res) => {
   const lead = guestRegistration?.leadGuest || {};
   if (!String(lead.fullName || '').trim()) return error(res, 'Lead guest full name is required', 400);
   if (!String(lead.mobile || '').trim()) return error(res, 'Lead guest mobile is required', 400);
-  if (!String(guestRegistration?.idProof?.type || '').trim() || !String(guestRegistration?.idProof?.number || '').trim()) {
-    return error(res, 'ID proof type and number are required', 400);
-  }
   if (!guestRegistration?.acceptedTermsAt && !guestRegistration?.acceptTerms) {
     return error(res, 'Please accept the Terms and Conditions', 400);
   }

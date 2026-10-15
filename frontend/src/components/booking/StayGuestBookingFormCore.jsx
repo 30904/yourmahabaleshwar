@@ -230,7 +230,7 @@ export default function StayGuestBookingFormCore({
                 ))}
               </div>
             </div>
-            <Input label={t('stayGuestBooking.idNumber')} value={form.idNumber} onChange={(e) => setField('idNumber', e.target.value)} required />
+            <Input label={t('stayGuestBooking.idNumber')} value={form.idNumber} onChange={(e) => setField('idNumber', e.target.value)} />
             <div className="sm:col-span-2">
               <ImageUploadField
                 label={t('stayGuestBooking.idProofUpload')}

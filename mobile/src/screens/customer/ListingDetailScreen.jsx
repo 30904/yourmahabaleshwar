@@ -265,7 +265,7 @@ export default function ListingDetailScreen({ route, navigation }) {
                 Alert.alert(t('common.error'), t('booking.badDates'));
                 return;
             }
-            if (!leadName.trim() || !idNumber.trim()) {
+            if (!leadName.trim()) {
                 Alert.alert(t('common.error'), t('booking.needGuest'));
                 return;
             }

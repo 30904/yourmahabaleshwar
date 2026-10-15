@@ -131,7 +131,6 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     if (!form.roomId && !roomList[0]?._id) return t('stayGuestBooking.validation.selectRoom');
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!isTenDigitMobile(form.leadMobile)) return t('stayGuestBooking.validation.mobile');
-    if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) return t('stayGuestBooking.validation.idProof');
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
     const customErr = validateCustom();

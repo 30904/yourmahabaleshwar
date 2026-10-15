@@ -147,9 +147,6 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
     }
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
     if (!isTenDigitMobile(form.leadMobile)) return t('stayGuestBooking.validation.mobile');
-    if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) {
-      return t('stayGuestBooking.validation.idProof');
-    }
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');
     const customErr = validateCustom();
@@ -385,7 +382,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
                 ))}
               </div>
             </div>
-            <Input label={t('stayGuestBooking.idNumber')} value={form.idNumber} onChange={(e) => setField('idNumber', e.target.value)} required />
+            <Input label={t('stayGuestBooking.idNumber')} value={form.idNumber} onChange={(e) => setField('idNumber', e.target.value)} />
             <div className="sm:col-span-2">
               <ImageUploadField
                 label={t('stayGuestBooking.idProofUpload')}

@@ -253,10 +253,6 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
             setError(t('stayGuestBooking.validation.mobile'));
             return;
         }
-        if (!form.idType || !form.idNumber.trim()) {
-            setError(t('stayGuestBooking.validation.idProof'));
-            return;
-        }
         if ((Number(form.adults) || 0) < 1) {
             setError(t('stayGuestBooking.validation.adults'));
             return;
