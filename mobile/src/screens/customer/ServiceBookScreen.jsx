@@ -11,6 +11,7 @@ import { Button, Card, Field, Screen } from '../../components/ui';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
+import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 
 const SERVICE_NS = {
     GUIDE: 'guideGuestBooking',
@@ -128,8 +129,12 @@ export default function ServiceBookScreen({ route, navigation }) {
             Alert.alert(t('common.error'), t(`${ns}.validation.dropLocation`, { defaultValue: t(`${ns}.dropLocation`) }));
             return;
         }
-        if (!leadName.trim() || !leadMobile.trim() || !email.trim()) {
+        if (!leadName.trim() || !email.trim()) {
             Alert.alert(t('common.error'), t('booking.needGuest'));
+            return;
+        }
+        if (!isTenDigitMobile(leadMobile)) {
+            Alert.alert(t('common.error'), t('stayGuestBooking.validation.mobile'));
             return;
         }
         if (!acceptTerms || (type === 'HORSE' && !acceptSafety)) {
@@ -340,7 +345,7 @@ export default function ServiceBookScreen({ route, navigation }) {
                                 />
                             </>
                         ) : null}
-                        <Field label={t(`${ns}.mobile`)} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad" />
+                        <Field label={t(`${ns}.mobile`)} value={leadMobile} onChangeText={(value) => setLeadMobile(digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10} />
                         <Field label={t(`${ns}.email`)} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
                         <Field label={t(`${ns}.hotelOrPickupAddress`)} value={address} onChangeText={setAddress} />
                         <Field label={t(`${ns}.cityState`)} value={cityState} onChangeText={setCityState} />

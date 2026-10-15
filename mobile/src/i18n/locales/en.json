@@ -1215,7 +1215,7 @@
       "datesRequired": "Check-in and check-out dates are required",
       "selectRoom": "Please select a room",
       "fullName": "Lead guest full name is required",
-      "mobile": "Mobile number is required",
+      "mobile": "Enter a 10-digit mobile number",
       "idProof": "ID proof type and number are required",
       "adults": "At least 1 adult is required",
       "acceptTerms": "Please accept the Terms and Conditions"
@@ -1574,7 +1574,7 @@
       "tourDate": "Tour date is required",
       "bikeAddon": "Please select Yes or No for bike service",
       "fullName": "Full name is required",
-      "mobile": "Mobile number is required",
+      "mobile": "Enter a 10-digit mobile number",
       "email": "Email is required",
       "acceptTerms": "Please accept the Terms and Conditions",
       "unavailable": "Guide not available on selected date"
@@ -1920,7 +1920,7 @@
     "validation": {
       "tripDate": "Trip date is required",
       "fullName": "Full name is required",
-      "mobile": "Mobile number is required",
+      "mobile": "Enter a 10-digit mobile number",
       "email": "Email is required",
       "pickup": "Pickup location is required",
       "drop": "Drop location is required for per-trip bookings",
@@ -2107,7 +2107,7 @@
     "validation": {
       "tripDate": "Trip date is required",
       "fullName": "Full name is required",
-      "mobile": "Mobile number is required",
+      "mobile": "Enter a 10-digit mobile number",
       "email": "Email is required",
       "pickup": "Pickup location is required",
       "drop": "Drop location is required for one way and drop trips",
@@ -2247,7 +2247,7 @@
       "rideDate": "Ride date is required",
       "route": "Please select a route",
       "fullName": "Full name is required",
-      "mobile": "Mobile number is required",
+      "mobile": "Enter a 10-digit mobile number",
       "email": "Email is required",
       "acceptSafety": "Please confirm safety requirements",
       "acceptTerms": "Please accept the Terms and Conditions",

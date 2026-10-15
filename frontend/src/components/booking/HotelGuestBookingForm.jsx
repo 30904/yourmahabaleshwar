@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { calcGST } from '../../utils/format';
+import { isTenDigitMobile } from '../../utils/mobileNumber';
 import { clampTime24 } from '../../utils/time12h';
 import { createHotelBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
@@ -130,7 +130,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
     if (dateBlocked) return t('booking.allRoomsBooked');
     if (!form.roomId && !roomList[0]?._id) return t('stayGuestBooking.validation.selectRoom');
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
-    if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');
+    if (!isTenDigitMobile(form.leadMobile)) return t('stayGuestBooking.validation.mobile');
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) return t('stayGuestBooking.validation.idProof');
     if (Number(form.adults) < 1) return t('stayGuestBooking.validation.adults');
     if (!form.acceptTerms) return t('stayGuestBooking.validation.acceptTerms');

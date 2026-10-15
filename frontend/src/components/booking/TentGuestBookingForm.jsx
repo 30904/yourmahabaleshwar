@@ -10,6 +10,7 @@ import ImageUploadField from '../ui/ImageUploadField';
 import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
+import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 import { clampTime24, formatTime12 } from '../../utils/time12h';
 import { createTentBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
@@ -145,7 +146,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
       });
     }
     if (!String(form.leadFullName || '').trim()) return t('stayGuestBooking.validation.fullName');
-    if (!String(form.leadMobile || '').trim()) return t('stayGuestBooking.validation.mobile');
+    if (!isTenDigitMobile(form.leadMobile)) return t('stayGuestBooking.validation.mobile');
     if (!String(form.idType || '').trim() || !String(form.idNumber || '').trim()) {
       return t('stayGuestBooking.validation.idProof');
     }
@@ -350,7 +351,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
                 <option value="OTHER">{t('stayGuestBooking.genderOther')}</option>
               </select>
             </div>
-            <Input label={t('stayGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
+            <Input label={t('stayGuestBooking.mobile')} inputMode="numeric" maxLength={10} value={form.leadMobile} onChange={(e) => setField('leadMobile', digitsOnlyMobile(e.target.value))} required />
             <Input label={t('stayGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
             <Input className="sm:col-span-2" label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChange={(e) => setField('leadAddress', e.target.value)} />
             <Input label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />

@@ -14,6 +14,7 @@ import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/format';
+import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 import { formatTime12, listingPlace, listingPrice, mediaUrl, scoreFromRating, scoreLabelFromRating, wishlistPath } from '../../utils/listing';
 import { MapPin } from '../../components/home/icons';
 function tomorrow() {
@@ -264,8 +265,12 @@ export default function ListingDetailScreen({ route, navigation }) {
                 Alert.alert(t('common.error'), t('booking.badDates'));
                 return;
             }
-            if (!leadName.trim() || !leadMobile.trim() || !idNumber.trim()) {
+            if (!leadName.trim() || !idNumber.trim()) {
                 Alert.alert(t('common.error'), t('booking.needGuest'));
+                return;
+            }
+            if (!isTenDigitMobile(leadMobile)) {
+                Alert.alert(t('common.error'), t('stayGuestBooking.validation.mobile'));
                 return;
             }
             if (!acceptTerms) {
@@ -278,8 +283,12 @@ export default function ListingDetailScreen({ route, navigation }) {
                 Alert.alert(t('common.error'), t('booking.badDates'));
                 return;
             }
-            if (!leadName.trim() || !leadMobile.trim()) {
+            if (!leadName.trim()) {
                 Alert.alert(t('common.error'), t('booking.needContact'));
+                return;
+            }
+            if (!isTenDigitMobile(leadMobile)) {
+                Alert.alert(t('common.error'), t('stayGuestBooking.validation.mobile'));
                 return;
             }
             if (!contact.email.trim()) {
@@ -787,7 +796,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             </FormSection>
             <FormSection title={t('guideGuestBooking.section2')}>
               <Field label={t('guideGuestBooking.fullName')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-              <Field label={t('guideGuestBooking.mobile')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+              <Field label={t('guideGuestBooking.mobile')} value={leadMobile} onChangeText={(value) => setLeadMobile(digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10}/>
               <ContactFields contact={contact} setContact={setContact} t={t} ns="guideGuestBooking" timeLabel={t('guideGuestBooking.startTime')}/>
             </FormSection>
             <FormSection title={t('guideGuestBooking.section4')}>
@@ -802,7 +811,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             </FormSection>
             <FormSection title={t(`${serviceNs}.section2`)}>
               <Field label={t(`${serviceNs}.fullName`)} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-              <Field label={t(`${serviceNs}.mobile`)} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+              <Field label={t(`${serviceNs}.mobile`)} value={leadMobile} onChangeText={(value) => setLeadMobile(digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10}/>
               <ContactFields contact={contact} setContact={setContact} t={t} ns={serviceNs} showDrop timeLabel={t(`${serviceNs}.pickupTime`)}/>
             </FormSection>
             <FormSection title={t(`${serviceNs}.section4`)}>
@@ -816,7 +825,7 @@ export default function ListingDetailScreen({ route, navigation }) {
             </FormSection>
             <FormSection title={t('horseGuestBooking.section2')}>
               <Field label={t('horseGuestBooking.fullName')} value={leadName} onChangeText={setLeadName} autoCapitalize="words"/>
-              <Field label={t('horseGuestBooking.mobile')} value={leadMobile} onChangeText={setLeadMobile} keyboardType="phone-pad"/>
+              <Field label={t('horseGuestBooking.mobile')} value={leadMobile} onChangeText={(value) => setLeadMobile(digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10}/>
               <ContactFields contact={contact} setContact={setContact} t={t} ns="horseGuestBooking" showAge timeLabel={t('horseGuestBooking.startTime')}/>
             </FormSection>
             <FormSection title={t('horseGuestBooking.section5')}>

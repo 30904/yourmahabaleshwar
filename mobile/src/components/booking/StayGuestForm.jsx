@@ -5,6 +5,7 @@ import DocumentUpload from './DocumentUpload';
 import { Button, Card, Field } from '../ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import { formatCurrency } from '../../utils/format';
+import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 import { formatTime12, listingPrice } from '../../utils/listing';
 
 const ID_TYPES = [
@@ -247,7 +248,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
             setError(t('stayGuestBooking.validation.fullName'));
             return;
         }
-        if (!form.leadMobile.trim()) {
+        if (!isTenDigitMobile(form.leadMobile)) {
             setError(t('stayGuestBooking.validation.mobile'));
             return;
         }
@@ -365,7 +366,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
                 <Field label={t('stayGuestBooking.fullName')} value={form.leadFullName} onChangeText={(value) => setField('leadFullName', value)} autoCapitalize="words" />
                 <Field label={t('stayGuestBooking.age')} value={form.leadAge} onChangeText={(value) => setField('leadAge', value)} keyboardType="numeric" />
                 <WebSelect label={t('stayGuestBooking.gender')} value={form.leadGender} onChange={(value) => setField('leadGender', value)} options={genderOptions} />
-                <Field label={t('stayGuestBooking.mobile')} value={form.leadMobile} onChangeText={(value) => setField('leadMobile', value)} keyboardType="phone-pad" />
+                <Field label={t('stayGuestBooking.mobile')} value={form.leadMobile} onChangeText={(value) => setField('leadMobile', digitsOnlyMobile(value))} keyboardType="number-pad" maxLength={10} />
                 <Field label={t('stayGuestBooking.email')} value={form.leadEmail} onChangeText={(value) => setField('leadEmail', value)} keyboardType="email-address" />
                 <Field label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChangeText={(value) => setField('leadAddress', value)} />
                 <Field label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChangeText={(value) => setField('leadCityState', value)} />

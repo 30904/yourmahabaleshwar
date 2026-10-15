@@ -10,6 +10,7 @@ import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
+import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 import { createHorseBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
@@ -157,7 +158,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
     if (dateBlocked) return t('horseGuestBooking.validation.unavailable');
     if (!form.routeId) return t('horseGuestBooking.validation.route');
     if (!String(form.leadFullName || '').trim()) return t('horseGuestBooking.validation.fullName');
-    if (!String(form.leadMobile || '').trim()) return t('horseGuestBooking.validation.mobile');
+    if (!isTenDigitMobile(form.leadMobile)) return t('horseGuestBooking.validation.mobile');
     if (!String(form.leadEmail || '').trim()) return t('horseGuestBooking.validation.email');
     if (!form.acceptSafety) return t('horseGuestBooking.validation.acceptSafety');
     if (!form.acceptTerms) return t('horseGuestBooking.validation.acceptTerms');
@@ -366,7 +367,7 @@ export default function HorseGuestBookingForm({ item, openMode = false }) {
                 <option value="OTHER">{t('horseGuestBooking.genderOther')}</option>
               </select>
             </div>
-            <Input label={t('horseGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
+            <Input label={t('horseGuestBooking.mobile')} inputMode="numeric" maxLength={10} value={form.leadMobile} onChange={(e) => setField('leadMobile', digitsOnlyMobile(e.target.value))} required />
             <Input label={t('horseGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"

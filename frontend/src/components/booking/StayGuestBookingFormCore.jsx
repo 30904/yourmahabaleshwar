@@ -9,6 +9,7 @@ import ImageUploadField from '../ui/ImageUploadField';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ConfigurableFormSections from '../forms/ConfigurableFormSections';
 import { formatCurrency } from '../../utils/format';
+import { digitsOnlyMobile } from '../../utils/mobileNumber';
 import { formatTime12 } from '../../utils/time12h';
 import { useAuth } from '../../context/AuthContext';
 
@@ -194,7 +195,7 @@ export default function StayGuestBookingFormCore({
                 <option value="OTHER">{t('stayGuestBooking.genderOther')}</option>
               </select>
             </div>
-            <Input label={t('stayGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
+            <Input label={t('stayGuestBooking.mobile')} inputMode="numeric" maxLength={10} value={form.leadMobile} onChange={(e) => setField('leadMobile', digitsOnlyMobile(e.target.value))} required />
             <Input label={t('stayGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} />
             <Input className="sm:col-span-2" label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChange={(e) => setField('leadAddress', e.target.value)} />
             <Input label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />

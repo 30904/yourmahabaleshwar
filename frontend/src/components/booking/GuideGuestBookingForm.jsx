@@ -10,6 +10,7 @@ import Card from '../ui/Card';
 import FormLanguageToggle from '../common/FormLanguageToggle';
 import ServiceRateChartToggle from './ServiceRateChartToggle';
 import { calcGST, formatCurrency } from '../../utils/format';
+import { digitsOnlyMobile, isTenDigitMobile } from '../../utils/mobileNumber';
 import { createGuideBooking } from '../../services/bookingsApi';
 import { fetchAvailability } from '../../services/listingsApi';
 import { payForBooking } from '../../services/paymentsApi';
@@ -217,7 +218,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
       return t('guideGuestBooking.validation.bikeAddon');
     }
     if (!String(form.leadFullName || '').trim()) return t('guideGuestBooking.validation.fullName');
-    if (!String(form.leadMobile || '').trim()) return t('guideGuestBooking.validation.mobile');
+    if (!isTenDigitMobile(form.leadMobile)) return t('guideGuestBooking.validation.mobile');
     if (!String(form.leadEmail || '').trim()) return t('guideGuestBooking.validation.email');
     if (!form.acceptTerms) return t('guideGuestBooking.validation.acceptTerms');
     const customErr = validateCustom();
@@ -539,7 +540,7 @@ export default function GuideGuestBookingForm({ item, openMode = false }) {
               onChange={(e) => setField('leadFullName', e.target.value)}
               required
             />
-            <Input label={t('guideGuestBooking.mobile')} value={form.leadMobile} onChange={(e) => setField('leadMobile', e.target.value)} required />
+            <Input label={t('guideGuestBooking.mobile')} inputMode="numeric" maxLength={10} value={form.leadMobile} onChange={(e) => setField('leadMobile', digitsOnlyMobile(e.target.value))} required />
             <Input label={t('guideGuestBooking.email')} type="email" value={form.leadEmail} onChange={(e) => setField('leadEmail', e.target.value)} required />
             <Input
               className="sm:col-span-2"
