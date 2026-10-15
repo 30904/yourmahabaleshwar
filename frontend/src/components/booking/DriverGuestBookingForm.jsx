@@ -467,35 +467,6 @@ export default function DriverGuestBookingForm({ item, openMode = false }) {
                 <p className="font-semibold text-slate-900">{tripHours}</p>
               </div>
             )}
-            <Input
-              label={t('driverGuestBooking.advanceAmount')}
-              type="number"
-              min="0"
-              value={form.advanceAmount}
-              onChange={(e) => setField('advanceAmount', e.target.value)}
-              placeholder={String(total || '')}
-            />
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-medium text-slate-700">{t('driverGuestBooking.paymentMode')}</p>
-            <div className="flex flex-wrap gap-4 text-sm">
-              {[
-                ['CASH', 'payCash'],
-                ['ONLINE', 'payOnline'],
-                ['CARD', 'payCard'],
-              ].map(([value, labelKey]) => (
-                <label key={value} className="inline-flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="paymentMode"
-                    checked={form.paymentMode === value}
-                    onChange={() => setField('paymentMode', value)}
-                  />
-                  {t(`driverGuestBooking.${labelKey}`)}
-                </label>
-              ))}
-            </div>
-            <p className="mt-2 text-xs text-slate-500">{t('driverGuestBooking.paymentHint')}</p>
           </div>
           <div className="rounded-xl bg-slate-50 p-4 text-sm">
             <div className="flex justify-between">

@@ -8,7 +8,7 @@ import HorseRateChart, { HORSE_CHART_PACKAGES, horseChartPrice } from '../../com
 import GuideRateChart, { GUIDE_CHART_PACKAGES, guideChartPrice } from '../../components/GuideRateChart';
 import TaxiRateChart, { taxiChartPrice } from '../../components/TaxiRateChart';
 import StayGuestForm from '../../components/booking/StayGuestForm';
-import { DateField, FormHeader, RadioChoices, TermsCard, TimeField } from '../../components/booking/formChrome';
+import { DateField, FormHeader, TermsCard, TimeField } from '../../components/booking/formChrome';
 import { useConfirm } from '../../components/confirm';
 import { Button, Card, Field, Loading, Muted, Screen } from '../../components/ui';
 import { COLORS, FONTS, RADIUS } from '../../constants/theme';
@@ -58,8 +58,6 @@ function ContactFields({ contact, setContact, t, ns, showDrop, timeLabel, showAg
       <TimeField label={timeLabel} value={contact.startTime} onChange={set('startTime')}/>
       {showDrop ? <Field label={t(`${ns}.dropLocation`)} value={contact.dropLocation} onChangeText={set('dropLocation')}/> : null}
       <Field label={t(`${ns}.specialRequests`)} value={contact.specialRequests} onChangeText={set('specialRequests')}/>
-      <Field label={t(`${ns}.advanceAmount`)} value={contact.advanceAmount} onChangeText={set('advanceAmount')} keyboardType="numeric"/>
-      <RadioChoices label={t(`${ns}.paymentMode`)} value={contact.paymentMode} onChange={set('paymentMode')} options={[['CASH', t(`${ns}.payCash`)], ['ONLINE', t(`${ns}.payOnline`)], ['CARD', t(`${ns}.payCard`)]]}/>
     </>);
 }
 function Choice({ selected, onPress, title, detail }) {

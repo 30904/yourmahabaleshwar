@@ -389,13 +389,6 @@ export default function ServiceBookScreen({ route, navigation }) {
                                 <Text style={styles.totalFinalValue}>{formatCurrency(total)}</Text>
                             </View>
                         </View>
-                        <Field label={t(`${ns}.advanceAmount`)} value={advanceAmount} onChangeText={setAdvanceAmount} keyboardType="numeric" placeholder={String(total || '')} />
-                        <RadioChoices
-                            label={t(`${ns}.paymentMode`)}
-                            value={paymentMode}
-                            onChange={setPaymentMode}
-                            options={[['CASH', t(`${ns}.payCash`)], ['ONLINE', t(`${ns}.payOnline`)], ['CARD', t(`${ns}.payCard`)]]}
-                        />
                     </Section>
                     <TermsCard
                         ns={ns}
