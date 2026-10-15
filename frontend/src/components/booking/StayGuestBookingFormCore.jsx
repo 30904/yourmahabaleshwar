@@ -102,7 +102,6 @@ export default function StayGuestBookingFormCore({
 
   const paymentModes = useMemo(
     () => [
-      ['CASH', 'payCash'],
       ['ONLINE', 'payOnline'],
       ['CARD', 'payCard'],
     ],
@@ -292,6 +291,7 @@ export default function StayGuestBookingFormCore({
           </div>
           <div>
             <p className="mb-2 text-sm font-medium text-slate-700">{t('stayGuestBooking.paymentMode')}</p>
+            <p className="mb-2 text-sm text-slate-600">{t('stayGuestBooking.advancePaymentCompulsory')}</p>
             <div className="flex flex-wrap gap-4 text-sm">
               {paymentModes.map(([value, labelKey]) => (
                 <label key={value} className="inline-flex items-center gap-2">

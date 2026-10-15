@@ -1309,6 +1309,7 @@
     "payCash": "रोख",
     "payOnline": "ऑनलाइन / UPI",
     "payCard": "कार्ड",
+    "advancePaymentCompulsory": "आगाऊ पेमेंट अनिवार्य आहे.",
     "paymentHint": "पुष्टी केल्यानंतर विनंती पाठवली जाते. नंतर My Bookings मधून पेमेंट करा.",
     "subtotalNights_one": "एकूण ({{count}} रात्र)",
     "subtotalNights_other": "एकूण ({{count}} रात्री)",

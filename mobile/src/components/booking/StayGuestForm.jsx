@@ -413,7 +413,8 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
                     </View>
                 </View>
                 <Field label={t('stayGuestBooking.advanceAmount')} value={form.advanceAmount} onChangeText={(value) => setField('advanceAmount', value)} keyboardType="numeric" placeholder={total ? String(total) : ''} />
-                <ChoiceRow label={t('stayGuestBooking.paymentMode')} value={form.paymentMode} onChange={(value) => setField('paymentMode', value)} options={PAYMENTS.map(([id, key]) => [id, t(`stayGuestBooking.${key}`)])} />
+                {isTent ? null : <Text style={styles.note}>{t('stayGuestBooking.advancePaymentCompulsory')}</Text>}
+                <ChoiceRow label={t('stayGuestBooking.paymentMode')} value={form.paymentMode} onChange={(value) => setField('paymentMode', value)} options={(isTent ? PAYMENTS : PAYMENTS.filter(([id]) => id !== 'CASH')).map(([id, key]) => [id, t(`stayGuestBooking.${key}`)])} />
                 <Text style={styles.note}>{t('stayGuestBooking.paymentHint')}</Text>
                 <View style={styles.totalBox}>
                     <Text style={styles.totalLabel}>{t(nights === 1 ? 'stayGuestBooking.subtotalNights_one' : 'stayGuestBooking.subtotalNights_other', { count: ready ? nights : 0 })}</Text>

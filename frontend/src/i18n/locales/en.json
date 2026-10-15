@@ -1309,6 +1309,7 @@
     "payCash": "Cash",
     "payOnline": "Online / UPI",
     "payCard": "Card",
+    "advancePaymentCompulsory": "Advance payment is compulsory.",
     "paymentHint": "Confirming sends your booking request. Pay later from My Bookings.",
     "subtotalNights_one": "Subtotal ({{count}} night)",
     "subtotalNights_other": "Subtotal ({{count}} nights)",
