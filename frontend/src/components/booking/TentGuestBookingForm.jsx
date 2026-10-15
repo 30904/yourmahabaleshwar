@@ -372,6 +372,7 @@ export default function TentGuestBookingForm({ item, openMode = false }) {
 
         <Card className="space-y-4">
           <SectionTitle>{t('stayGuestBooking.sectionIdProof')}</SectionTitle>
+          <p className="text-sm text-slate-600">{t('stayGuestBooking.idUploadOptionalNote', { place: t('stayGuestBooking.placeTent') })}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <p className="mb-2 text-sm font-medium text-slate-700">{t('stayGuestBooking.idType')}</p>

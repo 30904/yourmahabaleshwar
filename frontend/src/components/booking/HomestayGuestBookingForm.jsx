@@ -206,6 +206,7 @@ export default function HomestayGuestBookingForm({ item, initialRoomId }) {
       fullTermsTitle={t('homestayRegistration.fullTermsTitle')}
       fullTermsSections={fullTermsSections}
       acceptTermsLabel={t('homestayGuestBooking.acceptTerms')}
+      stayPlace="placeHomestay"
       form={form}
       setField={setField}
       roomList={roomList}

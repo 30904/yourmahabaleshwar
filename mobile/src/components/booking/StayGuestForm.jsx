@@ -199,6 +199,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
     const qty = isTent ? Math.max(1, Number(form.tentQuantity) || 1) : 1;
     const tariff = isTent ? (listingPrice(item) || 0) : (Number(room?.basePrice) || 0);
     const total = ready ? tariff * nights * qty : 0;
+    const placeKey = type === 'HOMESTAY' ? 'placeHomestay' : type === 'TENT' ? 'placeTent' : (type === 'RESORT' || item?.type === 'RESORT') ? 'placeResort' : 'placeHotel';
     const termsNs = type === 'HOMESTAY' ? 'homestayGuestBooking' : type === 'TENT' ? 'tentGuestBooking' : 'hotelGuestBooking';
     const fullTermsNs = type === 'HOMESTAY' ? 'homestayRegistration' : type === 'TENT' ? 'tentGuestBooking' : 'hotelRegistration';
     const summaryLines = useMemo(() => {
@@ -376,6 +377,7 @@ export default function StayGuestForm({ type, item, user, onConfirm, submitting,
 
             <Card>
                 <Text style={styles.section}>{t('stayGuestBooking.sectionIdProof')}</Text>
+                <Text style={styles.note}>{t('stayGuestBooking.idUploadOptionalNote', { place: t(`stayGuestBooking.${placeKey}`) })}</Text>
                 <ChoiceRow label={t('stayGuestBooking.idType')} value={form.idType} onChange={(value) => setField('idType', value)} options={ID_TYPES.map(([id, key]) => [id, t(`stayGuestBooking.${key}`)])} />
                 <Field label={t('stayGuestBooking.idNumber')} value={form.idNumber} onChangeText={(value) => setField('idNumber', value)} autoCapitalize="characters" />
                 <DocumentUpload

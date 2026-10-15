@@ -226,6 +226,7 @@ export default function HotelGuestBookingForm({ hotel, rooms = [], initialRoomId
       purposeName="hotelPurpose"
       idTypeName="hotelIdType"
       paymentModeName="hotelPaymentMode"
+      stayPlace={isResort ? 'placeResort' : 'placeHotel'}
       customSections={customSections}
       customValues={customValues}
       onCustomChange={setCustomField}
