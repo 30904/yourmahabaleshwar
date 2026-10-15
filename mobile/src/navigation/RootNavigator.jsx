@@ -15,6 +15,7 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import HomeScreen from '../screens/customer/HomeScreen';
 import SearchScreen from '../screens/customer/SearchScreen';
 import ContentScreen from '../screens/customer/ContentScreen';
+import DestinationScreen from '../screens/customer/DestinationScreen';
 import CatalogScreen from '../screens/customer/CatalogScreen';
 import ServiceBookScreen from '../screens/customer/ServiceBookScreen';
 import ListingDetailScreen from '../screens/customer/ListingDetailScreen';
@@ -113,6 +114,7 @@ export default function RootNavigator() {
         <RootStack.Screen name="Auth" component={AuthNavigator} options={{ headerShown: false, presentation: 'modal' }}/>
         <RootStack.Screen name="Search" component={SearchScreen} options={{ title: 'Search' }}/>
         <RootStack.Screen name="Content" component={ContentScreen} options={{ title: 'Info' }}/>
+        <RootStack.Screen name="Destination" component={DestinationScreen} options={{ title: 'Destination' }}/>
         <RootStack.Screen name="Catalog" component={CatalogScreen} options={{ title: 'Explore' }}/>
         <RootStack.Screen name="ServiceBook" component={ServiceBookScreen} options={{ title: '' }}/>
         <RootStack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: 'Details' }}/>

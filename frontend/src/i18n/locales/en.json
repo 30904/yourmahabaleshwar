@@ -221,7 +221,12 @@
       "mahabaleshwarCount": "450+ properties",
       "panchganiCount": "120+ properties",
       "tapolaCount": "45+ camps",
-      "pratapgadCount": "80+ guides"
+      "pratapgadCount": "80+ guides",
+      "aboutPlace": "About this place",
+      "special": "What is special",
+      "exciting": "What is exciting",
+      "activities": "Things you can do here",
+      "notFound": "This destination is not available."
     },
     "services": {
       "eyebrow": "Beyond stays",

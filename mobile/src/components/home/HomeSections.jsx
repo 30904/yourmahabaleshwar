@@ -10,6 +10,7 @@ import { COLORS, FONTS, RADIUS } from '../../constants/theme';
 import ListingCard from '../ListingCard';
 import SectionHeader from './SectionHeader';
 import { openCategory } from './homeNav';
+import { destinations, destinationCopy } from '../../content/destinations';
 
 const STRIP = [
     { key: 'hotels', labelKey: 'home.categories.hotels', countKey: 'home.categories.hotelsCount', Icon: Hotel, tint: '#EFF6FF', ink: '#003580' },
@@ -45,12 +46,12 @@ const TABS = [
     { id: 'tents', labelKey: 'home.propertyTabs.uniqueStays', category: 'tents', path: '/tents', type: 'TENT', params: { limit: 8 } },
 ];
 
-const DESTINATIONS = [
-    { name: 'Mahabaleshwar', countKey: 'home.destinations.mahabaleshwarCount', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80' },
-    { name: 'Panchgani', countKey: 'home.destinations.panchganiCount', image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80' },
-    { name: 'Tapola', countKey: 'home.destinations.tapolaCount', image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80' },
-    { name: 'Pratapgad', countKey: 'home.destinations.pratapgadCount', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80' },
-];
+const DESTINATION_COUNTS = {
+    mahabaleshwar: 'home.destinations.mahabaleshwarCount',
+    panchgani: 'home.destinations.panchganiCount',
+    tapola: 'home.destinations.tapolaCount',
+    pratapgad: 'home.destinations.pratapgadCount',
+};
 
 const TRUST = [
     { Icon: Shield, titleKey: 'trust.secureTitle', descKey: 'trust.secureDesc' },
@@ -244,7 +245,7 @@ export function HomePromo({ navigation }) {
 }
 
 export function HomeDestinations({ navigation }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const openBlog = () => navigation.navigate('Content', { page: 'blogs' });
     return (
         <View style={[styles.section, styles.destinations]}>
@@ -257,16 +258,23 @@ export function HomeDestinations({ navigation }) {
                 pressTitle
             />
             <View style={styles.grid}>
-                {DESTINATIONS.map((place) => (
-                    <Pressable key={place.name} style={styles.destination} onPress={openBlog}>
+                {destinations.map((place) => {
+                    const copy = destinationCopy(place, i18n.language);
+                    return (
+                    <Pressable
+                        key={place.slug}
+                        style={styles.destination}
+                        onPress={() => navigation.navigate('Destination', { slug: place.slug })}
+                    >
                         <Image source={{ uri: place.image }} style={styles.destinationImage} />
                         <View style={styles.destinationShade} />
                         <View style={styles.destinationCopy}>
-                            <Text style={styles.destinationName}>{place.name}</Text>
-                            <Text style={styles.destinationCount}>{t(place.countKey)}</Text>
+                            <Text style={styles.destinationName}>{copy.name}</Text>
+                            <Text style={styles.destinationCount}>{t(DESTINATION_COUNTS[place.slug])}</Text>
                         </View>
                     </Pressable>
-                ))}
+                    );
+                })}
             </View>
         </View>
     );

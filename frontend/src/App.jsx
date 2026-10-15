@@ -34,6 +34,7 @@ import ContactPage from './pages/public/ContactPage';
 import AboutUsPage from './pages/public/AboutUsPage';
 import FaqPage from './pages/public/FaqPage';
 import BlogsPage from './pages/public/BlogsPage';
+import DestinationPage from './pages/public/DestinationPage';
 import GuideBookingPage from './pages/public/GuideBookingPage';
 import TaxiBookingPage from './pages/TaxiBookingPage';
 import DriverBookingPage from './pages/DriverBookingPage';
@@ -137,6 +138,7 @@ export default function App() {
         <Route path="about" element={<Navigate to="/about-us" replace />} />
         <Route path="faq" element={<FaqPage />} />
         <Route path="blogs" element={<BlogsPage />} />
+        <Route path="destinations/:slug" element={<DestinationPage />} />
         <Route path="about-mahabaleshwar" element={
           <StaticPage title="About Mahabaleshwar">
             <p>Mahabaleshwar is a scenic hill station in Maharashtra, famous for strawberries, viewpoints, and pleasant weather year-round.</p>

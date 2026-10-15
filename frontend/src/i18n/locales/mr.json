@@ -221,7 +221,12 @@
       "mahabaleshwarCount": "४५०+ मालमत्ता",
       "panchganiCount": "१२०+ मालमत्ता",
       "tapolaCount": "४५+ कॅम्प",
-      "pratapgadCount": "८०+ मार्गदर्शक"
+      "pratapgadCount": "८०+ मार्गदर्शक",
+      "aboutPlace": "या ठिकाणाबद्दल",
+      "special": "येथे खास काय आहे",
+      "exciting": "येथे रोमांचक काय आहे",
+      "activities": "येथे काय करता येते",
+      "notFound": "हे ठिकाण उपलब्ध नाही."
     },
     "services": {
       "eyebrow": "राहण्यापलीकडे",
