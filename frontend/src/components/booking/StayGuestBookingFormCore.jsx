@@ -200,8 +200,6 @@ export default function StayGuestBookingFormCore({
             <Input className="sm:col-span-2" label={t('stayGuestBooking.permanentAddress')} value={form.leadAddress} onChange={(e) => setField('leadAddress', e.target.value)} />
             <Input label={t('stayGuestBooking.cityState')} value={form.leadCityState} onChange={(e) => setField('leadCityState', e.target.value)} />
             <PincodeInput autofill={false} label={t('stayGuestBooking.pinCode')} value={form.leadPincode} onChange={(e) => setField('leadPincode', e.target.value)} />
-            <Input label={t('stayGuestBooking.comingFrom')} value={form.comingFrom} onChange={(e) => setField('comingFrom', e.target.value)} />
-            <Input label={t('stayGuestBooking.goingTo')} value={form.goingTo} onChange={(e) => setField('goingTo', e.target.value)} />
             <div className="sm:col-span-2">
               <p className="mb-2 text-sm font-medium text-slate-700">{t('stayGuestBooking.purposeOfVisit')}</p>
               <div className="flex flex-wrap gap-4 text-sm">
