@@ -136,7 +136,7 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={onVerify} className="mt-8 space-y-4">
               <p className="text-sm text-slate-600">{t('auth.otpHint')}</p>
-              {import.meta.env.DEV && devHint && (
+              {devHint && (
                 <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800">Dev OTP: {devHint}</p>
               )}
               <div>
