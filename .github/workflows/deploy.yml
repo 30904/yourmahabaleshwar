@@ -19,25 +19,50 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      backend: ${{ github.event_name != 'push' || steps.filter.outputs.backend == 'true' }}
-      frontend: ${{ github.event_name != 'push' || steps.filter.outputs.frontend == 'true' }}
+      backend: ${{ steps.detect.outputs.backend }}
+      frontend: ${{ steps.detect.outputs.frontend }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Detect changed paths
-        id: filter
-        if: github.event_name == 'push'
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
-              - 'scripts/deploy-backend.sh'
-              - '.github/workflows/deploy.yml'
-            frontend:
-              - 'frontend/**'
-              - 'scripts/deploy-frontend.sh'
-              - '.github/workflows/deploy.yml'
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "push" ]; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            echo "Manual run — deploy backend and frontend"
+            exit 0
+          fi
+
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            echo "No previous commit — deploy backend and frontend"
+            exit 0
+          fi
+
+          CHANGED="$(git diff --name-only "$BEFORE" "$AFTER" || true)"
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          BACKEND=false
+          FRONTEND=false
+          if echo "$CHANGED" | grep -qE '^(backend/|scripts/deploy-backend\.sh|\.github/workflows/deploy\.yml)'; then
+            BACKEND=true
+          fi
+          if echo "$CHANGED" | grep -qE '^(frontend/|scripts/deploy-frontend\.sh|\.github/workflows/deploy\.yml)'; then
+            FRONTEND=true
+          fi
+
+          echo "backend=$BACKEND" >> "$GITHUB_OUTPUT"
+          echo "frontend=$FRONTEND" >> "$GITHUB_OUTPUT"
+          echo "backend=$BACKEND frontend=$FRONTEND"
 
   deploy-backend:
     needs: changes
@@ -77,7 +102,11 @@ jobs:
 
   deploy-frontend:
     needs: [changes, deploy-backend]
+    # always() is required: when backend is skipped (frontend-only push),
+    # GitHub would otherwise skip this job without evaluating the if.
     if: |
+      always() &&
+      needs.changes.result == 'success' &&
       needs.changes.outputs.frontend == 'true' &&
       (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
     runs-on: ubuntu-latest
