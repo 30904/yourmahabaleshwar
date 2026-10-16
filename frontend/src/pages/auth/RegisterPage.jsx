@@ -110,7 +110,11 @@ export default function RegisterPage() {
           ) : (
             <form onSubmit={onVerify} className="mt-6 space-y-4">
               <p className="text-sm text-slate-600">{t('auth.otpHint')}</p>
-              {devHint && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800">Dev OTP: {devHint}</p>}
+              {(devHint || pendingOtp?.devCode) && (
+                <p className="rounded-lg bg-amber-50 p-2 text-xs font-semibold text-amber-800">
+                  Dev OTP: {devHint || pendingOtp.devCode}
+                </p>
+              )}
               <Input label={t('auth.otp')} value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t('auth.verifying') : t('auth.verifyOtp')}

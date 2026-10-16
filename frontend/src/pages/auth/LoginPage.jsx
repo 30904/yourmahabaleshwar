@@ -136,8 +136,10 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={onVerify} className="mt-8 space-y-4">
               <p className="text-sm text-slate-600">{t('auth.otpHint')}</p>
-              {devHint && (
-                <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800">Dev OTP: {devHint}</p>
+              {(devHint || pendingOtp?.devCode) && (
+                <p className="rounded-lg bg-amber-50 p-2 text-xs font-semibold text-amber-800">
+                  Dev OTP: {devHint || pendingOtp.devCode}
+                </p>
               )}
               <div>
                 <label className="text-sm font-medium">{t('auth.otp')}</label>
