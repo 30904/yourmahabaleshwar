@@ -54,11 +54,15 @@ export const createAndSendOtp = async ({
     });
   }
 
-  const payload = { otpId: otp._id, expiresAt: otp.expiresAt, channel, purpose };
-  if (process.env.NODE_ENV !== 'production') {
-    payload.devCode = code;
-  }
-  return payload;
+  // Temporary for testing: always return the OTP in the API response (website shows it).
+  // Remove this when SMS/WhatsApp OTP is reliable and NODE_ENV is production.
+  return {
+    otpId: otp._id,
+    expiresAt: otp.expiresAt,
+    channel,
+    purpose,
+    devCode: code,
+  };
 };
 
 export const verifyOtpCode = async ({ identifier, purpose, code }) => {
